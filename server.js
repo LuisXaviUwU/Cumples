@@ -27,6 +27,27 @@ const DASHBOARD_KEY = process.env.DASHBOARD_KEY || 'yocapi_dash_auth_8492';
 const BIRTHDAY_GRACE_DAYS = 14;
 const ALERT_COOLDOWN_MS = 30_000; // 30 segundos entre alertas del mismo usuario
 
+// Configuración persistente (Felicitaciones en directo activadas por la streamer, etc.)
+const settingsFile = path.join(__dirname, 'data', 'settings.json');
+let appSettings = { felicitations_enabled: false };
+try {
+    if (fs.existsSync(settingsFile)) {
+        appSettings = { ...appSettings, ...JSON.parse(fs.readFileSync(settingsFile, 'utf8')) };
+    }
+} catch (e) {
+    console.error('Error cargando settings.json:', e);
+}
+
+function saveAppSettings() {
+    try {
+        const dir = path.dirname(settingsFile);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(settingsFile, JSON.stringify(appSettings, null, 2));
+    } catch (e) {
+        console.error('Error guardando settings.json:', e);
+    }
+}
+
 // ─── Middleware ─────────────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
@@ -260,6 +281,7 @@ app.post('/api/auth/register', async (req, res) => {
         const fetchedAvatar = await fetchPublicTwitchAvatar(cleanName);
         const avatarUrl = (fetchedAvatar && fetchedAvatar.startsWith('http')) ? fetchedAvatar : '/img/yocapi.png';
 
+        const nowIso = new Date().toISOString();
         const newUser = await db.saveUser({
             username: cleanName,
             display_name: cleanName,
@@ -270,7 +292,9 @@ app.post('/api/auth/register', async (req, res) => {
             birth_day: day,
             custom_message: custom_message || '',
             selected_sound: selected_sound || 'HBSilbato.mp3',
-            created_at: new Date().toISOString()
+            birthday_unlocked: false,
+            created_at: nowIso,
+            registered_at: nowIso
         });
 
         const token = crypto.randomBytes(32).toString('hex');
@@ -375,9 +399,13 @@ function isUserDateLocked(user) {
     // SQLite almacena 1/0, Firestore almacena true/false
     if (user.birthday_unlocked === true || user.birthday_unlocked === 1) return false;
     if (!user.birth_month || !user.birth_day) return false;
-    const regTime = user.created_at ? new Date(user.created_at).getTime() : 0;
-    // Si no hay created_at, es usuario viejo → no bloqueado (para no afectar registros anteriores)
-    if (!regTime) return false;
+
+    // Buscar cualquier fecha de registro/creación/modificación disponible
+    const dateStr = user.created_at || user.registered_at || user.last_changed_at;
+    const regTime = dateStr ? new Date(dateStr).getTime() : 0;
+    // Si ya tiene fecha registrada pero no hay timestamp, por defecto está bloqueado por 1 año
+    if (!regTime) return true;
+
     const oneYearMs = 365 * 24 * 60 * 60 * 1000;
     return (Date.now() - regTime < oneYearMs);
 }
@@ -603,7 +631,10 @@ app.get('/api/birthday/public-today', async (req, res) => {
         // Ordenar próximos por días
         result.upcoming.sort((a, b) => a.daysUntil - b.daysUntil);
 
-        res.json(result);
+        res.json({
+            ...result,
+            felicitations_enabled: !!appSettings.felicitations_enabled
+        });
     } catch (err) {
         console.error('Error en /api/birthday/public-today:', err);
         res.status(500).json({ error: 'Error del servidor' });
@@ -612,11 +643,17 @@ app.get('/api/birthday/public-today', async (req, res) => {
 
 // Cooldown de felicitaciones: username -> timestamp último envío
 const felicitationCooldown = new Map();
-const FELICITATION_COOLDOWN_MS = 60_000; // 60 segundos entre felicitaciones del mismo usuario
+const FELICITATION_COOLDOWN_MS = 5_000; // 5 segundos entre felicitaciones del mismo usuario
 
 // Enviar felicitación al overlay (usuario autenticado felicita a un cumpleañero)
 app.post('/api/birthday/send-felicitation', authenticateUser, async (req, res) => {
     try {
+        if (!appSettings.felicitations_enabled) {
+            return res.status(403).json({
+                error: 'Las felicitaciones en vivo están desactivadas por la streamer en este momento.'
+            });
+        }
+
         const { target_username, sound } = req.body;
         if (!target_username || !sound) {
             return res.status(400).json({ error: 'Faltan parámetros: target_username y sound' });
@@ -854,6 +891,26 @@ app.post('/api/dashboard/users/:username/change-date', authenticateDashboard, as
     } catch (err) {
         res.status(500).json({ error: 'Error al cambiar fecha' });
     }
+});
+
+// Obtener estado de felicitaciones en directo
+app.get('/api/dashboard/felicitations-status', authenticateDashboard, (req, res) => {
+    res.json({ enabled: !!appSettings.felicitations_enabled });
+});
+
+// Habilitar / Desactivar felicitaciones en directo
+app.post('/api/dashboard/felicitations-toggle', authenticateDashboard, (req, res) => {
+    if (typeof req.body.enabled === 'boolean') {
+        appSettings.felicitations_enabled = req.body.enabled;
+    } else {
+        appSettings.felicitations_enabled = !appSettings.felicitations_enabled;
+    }
+    saveAppSettings();
+    res.json({
+        success: true,
+        enabled: appSettings.felicitations_enabled,
+        message: appSettings.felicitations_enabled ? '¡Felicitaciones en directo activadas!' : 'Felicitaciones en directo desactivadas.'
+    });
 });
 
 // Lanzar alerta manual o de prueba desde el Dashboard
