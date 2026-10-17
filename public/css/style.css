@@ -1039,7 +1039,22 @@ footer a {
 
 .felic-sound-btns {
   display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.felic-cd-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(244, 63, 94, 0.18);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  color: #fb7185;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
 }
 
 .btn-felic-sound {
@@ -1051,7 +1066,7 @@ footer a {
   color: #fff;
   font-size: 1.3rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1064,10 +1079,18 @@ footer a {
   transform: scale(1.1);
 }
 
-.btn-felic-sound:disabled {
-  cursor: not-allowed;
-  font-size: 0.72rem;
-  font-weight: 700;
+.btn-felic-sound:disabled,
+.btn-felic-sound.felic-cooldown {
+  opacity: 0.35 !important;
+  filter: grayscale(0.85) brightness(0.7) !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(20, 15, 30, 0.75) !important;
+  box-shadow: none !important;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #c4b5fd;
 }
 
 .felic-upcoming-row {
