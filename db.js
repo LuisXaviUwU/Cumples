@@ -30,7 +30,17 @@ function initDatabase() {
         let serviceAccount = null;
         if (process.env.FIREBASE_SERVICE_ACCOUNT) {
             try {
-                serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+                let raw = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+                if ((raw.startsWith("'") && raw.endsWith("'")) || (raw.startsWith('"') && raw.endsWith('"'))) {
+                    raw = raw.slice(1, -1);
+                }
+                if (!raw.startsWith('{')) {
+                    try {
+                        const decoded = Buffer.from(raw, 'base64').toString('utf8');
+                        if (decoded.trim().startsWith('{')) raw = decoded;
+                    } catch (_) {}
+                }
+                serviceAccount = JSON.parse(raw);
             } catch (err) {
                 console.error('[DB] Error parseando FIREBASE_SERVICE_ACCOUNT JSON:', err.message);
             }
@@ -47,6 +57,9 @@ function initDatabase() {
         }
 
         if (serviceAccount && !admin.apps.length) {
+            if (serviceAccount.private_key && typeof serviceAccount.private_key === 'string') {
+                serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+            }
             admin.initializeApp({
                 credential: admin.credential.cert(serviceAccount)
             });

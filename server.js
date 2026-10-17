@@ -179,7 +179,7 @@ app.post('/api/auth/register', async (req, res) => {
         res.json({ success: true, user: newUser });
     } catch (err) {
         console.error('Error en registro:', err);
-        res.status(500).json({ error: 'Error del servidor al registrar' });
+        res.status(500).json({ error: 'Error al registrar: ' + (err.message || 'Error del servidor') });
     }
 });
 
