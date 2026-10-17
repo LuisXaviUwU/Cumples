@@ -14,6 +14,7 @@ const https = require('https');
 const db = require('./db');
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3001;
 
 // Configuración general
@@ -103,14 +104,19 @@ function getBirthdayStatus(birthMonth, birthDay) {
 
 // ─── Middleware Autenticación de Usuario ────────────────────────────────────
 async function authenticateUser(req, res, next) {
-    const token = req.cookies.yocapi_session || req.headers.authorization?.replace('Bearer ', '');
-    if (!token) return res.status(401).json({ error: 'No autenticado' });
+    try {
+        const token = req.cookies?.yocapi_session || req.headers.authorization?.replace('Bearer ', '').trim();
+        if (!token) return res.status(401).json({ error: 'No autenticado' });
 
-    const session = await db.getSession(token);
-    if (!session) return res.status(401).json({ error: 'Sesión expirada o inválida' });
+        const session = await db.getSession(token);
+        if (!session) return res.status(401).json({ error: 'Sesión expirada o inválida' });
 
-    req.user = session;
-    next();
+        req.user = session;
+        next();
+    } catch (err) {
+        console.error('Error en authenticateUser:', err);
+        return res.status(401).json({ error: 'Error de autenticación' });
+    }
 }
 
 // ─── API DE AUTENTICACIÓN (NICK + PIN) ──────────────────────────────────────
@@ -173,10 +179,11 @@ app.post('/api/auth/register', async (req, res) => {
         res.cookie('yocapi_session', token, {
             httpOnly: true,
             maxAge: 60 * 24 * 60 * 60 * 1000,
-            sameSite: 'lax'
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production' || !!process.env.RENDER
         });
 
-        res.json({ success: true, user: newUser });
+        res.json({ success: true, user: newUser, token });
     } catch (err) {
         console.error('Error en registro:', err);
         res.status(500).json({ error: 'Error al registrar: ' + (err.message || 'Error del servidor') });
@@ -240,10 +247,11 @@ app.post('/api/auth/login', async (req, res) => {
         res.cookie('yocapi_session', token, {
             httpOnly: true,
             maxAge: 60 * 24 * 60 * 60 * 1000,
-            sameSite: 'lax'
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production' || !!process.env.RENDER
         });
 
-        res.json({ success: true, user });
+        res.json({ success: true, user, token });
     } catch (err) {
         console.error('Error en login:', err);
         res.status(500).json({ error: 'Error del servidor al iniciar sesión' });
@@ -252,7 +260,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 // Cerrar sesión
 app.post('/api/auth/logout', async (req, res) => {
-    const token = req.cookies.yocapi_session;
+    const token = req.cookies?.yocapi_session || req.headers.authorization?.replace('Bearer ', '').trim();
     if (token) await db.deleteSession(token);
     res.clearCookie('yocapi_session');
     res.json({ success: true });
@@ -261,23 +269,28 @@ app.post('/api/auth/logout', async (req, res) => {
 // ─── API DE USUARIO (DATOS & CUMPLEAÑOS) ────────────────────────────────────
 
 app.get('/api/me', authenticateUser, async (req, res) => {
-    const user = await db.getUser(req.user.username);
-    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    try {
+        const user = await db.getUser(req.user.username);
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-    const status = getBirthdayStatus(user.birth_month, user.birth_day);
-    res.json({
-        user: {
-            username: user.username,
-            display_name: user.display_name,
-            profile_image: user.profile_image,
-            birth_month: user.birth_month,
-            birth_day: user.birth_day,
-            custom_message: user.custom_message,
-            selected_sound: user.selected_sound
-        },
-        status,
-        streamer_login: STREAMER_LOGIN
-    });
+        const status = getBirthdayStatus(user.birth_month, user.birth_day);
+        res.json({
+            user: {
+                username: user.username,
+                display_name: user.display_name,
+                profile_image: user.profile_image,
+                birth_month: user.birth_month,
+                birth_day: user.birth_day,
+                custom_message: user.custom_message,
+                selected_sound: user.selected_sound
+            },
+            status,
+            streamer_login: STREAMER_LOGIN
+        });
+    } catch (err) {
+        console.error('Error en /api/me:', err);
+        res.status(500).json({ error: 'Error del servidor al obtener datos' });
+    }
 });
 
 // Actualizar cumpleaños o configuración
