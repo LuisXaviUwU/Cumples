@@ -1,9 +1,10 @@
 /**
- * YoCapi Birthday System — Frontend App Logic
+ * YoCapi Birthday System — Client App Logic (Nick + PIN, Mobile-First)
  */
 
 let currentAudio = null;
 let currentPlayingFile = null;
+let avatarFetchTimeout = null;
 
 // Cálculo de Signo Zodiacal
 function getZodiac(month, day) {
@@ -50,17 +51,14 @@ function showToast(message, type = 'info') {
   }, 4000);
 }
 
-// Inicialización de Días
-function populateDays(selectedDay = null) {
-  const selectDay = document.getElementById('select-day');
-  const selectMonth = document.getElementById('select-month');
-  const month = parseInt(selectMonth.value, 10);
-
+// Llenar selector de días
+function populateDaysSelect(selectDayEl, selectMonthEl, selectedDay = null) {
+  const month = parseInt(selectMonthEl.value, 10);
   let maxDays = 31;
   if ([4, 6, 9, 11].includes(month)) maxDays = 30;
   if (month === 2) maxDays = 29;
 
-  selectDay.innerHTML = '<option value="" disabled selected>Selecciona tu día...</option>';
+  selectDayEl.innerHTML = '<option value="" disabled selected>Día...</option>';
   for (let i = 1; i <= maxDays; i++) {
     const opt = document.createElement('option');
     opt.value = i;
@@ -68,13 +66,14 @@ function populateDays(selectedDay = null) {
     if (selectedDay && parseInt(selectedDay, 10) === i) {
       opt.selected = true;
     }
-    selectDay.appendChild(opt);
+    selectDayEl.appendChild(opt);
   }
 }
 
 // Cargar sonidos
-async function loadSounds(selectedSound = 'HBSilbato.mp3') {
-  const container = document.getElementById('sound-options-container');
+async function loadSoundCards(containerId, groupName, selectedSound = 'HBSilbato.mp3') {
+  const container = document.getElementById(containerId);
+  if (!container) return;
   container.innerHTML = '';
 
   try {
@@ -92,15 +91,15 @@ async function loadSounds(selectedSound = 'HBSilbato.mp3') {
       card.className = `sound-card ${isSelected ? 'selected' : ''}`;
       card.innerHTML = `
         <div class="sound-card-left">
-          <input type="radio" name="selected_sound" value="${s.file}" id="sound_${s.file}" class="sound-radio" ${isSelected ? 'checked' : ''}>
-          <label for="sound_${s.file}" class="sound-name" style="cursor:pointer;">${s.label}</label>
+          <input type="radio" name="${groupName}" value="${s.file}" id="${groupName}_${s.file}" class="sound-radio" ${isSelected ? 'checked' : ''}>
+          <label for="${groupName}_${s.file}" class="sound-name" style="cursor:pointer;">${s.label}</label>
         </div>
         <button type="button" class="btn-preview-audio" data-sound="${s.file}" title="Escuchar">▶</button>
       `;
 
       card.addEventListener('click', (e) => {
         if (e.target.closest('.btn-preview-audio')) return;
-        document.querySelectorAll('.sound-card').forEach(c => c.classList.remove('selected'));
+        container.querySelectorAll('.sound-card').forEach(c => c.classList.remove('selected'));
         card.classList.add('selected');
         card.querySelector('input[type="radio"]').checked = true;
       });
@@ -108,7 +107,7 @@ async function loadSounds(selectedSound = 'HBSilbato.mp3') {
       const playBtn = card.querySelector('.btn-preview-audio');
       playBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        toggleAudioPreview(s.file, playBtn);
+        toggleAudio(s.file, playBtn);
       });
 
       container.appendChild(card);
@@ -118,7 +117,7 @@ async function loadSounds(selectedSound = 'HBSilbato.mp3') {
   }
 }
 
-function toggleAudioPreview(file, btn) {
+function toggleAudio(file, btn) {
   if (currentAudio && currentPlayingFile === file) {
     currentAudio.pause();
     currentAudio = null;
@@ -141,8 +140,7 @@ function toggleAudioPreview(file, btn) {
   btn.textContent = '⏸';
   btn.classList.add('playing');
 
-  currentAudio.play().catch(e => {
-    console.warn('Auto-play prevent:', e);
+  currentAudio.play().catch(() => {
     btn.textContent = '▶';
     btn.classList.remove('playing');
   });
@@ -155,219 +153,405 @@ function toggleAudioPreview(file, btn) {
   };
 }
 
-// Actualizar banner de estado
-function updateCelebrationBanner(status, birthday) {
+// Actualizar banner de estado de cumpleaños
+function updateCelebrationBanner(status, user) {
   const box = document.getElementById('celebration-box');
   const tag = document.getElementById('status-tag');
   const title = document.getElementById('status-title');
   const desc = document.getElementById('status-desc');
   const launchBtn = document.getElementById('btn-launch-alert');
 
-  if (!birthday) {
-    box.className = 'celebration-box waiting';
-    tag.textContent = '🗓️ Sin Registro';
-    title.textContent = 'Registra tu fecha especial';
-    desc.textContent = 'Elige tu mes y día en el formulario para activar tu alerta en stream.';
-    launchBtn.style.display = 'none';
-    return;
-  }
-
   if (status.canCelebrate) {
     box.className = 'celebration-box active';
     launchBtn.style.display = 'inline-flex';
 
     if (status.isToday) {
-      tag.textContent = '🎂 ¡ES HOY! ¡ES HOY!';
+      tag.textContent = '🎂 ¡HOY ES TU DÍA!';
       title.textContent = '🎉 ¡Feliz Cumpleaños!';
-      desc.textContent = '¡Hoy es tu día especial! Haz clic en el botón para enviar tu alerta en vivo a la pantalla de yocapi_pr.';
+      desc.textContent = '¡Tu alerta en vivo está lista! Presiona el botón para dispararla con sonido y confeti en la pantalla de yocapi_pr.';
     } else {
-      tag.textContent = `🎈 Período de Gracia (${status.daysRemainingInGrace} días restantes)`;
-      title.textContent = '¡Aún estás a tiempo de celebrar!';
-      desc.textContent = 'Tu cumpleaños fue hace poco, pero el período de gracia te permite lanzar tu felicitación en directo.';
+      tag.textContent = `🎈 Período de Gracia (${status.daysRemainingInGrace} días rest.)`;
+      title.textContent = '¡Aún puedes festejar!';
+      desc.textContent = 'El período de gracia te permite lanzar tu alerta en directo aunque hayan pasado unos días de tu cumpleaños.';
     }
 
-    // Pequeño confeti de bienvenida si puede celebrar
     if (typeof confetti === 'function') {
-      confetti({
-        particleCount: 40,
-        spread: 60,
-        origin: { y: 0.7 }
-      });
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
     }
   } else {
-    box.className = 'celebration-box waiting';
+    box.className = 'celebration-box';
     launchBtn.style.display = 'none';
     tag.textContent = '⏳ Cuenta Regresiva';
     title.textContent = `Faltan ${status.daysUntilBirthday} días`;
-    desc.textContent = `Tu cumpleaños está guardado para el ${birthday.birth_day} de este mes. ¡El botón de alerta en vivo se activará automáticamente el día de tu cumpleaños y durará 14 días!`;
+    desc.textContent = `Tu cumpleaños está programado para el día ${user.birth_day}. ¡El botón para lanzarlo en directo se activará automáticamente el día de tu cumpleaños!`;
   }
 }
 
-// Iniciar aplicación
+// Inicialización de la aplicación
 document.addEventListener('DOMContentLoaded', async () => {
-  const selectMonth = document.getElementById('select-month');
-  const selectDay = document.getElementById('select-day');
-  const inputMessage = document.getElementById('input-message');
-  const charCounter = document.getElementById('char-counter');
-  const zodiacBadge = document.getElementById('zodiac-badge');
-  const launchAlertBtn = document.getElementById('btn-launch-alert');
-  const bdayForm = document.getElementById('bday-form');
+  const stateLoading = document.getElementById('state-loading');
+  const stateGuest = document.getElementById('state-guest');
+  const stateUser = document.getElementById('state-user');
 
-  populateDays();
+  // Pestañas Registro / Login
+  const tabBtnReg = document.getElementById('tab-btn-register');
+  const tabBtnLog = document.getElementById('tab-btn-login');
+  const formReg = document.getElementById('form-register');
+  const formLog = document.getElementById('form-login');
 
-  // Escuchar mensaje y actualizar contador
-  inputMessage.addEventListener('input', () => {
-    charCounter.textContent = `${inputMessage.value.length}/100`;
+  tabBtnReg.addEventListener('click', () => {
+    tabBtnReg.classList.add('active');
+    tabBtnLog.classList.remove('active');
+    formReg.style.display = 'block';
+    formLog.style.display = 'none';
   });
 
-  // Actualizar días y zodiaco al cambiar mes o día
-  function updateZodiac() {
-    const m = parseInt(selectMonth.value, 10);
-    const d = parseInt(selectDay.value, 10);
-    if (m && d) {
-      zodiacBadge.textContent = getZodiac(m, d);
-      zodiacBadge.style.display = 'inline-block';
+  tabBtnLog.addEventListener('click', () => {
+    tabBtnLog.classList.add('active');
+    tabBtnReg.classList.remove('active');
+    formLog.style.display = 'block';
+    formReg.style.display = 'none';
+  });
+
+  // Vista previa dinámica de avatar de Twitch
+  const regUserInput = document.getElementById('reg-username');
+  const regAvatarImg = document.getElementById('reg-avatar-preview');
+  const regAvatarName = document.getElementById('reg-avatar-name');
+
+  regUserInput.addEventListener('input', () => {
+    const val = regUserInput.value.trim();
+    regAvatarName.textContent = val ? `@${val}` : 'Tu Avatar de Twitch';
+
+    clearTimeout(avatarFetchTimeout);
+    if (val.length >= 2) {
+      avatarFetchTimeout = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/avatar/${encodeURIComponent(val)}`);
+          const data = await res.json();
+          if (data.avatar) {
+            regAvatarImg.src = data.avatar;
+          }
+        } catch {}
+      }, 500);
     } else {
-      zodiacBadge.style.display = 'none';
+      regAvatarImg.src = '/img/yocapi.png';
+    }
+  });
+
+  // Selectores de días y zodiaco en registro
+  const regMonth = document.getElementById('reg-month');
+  const regDay = document.getElementById('reg-day');
+
+
+  function updateRegZodiac() {
+    const m = parseInt(regMonth.value, 10);
+    const d = parseInt(regDay.value, 10);
+    if (m && d) {
+      regZodiac.textContent = `✨ Signo: ${getZodiac(m, d)}`;
+      regZodiac.style.display = 'block';
+    } else {
+      regZodiac.style.display = 'none';
     }
   }
 
-  selectMonth.addEventListener('change', () => {
-    populateDays(selectDay.value);
-    updateZodiac();
+  regMonth.addEventListener('change', () => {
+    populateDaysSelect(regDay, regMonth, regDay.value);
+    updateRegZodiac();
   });
-  selectDay.addEventListener('change', updateZodiac);
+  regDay.addEventListener('change', updateRegZodiac);
 
-  // Cargar usuario
-  try {
-    const res = await fetch('/api/me');
-    document.getElementById('state-loading').style.display = 'none';
+  // Inicializar días
+  populateDaysSelect(regDay, regMonth);
 
-    if (res.status === 401) {
-      document.getElementById('state-guest').style.display = 'block';
-      return;
+  // Submit Registro
+  formReg.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = regUserInput.value.trim();
+    const pin = document.getElementById('reg-pin').value.trim();
+    const secret = document.getElementById('reg-secret').value.trim();
+    const month = regMonth.value;
+    const day = regDay.value;
+
+    const submitBtn = document.getElementById('btn-submit-register');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Registrando...';
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username,
+          pin,
+          secret_word: secret,
+          birth_month: month,
+          birth_day: day
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('¡Registro completado con éxito!', 'success');
+        checkUserSession();
+      } else {
+        showToast(data.error || 'Error al registrar', 'error');
+      }
+    } catch {
+      showToast('Error conectando con el servidor', 'error');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '🎉 Registrar Mi Cumpleaños';
     }
+  });
 
-    const data = await res.json();
-    document.getElementById('state-user').style.display = 'block';
+  // Submit Login
+  formLog.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('login-username').value.trim();
+    const pin = document.getElementById('login-pin').value.trim();
 
-    // Perfil
-    document.getElementById('user-name').textContent = data.user.display_name;
-    document.getElementById('user-login').textContent = `@${data.user.login}`;
-    if (data.user.profile_image) {
-      document.getElementById('user-avatar').src = data.user.profile_image;
+    const submitBtn = document.getElementById('btn-submit-login');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Entrando...';
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, pin })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`¡Bienvenido de vuelta, ${data.user.display_name}!`, 'success');
+        checkUserSession();
+      } else {
+        showToast(data.error || 'Error al iniciar sesión', 'error');
+      }
+    } catch {
+      showToast('Error conectando con el servidor', 'error');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '🔓 Iniciar Sesión';
     }
+  });
 
-    // Datos de cumpleaños previos
-    let selectedSound = 'HBSilbato.mp3';
-    if (data.birthday) {
-      selectMonth.value = data.birthday.birth_month;
-      populateDays(data.birthday.birth_day);
-      inputMessage.value = data.birthday.custom_message || '';
-      charCounter.textContent = `${inputMessage.value.length}/100`;
-      selectedSound = data.birthday.selected_sound || 'HBSilbato.mp3';
-      updateZodiac();
-    }
+  // Flujo de Olvido / Recuperación de PIN
+  const formReset = document.getElementById('form-reset-pin');
+  const linkForgotPin = document.getElementById('link-forgot-pin');
+  const linkBackLogin = document.getElementById('link-back-login');
 
-    await loadSounds(selectedSound);
-
-    if (data.status) {
-      updateCelebrationBanner(data.status, data.birthday);
-    }
-
-    // Guardar cumpleaños
-    bdayForm.addEventListener('submit', async (e) => {
+  if (linkForgotPin) {
+    linkForgotPin.addEventListener('click', (e) => {
       e.preventDefault();
-      const month = selectMonth.value;
-      const day = selectDay.value;
-      const message = inputMessage.value;
-      const soundInput = document.querySelector('input[name="selected_sound"]:checked');
-      const sound = soundInput ? soundInput.value : 'HBSilbato.mp3';
+      formLog.style.display = 'none';
+      formReg.style.display = 'none';
+      formReset.style.display = 'block';
+    });
+  }
 
-      const saveBtn = document.getElementById('btn-save-bday');
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Guardando...';
+  if (linkBackLogin) {
+    linkBackLogin.addEventListener('click', (e) => {
+      e.preventDefault();
+      formReset.style.display = 'none';
+      formLog.style.display = 'block';
+    });
+  }
+
+  if (formReset) {
+    formReset.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('reset-username').value.trim();
+      const secret_word = document.getElementById('reset-secret').value.trim();
+      const new_pin = document.getElementById('reset-new-pin').value.trim();
+      const resetBtn = document.getElementById('btn-submit-reset');
+
+      resetBtn.disabled = true;
+      resetBtn.textContent = 'Verificando...';
 
       try {
-        const postRes = await fetch('/api/birthday/register', {
+        const res = await fetch('/api/auth/reset-pin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            birth_month: month,
-            birth_day: day,
-            custom_message: message,
-            selected_sound: sound
-          })
+          body: JSON.stringify({ username, secret_word, new_pin })
         });
-        const result = await postRes.json();
-        if (result.success) {
-          showToast('¡Cumpleaños guardado exitosamente!', 'success');
-          updateCelebrationBanner(result.status, result.birthday);
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          formReset.style.display = 'none';
+          formLog.style.display = 'block';
+          document.getElementById('login-username').value = username;
+          document.getElementById('login-pin').value = new_pin;
         } else {
-          showToast(result.error || 'Error al guardar', 'error');
+          showToast(data.error || 'Error al restablecer PIN', 'error');
         }
       } catch {
         showToast('Error de conexión con el servidor', 'error');
       } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = '💾 Guardar Cumpleaños';
+        resetBtn.disabled = false;
+        resetBtn.textContent = '✅ Restablecer PIN y Entrar';
       }
     });
+  }
 
-    // Lanzar alerta en directo
-    launchAlertBtn.addEventListener('click', async () => {
-      launchAlertBtn.disabled = true;
-      launchAlertBtn.textContent = '🚀 Enviando a OBS...';
+  // Comprobar sesión activa
+  async function checkUserSession() {
+    try {
+      const res = await fetch('/api/me');
+      stateLoading.style.display = 'none';
 
-      try {
-        const alertRes = await fetch('/api/birthday/alert', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
-        const result = await alertRes.json();
+      if (res.status === 401) {
+        stateGuest.style.display = 'block';
+        stateUser.style.display = 'none';
+        return;
+      }
 
-        if (result.success) {
-          showToast(result.message, 'success');
-          if (typeof confetti === 'function') {
-            confetti({
-              particleCount: 150,
-              spread: 100,
-              origin: { y: 0.5 }
-            });
-          }
+      const data = await res.json();
+      stateGuest.style.display = 'none';
+      stateUser.style.display = 'block';
 
-          // Cooldown visual de 30s
-          let seconds = 30;
-          const cooldownText = document.getElementById('alert-cooldown-text');
-          cooldownText.style.display = 'block';
+      // Llenar datos de usuario logueado
+      document.getElementById('user-name').textContent = data.user.display_name;
+      document.getElementById('user-details').textContent = `Cumpleaños: ${data.user.birth_day} del mes ${data.user.birth_month}`;
+      if (data.user.profile_image) {
+        document.getElementById('user-avatar').src = data.user.profile_image;
+      }
 
-          const interval = setInterval(() => {
-            seconds--;
-            launchAlertBtn.textContent = `⏳ Espera ${seconds}s`;
-            cooldownText.textContent = `Podrás lanzar otra alerta en ${seconds} segundos.`;
-            if (seconds <= 0) {
-              clearInterval(interval);
-              launchAlertBtn.disabled = false;
-              launchAlertBtn.innerHTML = '<span>🎉</span> ¡LANZAR ALERTA EN DIRECTO! <span>🚀</span>';
-              cooldownText.style.display = 'none';
-            }
-          }, 1000);
-        } else {
-          showToast(result.error || 'No se pudo enviar la alerta', 'error');
-          launchAlertBtn.disabled = false;
-          launchAlertBtn.innerHTML = '<span>🎉</span> ¡LANZAR ALERTA EN DIRECTO! <span>🚀</span>';
+      // Banner de estado
+      updateCelebrationBanner(data.status, data.user);
+
+      // Formulario de edición
+      const editMonth = document.getElementById('edit-month');
+      const editDay = document.getElementById('edit-day');
+      const editMsg = document.getElementById('edit-message');
+      const editZodiac = document.getElementById('user-zodiac-badge');
+
+      editMonth.value = data.user.birth_month;
+      populateDaysSelect(editDay, editMonth, data.user.birth_day);
+      editMsg.value = data.user.custom_message || '';
+      const editCounter = document.getElementById('edit-char-counter');
+      if (editCounter) {
+        editCounter.textContent = `${(data.user.custom_message || '').length}/100`;
+        editMsg.oninput = () => {
+          editCounter.textContent = `${editMsg.value.length}/100`;
+        };
+      }
+      editZodiac.textContent = getZodiac(data.user.birth_month, data.user.birth_day);
+
+      editMonth.onchange = () => {
+        populateDaysSelect(editDay, editMonth, editDay.value);
+        editZodiac.textContent = getZodiac(parseInt(editMonth.value, 10), parseInt(editDay.value, 10));
+      };
+      editDay.onchange = () => {
+        editZodiac.textContent = getZodiac(parseInt(editMonth.value, 10), parseInt(editDay.value, 10));
+      };
+
+      await loadSoundCards('edit-sound-container', 'edit_sound', data.user.selected_sound);
+
+    } catch (err) {
+      console.error('Error comprobando sesión:', err);
+      stateLoading.style.display = 'none';
+      stateGuest.style.display = 'block';
+    }
+  }
+
+  // Guardar edición
+  const formEdit = document.getElementById('form-edit');
+  formEdit.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const month = document.getElementById('edit-month').value;
+    const day = document.getElementById('edit-day').value;
+    const message = document.getElementById('edit-message').value;
+    const pin = document.getElementById('edit-pin').value;
+    const secret = document.getElementById('edit-secret').value.trim();
+    const soundRadio = document.querySelector('input[name="edit_sound"]:checked');
+    const sound = soundRadio ? soundRadio.value : 'HBSilbato.mp3';
+
+    const saveBtn = document.getElementById('btn-save-edit');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Guardando...';
+
+    try {
+      const res = await fetch('/api/birthday/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          birth_month: month,
+          birth_day: day,
+          custom_message: message,
+          selected_sound: sound,
+          new_pin: pin || null,
+          new_secret: secret || null
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('¡Datos actualizados correctamente!', 'success');
+        document.getElementById('edit-pin').value = '';
+        document.getElementById('edit-secret').value = '';
+        checkUserSession();
+      } else {
+        showToast(data.error || 'Error al actualizar', 'error');
+      }
+    } catch {
+      showToast('Error conectando con el servidor', 'error');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '💾 Guardar Cambios';
+    }
+  });
+
+  // Cerrar Sesión
+  document.getElementById('btn-logout').addEventListener('click', async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    showToast('Sesión cerrada', 'info');
+    checkUserSession();
+  });
+
+  // Botón Lanzar Alerta en Directo
+  const launchAlertBtn = document.getElementById('btn-launch-alert');
+  launchAlertBtn.addEventListener('click', async () => {
+    launchAlertBtn.disabled = true;
+    launchAlertBtn.textContent = '🚀 Enviando a OBS...';
+
+    try {
+      const alertRes = await fetch('/api/birthday/alert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const result = await alertRes.json();
+
+      if (result.success) {
+        showToast(result.message, 'success');
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 120, spread: 90, origin: { y: 0.5 } });
         }
-      } catch {
-        showToast('Error de comunicación con el servidor', 'error');
+
+        let seconds = 30;
+        const cooldownText = document.getElementById('alert-cooldown-text');
+        cooldownText.style.display = 'block';
+
+        const interval = setInterval(() => {
+          seconds--;
+          launchAlertBtn.textContent = `⏳ Espera ${seconds}s`;
+          cooldownText.textContent = `Podrás lanzar otra alerta en ${seconds}s.`;
+          if (seconds <= 0) {
+            clearInterval(interval);
+            launchAlertBtn.disabled = false;
+            launchAlertBtn.innerHTML = '<span>🎉</span> ¡LANZAR ALERTA EN DIRECTO! <span>🚀</span>';
+            cooldownText.style.display = 'none';
+          }
+        }, 1000);
+      } else {
+        showToast(result.error || 'No se pudo enviar la alerta', 'error');
         launchAlertBtn.disabled = false;
         launchAlertBtn.innerHTML = '<span>🎉</span> ¡LANZAR ALERTA EN DIRECTO! <span>🚀</span>';
       }
-    });
+    } catch {
+      showToast('Error de comunicación con el servidor', 'error');
+      launchAlertBtn.disabled = false;
+      launchAlertBtn.innerHTML = '<span>🎉</span> ¡LANZAR ALERTA EN DIRECTO! <span>🚀</span>';
+    }
+  });
 
-  } catch (err) {
-    console.error('Error inicializando:', err);
-    document.getElementById('state-loading').innerHTML = `
-      <p style="color: var(--accent-pink);">No se pudo conectar con el servidor.</p>
-    `;
-  }
+  // Verificar al cargar
+  checkUserSession();
 });

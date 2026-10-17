@@ -208,22 +208,48 @@ async function loadBirthdays() {
           <img src="${b.profile_image || '/img/yocapi.png'}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
           <div>
             <strong>${b.display_name}</strong>
-            <div style="font-size:0.75rem;color:#64748b;">@${b.twitch_login}</div>
+            <div style="font-size:0.75rem;color:#64748b;">@${b.username}</div>
           </div>
         </td>
         <td><strong>${b.birth_day} de ${MONTH_NAMES[b.birth_month]}</strong></td>
         <td style="color:#cbd5e1;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.custom_message || '-'}</td>
         <td><span style="font-size:0.75rem;background:rgba(255,255,255,0.06);padding:3px 8px;border-radius:6px;">${b.selected_sound || 'HBSilbato.mp3'}</span></td>
         <td style="color:#64748b;font-size:0.8rem;">${regDate}</td>
-        <td style="text-align:right;">
-          <button class="btn-del" data-id="${b.twitch_id}">Eliminar</button>
+        <td style="text-align:right;white-space:nowrap;">
+          <button class="btn-copy" style="padding: 5px 10px; font-size: 0.75rem; background: rgba(145, 70, 255, 0.2); border: 1px solid rgba(145, 70, 255, 0.4); color: #bf94ff; margin-right: 6px; display:inline-flex;" data-reset="${b.username}">🔑 Reset PIN</button>
+          <button class="btn-del" data-id="${b.username}">Eliminar</button>
         </td>
       `;
+
+      tr.querySelector('[data-reset]').addEventListener('click', async () => {
+        const newPin = prompt(`Ingresa el nuevo PIN (mínimo 4 dígitos) para @${b.username}:`, '1234');
+        if (newPin === null) return;
+        if (newPin.trim().length < 4) {
+          showToast('El PIN debe tener al menos 4 dígitos', 'error');
+          return;
+        }
+
+        try {
+          const res = await authFetch(`/api/dashboard/users/${b.username}/reset-pin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ new_pin: newPin.trim() })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast(data.message, 'success');
+          } else {
+            showToast(data.error || 'Error al cambiar PIN', 'error');
+          }
+        } catch {
+          showToast('Error de conexión', 'error');
+        }
+      });
 
       tr.querySelector('.btn-del').addEventListener('click', async () => {
         if (!confirm(`¿Eliminar el registro de ${b.display_name}?`)) return;
         try {
-          const delRes = await authFetch(`/api/dashboard/birthdays/${b.twitch_id}`, { method: 'DELETE' });
+          const delRes = await authFetch(`/api/dashboard/birthdays/${b.username}`, { method: 'DELETE' });
           if (delRes.ok) {
             showToast('Registro eliminado', 'success');
             loadBirthdays();
