@@ -483,6 +483,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (lockedDisplay) {
           lockedDisplay.textContent = `${data.user.birth_day} de ${MONTH_NAMES_ES[data.user.birth_month] || ''}`;
         }
+        // Iniciar polling para detectar desbloqueo del streamer
+        startUnlockPolling();
       } else {
         // Mostrar selectores editables
         if (boxLocked) boxLocked.style.display = 'none';
@@ -515,6 +517,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Pestañas superiores de usuario (Sidebar Superior)
   const userSubnavBtns = document.querySelectorAll('.user-subnav-btn');
   const userTabPanes = document.querySelectorAll('.user-tab-pane');
+  let communityLoaded = false;
 
   userSubnavBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -523,8 +526,169 @@ document.addEventListener('DOMContentLoaded', async () => {
       userTabPanes.forEach(pane => {
         pane.style.display = pane.id === targetTab ? 'block' : 'none';
       });
+      // Cargar comunidad al entrar al tab
+      if (targetTab === 'tab-community' && !communityLoaded) {
+        loadCommunitySection();
+        communityLoaded = true;
+      }
     });
   });
+
+  // Polling de desbloqueo: cuando la fecha está bloqueada, verificar cada 12s
+  let unlockPollInterval = null;
+  function startUnlockPolling() {
+    if (unlockPollInterval) return;
+    unlockPollInterval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/me', { headers: getAuthHeaders() });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && data.user && !data.user.is_date_locked) {
+          clearInterval(unlockPollInterval);
+          unlockPollInterval = null;
+          showToast('🔓 ¡La streamer desbloqueó tu fecha! Ya puedes modificarla.', 'success');
+          checkUserSession();
+        }
+      } catch {}
+    }, 12000);
+  }
+
+  // Cargar sección de comunidad (cumpleañeros de hoy + próximos 14 días)
+  async function loadCommunitySection() {
+    const container = document.getElementById('community-section');
+    if (!container) return;
+    container.innerHTML = '<p style="color:var(--text-dim);padding:16px;">Cargando...</p>';
+
+    try {
+      const res = await fetch('/api/birthday/public-today');
+      const data = await res.json();
+
+      const MONTH_NAMES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+      let html = '';
+
+      // Cumpleañeros de HOY
+      if (data.today && data.today.length > 0) {
+        html += `
+          <div class="glass-card" style="margin-bottom:16px; border-color: rgba(244,63,94,0.3);">
+            <h3 style="font-family:var(--font-heading);font-size:1.1rem;font-weight:800;margin-bottom:4px;">
+              🎂 ¡Cumpleaños HOY!
+            </h3>
+            <p style="color:var(--text-dim);font-size:0.82rem;margin-bottom:16px;">
+              Manda un sonido de felicitación que aparecerá en el stream de yocapi_pr
+            </p>
+        `;
+        data.today.forEach(u => {
+          html += `
+            <div class="felic-user-card" id="felic-card-${u.username}">
+              <div class="felic-user-info">
+                <img src="${u.profile_image || '/img/yocapi.png'}" onerror="this.src='/img/yocapi.png'" 
+                  class="felic-user-avatar" alt="${u.display_name}">
+                <div>
+                  <strong style="font-size:0.95rem;">${u.display_name}</strong>
+                  <p style="font-size:0.75rem;color:var(--text-dim);">🎂 ¡Cumpleaños Hoy!</p>
+                </div>
+              </div>
+              <div class="felic-sound-btns">
+                <button class="btn-felic-sound" data-target="${u.username}" data-sound="HBSilbato.mp3" title="Silbato Festivo">🎺</button>
+                <button class="btn-felic-sound" data-target="${u.username}" data-sound="HBVoz.mp3" title="Felicitación de Voz">🎤</button>
+                <button class="btn-felic-sound" data-target="${u.username}" data-sound="MBMusica.mp3" title="Música de Fiesta">🎵</button>
+              </div>
+            </div>
+          `;
+        });
+        html += `</div>`;
+      }
+
+      // Próximos cumpleaños (14 días)
+      if (data.upcoming && data.upcoming.length > 0) {
+        html += `
+          <div class="glass-card" style="border-color: rgba(145,70,255,0.2);">
+            <h3 style="font-family:var(--font-heading);font-size:1rem;font-weight:700;margin-bottom:14px;">
+              📅 Próximos Cumpleaños (14 días)
+            </h3>
+        `;
+        data.upcoming.forEach(u => {
+          html += `
+            <div class="felic-upcoming-row">
+              <img src="${u.profile_image || '/img/yocapi.png'}" onerror="this.src='/img/yocapi.png'"
+                style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid rgba(145,70,255,0.4);" alt="">
+              <div style="flex:1;">
+                <strong style="font-size:0.88rem;">${u.display_name}</strong>
+                <p style="font-size:0.73rem;color:var(--text-dim);">
+                  ${u.birth_day} de ${MONTH_NAMES[u.birth_month]} · en ${u.daysUntil} día${u.daysUntil === 1 ? '' : 's'}
+                </p>
+              </div>
+              <span style="font-size:1.1rem;">🎈</span>
+            </div>
+          `;
+        });
+        html += `</div>`;
+      }
+
+      if (!html) {
+        html = `
+          <div class="glass-card" style="text-align:center;padding:36px;">
+            <div style="font-size:2rem;margin-bottom:8px;">☕</div>
+            <h4 style="font-size:1rem;font-weight:700;">Sin cumpleaños próximos</h4>
+            <p style="color:var(--text-dim);font-size:0.82rem;margin-top:6px;">
+              Nadie cumple años hoy ni en los próximos 14 días.
+            </p>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+
+      // Listeners de botones de felicitación
+      container.querySelectorAll('.btn-felic-sound').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const target = btn.dataset.target;
+          const sound = btn.dataset.sound;
+          btn.disabled = true;
+          btn.style.opacity = '0.4';
+
+          try {
+            const res = await fetch('/api/birthday/send-felicitation', {
+              method: 'POST',
+              headers: getAuthHeaders(),
+              body: JSON.stringify({ target_username: target, sound })
+            });
+            const result = await res.json();
+            if (result.success) {
+              showToast(result.message, 'success');
+              // Mini cooldown visual: 60 segundos
+              let secs = 60;
+              btn.textContent = `${secs}s`;
+              const countdown = setInterval(() => {
+                secs--;
+                btn.textContent = `${secs}s`;
+                if (secs <= 0) {
+                  clearInterval(countdown);
+                  // Restaurar emoji
+                  const icons = { 'HBSilbato.mp3': '🎺', 'HBVoz.mp3': '🎤', 'MBMusica.mp3': '🎵' };
+                  btn.textContent = icons[sound] || '🎵';
+                  btn.disabled = false;
+                  btn.style.opacity = '1';
+                }
+              }, 1000);
+            } else {
+              showToast(result.error || 'Error al enviar', 'error');
+              btn.disabled = false;
+              btn.style.opacity = '1';
+            }
+          } catch {
+            showToast('Error de conexión', 'error');
+            btn.disabled = false;
+            btn.style.opacity = '1';
+          }
+        });
+      });
+    } catch (err) {
+      container.innerHTML = '<p style="color:var(--accent-pink);padding:16px;">Error al cargar.</p>';
+    }
+  }
 
   // Guardar configuración de celebración
   const formCelebration = document.getElementById('form-edit-celebration');

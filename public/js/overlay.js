@@ -234,6 +234,9 @@ function connectSSE() {
       if (data.type === 'alert') {
         enqueue(data);
       }
+      if (data.type === 'felicitation') {
+        showFelicitation(data);
+      }
     } catch (e) {
       console.error('Error parseando evento SSE:', e);
     }
@@ -244,6 +247,81 @@ function connectSSE() {
     evtSource.close();
     setTimeout(connectSSE, 5000);
   };
+}
+
+// ─── Felicitaciones Flotantes de la Comunidad ─────────────────────────────
+const FELIC_ICONS = ['🎂', '🎉', '🎈', '🎁', '✨', '🥳', '💖', '🌟', '🎊', '🍰'];
+const FELIC_SOUNDS = {
+  'HBSilbato.mp3': '🎺',
+  'HBVoz.mp3': '🎤',
+  'MBMusica.mp3': '🎵'
+};
+
+function showFelicitation(data) {
+  // Reproducir el sonido
+  if (data.sound) {
+    const audio = new Audio(`/music/${data.sound}`);
+    audio.volume = 0.55;
+    audio.play().catch(() => {});
+  }
+
+  // Crear mini confetti pequeño
+  if (typeof confetti === 'function') {
+    confetti({
+      particleCount: 25,
+      spread: 50,
+      origin: { x: Math.random(), y: 0.6 + Math.random() * 0.3 },
+      colors: ['#9146ff', '#f43f5e', '#fbbf24', '#10b981'],
+      scalar: 0.7,
+      ticks: 120
+    });
+  }
+
+  // Crear card flotante en posición aleatoria (evitando centro, que es la alerta principal)
+  const card = document.createElement('div');
+  card.className = 'felic-card';
+
+  const randomIcon = FELIC_ICONS[Math.floor(Math.random() * FELIC_ICONS.length)];
+  const soundIcon = FELIC_SOUNDS[data.sound] || '🎵';
+
+  const avatarSrc = (data.fromAvatar && data.fromAvatar.startsWith('http'))
+    ? data.fromAvatar : '/img/yocapi.png';
+
+  card.innerHTML = `
+    <img class="felic-avatar" src="${avatarSrc}" onerror="this.src='/img/yocapi.png'" alt="">
+    <div class="felic-body">
+      <span class="felic-from">${data.from || 'Alguien'}</span>
+      <span class="felic-text">${randomIcon} ¡Feliz Cumpleaños! ${soundIcon}</span>
+    </div>
+  `;
+
+  // Posición aleatoria en zonas perimetrales (evitando el centro ±35%)
+  let x, y;
+  const zone = Math.floor(Math.random() * 4); // 0=top, 1=bottom, 2=left, 3=right
+  switch (zone) {
+    case 0: x = 5 + Math.random() * 90; y = 3 + Math.random() * 18; break;
+    case 1: x = 5 + Math.random() * 90; y = 75 + Math.random() * 20; break;
+    case 2: x = 1 + Math.random() * 18; y = 20 + Math.random() * 55; break;
+    default: x = 76 + Math.random() * 20; y = 20 + Math.random() * 55; break;
+  }
+
+  card.style.left = `${x}%`;
+  card.style.top = `${y}%`;
+  card.style.setProperty('--felic-dx', `${(Math.random() - 0.5) * 120}px`);
+  card.style.setProperty('--felic-dy', `${-60 - Math.random() * 80}px`);
+
+  document.body.appendChild(card);
+
+  // Animar entrada
+  requestAnimationFrame(() => {
+    card.classList.add('felic-visible');
+  });
+
+  // Remover tras 4.5s
+  setTimeout(() => {
+    card.classList.add('felic-exit');
+    setTimeout(() => card.remove(), 700);
+  }, 4500);
 }
 
 connectSSE();
