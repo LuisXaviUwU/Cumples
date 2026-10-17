@@ -104,6 +104,33 @@
             </div>
           </div>
 
+          <!-- Control de Felicitaciones en Directo para Espectadores -->
+          <div class="glass-card" style="padding: 20px 24px; margin-bottom: 24px; border: 1.5px solid rgba(244, 63, 94, 0.4); background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(145, 70, 255, 0.08));">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 16px;">
+                <span style="font-size: 2.4rem;">🎊</span>
+                <div>
+                  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                    <h3 style="font-family: var(--font-h); font-size: 1.15rem; font-weight: 800; margin: 0;">
+                      Lluvia de Felicitaciones en Directo
+                    </h3>
+                    <span id="felic-status-badge" style="padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);">
+                      🔴 Desactivadas
+                    </span>
+                  </div>
+                  <p style="color: #94a3b8; font-size: 0.85rem; margin: 0; line-height: 1.4;">
+                    Permite que los seguidores manden sonidos y tarjetas flotantes de felicitación en pantalla. Al terminar el momento, apágalo para no recibir más.
+                  </p>
+                </div>
+              </div>
+              <div>
+                <button id="btn-toggle-felic" class="btn-primary" style="padding: 12px 24px; font-size: 0.92rem; font-weight: 800; border-radius: 12px; cursor: pointer; transition: all 0.2s;">
+                  Activar Felicitaciones
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- OBS Quick Setup Card -->
           <div class="obs-setup-card">
             <div style="display: flex; align-items: center; justify-content: space-between;">
