@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Streamer — YoCapi Birthday</title>
+  <link rel="icon" href="img/HB.png" type="image/png">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- DASHBOARD PRINCIPAL -->
+  <div id="dash-app" class="dash-layout">
+    
+    <!-- Sidebar -->
+    <aside class="dash-sidebar">
+      <div class="sidebar-brand">
+        <img src="img/yocapi.png" alt="yocapi_pr" class="sidebar-avatar">
+        <div class="sidebar-title">
+          <h2>yocapi_pr</h2>
+          <p>Streamer Cockpit</p>
+        </div>
+      </div>
+
+      <div class="nav-section-title">Navegación</div>
+      <div class="nav-item active" data-tab="overview">
+        <span>📊</span> Resumen
+      </div>
+      <div class="nav-item" data-tab="today">
+        <span>🎉</span> Cumpleañeros Hoy
+      </div>
+      <div class="nav-item" data-tab="birthdays">
+        <span>👥</span> Base de Datos
+      </div>
+      <div class="nav-item" data-tab="overlay-test">
+        <span>🚀</span> OBS & Test Alert
+      </div>
+      <div class="nav-item" data-tab="logs">
+        <span>📜</span> Historial
+      </div>
+
+      <div class="sidebar-footer">
+        <a href="/" target="_blank" class="nav-item" style="color: #64748b; text-decoration: none;">
+          <span>🌐</span> Ver Portal de Seguidores ↗
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="dash-main">
+      <header class="dash-topbar">
+        <div class="topbar-page-title" id="page-title">
+          <span>📊</span> Resumen del Sistema
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div id="obs-status-pill" style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 20px; background: rgba(255,255,255,0.04); font-size: 0.78rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.08);">
+            <span id="obs-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #64748b;"></span>
+            <span id="obs-status-text">OBS: Verificando...</span>
+          </div>
+          <button id="btn-refresh" class="btn-copy" style="padding: 8px 14px; background: rgba(255,255,255,0.06); font-size: 0.8rem;">
+            🔄 Actualizar
+          </button>
+        </div>
+      </header>
+
+      <div class="dash-scroll-content">
+        
+        <!-- PESTAÑA: RESUMEN (OVERVIEW) -->
+        <div id="tab-overview" class="dash-tab-content">
+          <!-- Métricas -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-label">Total Registrados</span>
+                <span class="stat-icon">👥</span>
+              </div>
+              <div class="stat-value" id="stat-total">0</div>
+            </div>
+            <div class="stat-card" style="border-color: rgba(244, 63, 94, 0.4);">
+              <div class="stat-header">
+                <span class="stat-label">Cumpleaños Hoy</span>
+                <span class="stat-icon">🎂</span>
+              </div>
+              <div class="stat-value" id="stat-today" style="color: var(--c-pink);">0</div>
+            </div>
+            <div class="stat-card" style="border-color: rgba(251, 191, 36, 0.4);">
+              <div class="stat-header">
+                <span class="stat-label">En Gracia (14 Días)</span>
+                <span class="stat-icon">🎈</span>
+              </div>
+              <div class="stat-value" id="stat-grace" style="color: var(--c-gold);">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-label">Alertas en Stream</span>
+                <span class="stat-icon">🚀</span>
+              </div>
+              <div class="stat-value" id="stat-alerts">0</div>
+            </div>
+          </div>
+
+          <!-- OBS Quick Setup Card -->
+          <div class="obs-setup-card">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <h3 style="font-family: var(--font-h); font-size: 1.2rem; font-weight: 800; margin-bottom: 4px;">
+                  📺 URL de Navegador para OBS Studio
+                </h3>
+                <p style="color: #94a3b8; font-size: 0.85rem;">
+                  Copia esta URL y agrégala como <strong>Fuente de Navegador (Browser Source)</strong> en OBS (1920x1080). ¡No necesitas ejecutar nada en tu PC!
+                </p>
+              </div>
+              <div style="padding: 6px 12px; background: rgba(145, 70, 255, 0.2); border-radius: 8px; font-size: 0.75rem; font-weight: 700; color: #bf94ff;">
+                Modo Cloud 24/7
+              </div>
+            </div>
+            <div class="obs-copy-row">
+              <input type="text" id="obs-url-display" class="obs-url-input" readonly>
+              <button id="btn-copy-obs" class="btn-copy">📋 Copiar URL</button>
+            </div>
+          </div>
+
+          <!-- Info del Sistema -->
+          <div class="glass-card" style="padding: 24px; margin-bottom: 28px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+              <div>
+                <h4 style="font-family: var(--font-h); font-size: 1.1rem; font-weight: 800; margin-bottom: 4px;">
+                  ✨ Sistema Ágil (Nick de Twitch + PIN)
+                </h4>
+                <p style="color: #94a3b8; font-size: 0.85rem;">
+                  Tus seguidores solo ingresan su Nick de Twitch y un PIN de 4 dígitos. El sistema carga automáticamente sus fotos de perfil y lanza las alertas sin depender de inicios de sesión de Twitch ni tokens que expiren.
+                </p>
+              </div>
+              <div style="padding: 6px 14px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 20px; font-size: 0.8rem; font-weight: 700; color: #10b981;">
+                🟢 Sistema Autónomo 24/7
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PESTAÑA: CUMPLEAÑEROS HOY -->
+        <div id="tab-today" class="dash-tab-content" style="display: none;">
+          <div style="margin-bottom: 20px;">
+            <h3 style="font-family: var(--font-h); font-size: 1.3rem; font-weight: 800;">Celebrantes Activos</h3>
+            <p style="color: #94a3b8; font-size: 0.85rem;">Seguidores que cumplen años hoy o se encuentran dentro del período de gracia (14 días posteriores).</p>
+          </div>
+          <div id="today-celebrants-list" class="today-cards-list">
+            <!-- Cargado por JS -->
+          </div>
+        </div>
+
+        <!-- PESTAÑA: BASE DE DATOS -->
+        <div id="tab-birthdays" class="dash-tab-content" style="display: none;">
+          <div class="dash-table-wrap">
+            <div class="table-toolbar">
+              <input type="text" id="filter-search" class="search-input" placeholder="Buscar por usuario de Twitch...">
+              <select id="filter-month" class="filter-select">
+                <option value="">Todos los Meses</option>
+                <option value="1">Enero</option>
+                <option value="2">Febrero</option>
+                <option value="3">Marzo</option>
+                <option value="4">Abril</option>
+                <option value="5">Mayo</option>
+                <option value="6">Junio</option>
+                <option value="7">Julio</option>
+                <option value="8">Agosto</option>
+                <option value="9">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+              </select>
+            </div>
+            <table class="bday-table">
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Fecha de Cumpleaños</th>
+                  <th>Mensaje en Pantalla</th>
+                  <th>Sonido</th>
+                  <th>Registrado el</th>
+                  <th style="text-align: right;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="bday-table-body">
+                <!-- Filas dinámicas -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PESTAÑA: OBS & TEST ALERT -->
+        <div id="tab-overlay-test" class="dash-tab-content" style="display: none;">
+          <div class="glass-card" style="max-width: 650px;">
+            <h3 style="font-family: var(--font-h); font-size: 1.3rem; font-weight: 800; margin-bottom: 8px;">
+              Lanzador de Alertas de Prueba
+            </h3>
+            <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 24px;">
+              Envía una alerta simulada directamente al overlay de OBS para verificar animaciones, sonido y posición.
+            </p>
+
+            <form id="test-alert-form">
+              <div class="input-group">
+                <label class="input-label">Nombre del Usuario</label>
+                <input type="text" id="test-user" class="custom-input" value="SeguidorVIP" required>
+              </div>
+
+              <div class="input-group">
+                <label class="input-label">Mensaje en Pantalla</label>
+                <input type="text" id="test-message" class="custom-input" value="¡Festejando con toda la comunidad! 🎉">
+              </div>
+
+              <div class="input-group">
+                <label class="input-label">Sonido</label>
+                <select id="test-sound" class="custom-select">
+                  <option value="HBSilbato.mp3">🎺 Silbato Festivo (HBSilbato.mp3)</option>
+                  <option value="HBVoz.mp3">🎤 Felicitación de Voz (HBVoz.mp3)</option>
+                  <option value="MBMusica.mp3">🎵 Música de Fiesta (MBMusica.mp3)</option>
+                </select>
+              </div>
+
+              <div class="input-group">
+                <label class="input-label">Tema Visual</label>
+                <select id="test-theme" class="custom-select">
+                  <option value="purple">🟣 Morado Neón (Twitch Classic)</option>
+                  <option value="pink">💖 Rosa Cyberpunk</option>
+                  <option value="gold">⭐ Dorado Celebración</option>
+                </select>
+              </div>
+
+              <button type="submit" class="btn-save" style="margin-top: 10px;">
+                🚀 Enviar Alerta de Prueba a OBS
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- PESTAÑA: HISTORIAL (LOGS) -->
+        <div id="tab-logs" class="dash-tab-content" style="display: none;">
+          <div class="dash-table-wrap">
+            <table class="bday-table">
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Sonido</th>
+                  <th>Mensaje</th>
+                  <th>Lanzada el</th>
+                </tr>
+              </thead>
+              <tbody id="logs-table-body">
+                <!-- Filas dinámicas -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
