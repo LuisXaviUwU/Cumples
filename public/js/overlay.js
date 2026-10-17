@@ -1,5 +1,5 @@
 /**
- * YoCapi Birthday System — OBS Overlay Controller
+ * YoCapi Birthday System — OBS Overlay Controller 3.0 (Super Festive & Reliable)
  */
 
 const params = new URLSearchParams(window.location.search);
@@ -18,22 +18,33 @@ const alertQuote = document.getElementById('alert-quote');
 const alertQueueTag = document.getElementById('alert-queue-tag');
 const debugStatus = document.getElementById('debug-status');
 
-// Paleta de temas
+// Fallback de imagen en caso de error 404 o fallo de red
+alertAvatar.onerror = function () {
+  this.onerror = null;
+  this.src = '/img/yocapi.png';
+};
+
+// Paleta de temas festivos
 const THEMES = {
   purple: {
     solid: '#9146ff',
-    glow: 'rgba(145, 70, 255, 0.45)',
-    ring: 'conic-gradient(from 0deg, #9146ff, #f43f5e, #fbbf24, #06b6d4, #9146ff)'
+    glow: 'rgba(145, 70, 255, 0.55)',
+    ring: 'conic-gradient(from 0deg, #9146ff, #f43f5e, #fbbf24, #06b6d4, #a855f7, #9146ff)'
   },
   pink: {
     solid: '#f43f5e',
-    glow: 'rgba(244, 63, 94, 0.5)',
+    glow: 'rgba(244, 63, 94, 0.6)',
     ring: 'conic-gradient(from 0deg, #f43f5e, #ec4899, #fbbf24, #9146ff, #f43f5e)'
   },
   gold: {
     solid: '#fbbf24',
-    glow: 'rgba(251, 191, 36, 0.5)',
-    ring: 'conic-gradient(from 0deg, #fbbf24, #f59e0b, #f43f5e, #fbbf24)'
+    glow: 'rgba(251, 191, 36, 0.6)',
+    ring: 'conic-gradient(from 0deg, #fbbf24, #f59e0b, #f43f5e, #a855f7, #fbbf24)'
+  },
+  cyan: {
+    solid: '#06b6d4',
+    glow: 'rgba(6, 182, 212, 0.6)',
+    ring: 'conic-gradient(from 0deg, #06b6d4, #3b82f6, #9146ff, #ec4899, #06b6d4)'
   }
 };
 
@@ -44,10 +55,88 @@ function applyTheme(name = 'purple') {
   document.documentElement.style.setProperty('--theme-ring', t.ring);
 }
 
-// Cola de Alertas
+// Resolución inteligente de avatar con auto-recuperación de Twitch
+async function resolveAvatar(username, initialAvatar) {
+  if (initialAvatar && initialAvatar.startsWith('http') && !initialAvatar.includes('default')) {
+    alertAvatar.src = initialAvatar;
+    return;
+  }
+
+  // Si no vino avatar o vino el default, intentar rescate en vivo con IVR Twitch API
+  alertAvatar.src = '/img/yocapi.png';
+  try {
+    const clean = (username || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+    if (!clean) return;
+    const res = await fetch(`https://api.ivr.fi/v2/twitch/user?login=${encodeURIComponent(clean)}`);
+    const data = await res.json();
+    const logo = data && data[0]?.logo;
+    if (logo && logo.startsWith('http')) {
+      alertAvatar.src = logo;
+    }
+  } catch (e) {
+    // Si falla, se queda /img/yocapi.png
+  }
+}
+
+// ─── Espectáculo de Confeti y Fuegos Artificiales ──────────────────────────
+function triggerBirthdayConfetti() {
+  if (typeof confetti !== 'function') return;
+
+  // Ola 1: Disparo central masivo con estrellas y círculos
+  confetti({
+    particleCount: 110,
+    spread: 95,
+    origin: { y: 0.8 },
+    shapes: ['star', 'circle'],
+    colors: ['#9146ff', '#f43f5e', '#fbbf24', '#06b6d4', '#ffffff']
+  });
+
+  // Ola 2: Cañones laterales cruzados (a los 350ms)
+  setTimeout(() => {
+    confetti({
+      particleCount: 65,
+      angle: 60,
+      spread: 60,
+      origin: { x: 0.05, y: 0.85 },
+      colors: ['#fbbf24', '#f43f5e', '#9146ff', '#ec4899']
+    });
+    confetti({
+      particleCount: 65,
+      angle: 120,
+      spread: 60,
+      origin: { x: 0.95, y: 0.85 },
+      colors: ['#06b6d4', '#9146ff', '#fbbf24', '#10b981']
+    });
+  }, 350);
+
+  // Ola 3: Lluvia dorada celestial suave (a los 1200ms)
+  setTimeout(() => {
+    confetti({
+      particleCount: 80,
+      spread: 120,
+      origin: { y: 0.15 },
+      gravity: 0.75,
+      ticks: 240,
+      shapes: ['star'],
+      colors: ['#ffd700', '#ff69b4', '#00ffff', '#ffffff']
+    });
+  }, 1200);
+
+  // Ola 4: Explosión secundaria de destellos (a los 2500ms)
+  setTimeout(() => {
+    confetti({
+      particleCount: 50,
+      spread: 75,
+      origin: { y: 0.75 },
+      colors: ['#f43f5e', '#fbbf24', '#9146ff']
+    });
+  }, 2500);
+}
+
+// ─── Cola de Alertas ───────────────────────────────────────────────────────
 const alertQueue = [];
 let isPlaying = false;
-const ALERT_DURATION_MS = 9000;
+const ALERT_DURATION_MS = 9500;
 
 function enqueue(alertData) {
   alertQueue.push(alertData);
@@ -60,7 +149,7 @@ function enqueue(alertData) {
 
 function updateQueueTag() {
   if (alertQueue.length > 0) {
-    alertQueueTag.textContent = `+${alertQueue.length} en espera`;
+    alertQueueTag.textContent = `+${alertQueue.length} en espera 🎉`;
     alertQueueTag.style.display = 'block';
   } else {
     alertQueueTag.style.display = 'none';
@@ -80,11 +169,9 @@ function playNext() {
 
   // Configurar contenido
   alertUsername.textContent = current.user || 'Cumpleañero';
-  if (current.avatar) {
-    alertAvatar.src = current.avatar;
-  } else {
-    alertAvatar.src = '/img/yocapi.png';
-  }
+
+  // Carga inteligente del avatar con rescate en vivo
+  resolveAvatar(current.user, current.avatar);
 
   if (current.isGrace) {
     alertTaglineText.textContent = '¡Celebrando su Cumpleaños! (Período de Gracia)';
@@ -93,7 +180,7 @@ function playNext() {
   }
 
   if (current.message && current.message.trim().length > 0) {
-    alertQuote.textContent = `"${current.message}"`;
+    alertQuote.textContent = `“${current.message.trim()}”`;
     alertQuote.style.display = 'block';
   } else {
     alertQuote.style.display = 'none';
@@ -101,36 +188,16 @@ function playNext() {
 
   applyTheme(current.theme || 'purple');
 
-  // Reproducir audio
+  // Reproducir audio seleccionado
   if (current.sound) {
     const audio = new Audio(`/music/${current.sound}`);
     audio.play().catch(e => console.warn('Audio play error:', e));
   }
 
-  // Lanzar confeti
-  if (typeof confetti === 'function') {
-    confetti({
-      particleCount: 80,
-      spread: 80,
-      origin: { y: 0.85 }
-    });
-    setTimeout(() => {
-      confetti({
-        particleCount: 50,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0, y: 0.85 }
-      });
-      confetti({
-        particleCount: 50,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1, y: 0.85 }
-      });
-    }, 400);
-  }
+  // Activar confeti y fuegos artificiales
+  triggerBirthdayConfetti();
 
-  // Mostrar alerta
+  // Mostrar alerta con animación
   alertWrapper.classList.add('active');
 
   // Programar fin de alerta
@@ -138,11 +205,11 @@ function playNext() {
     alertWrapper.classList.remove('active');
     setTimeout(() => {
       playNext();
-    }, 700); // Pequeña pausa entre alertas
+    }, 700); // Pausa entre alertas
   }, ALERT_DURATION_MS);
 }
 
-// Conexión SSE
+// ─── Conexión SSE con Reconexión Automática ────────────────────────────────
 function connectSSE() {
   if (!token) {
     debugStatus.textContent = 'ERROR: Falta el parámetro ?token= en la URL de OBS.';

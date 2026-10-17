@@ -124,7 +124,7 @@ async function loadTodayCelebrants() {
 
       card.innerHTML = `
         <div class="today-item-left">
-          <img src="${c.profile_image || '/img/yocapi.png'}" alt="${c.display_name}" class="today-avatar">
+          <img src="${c.profile_image || '/img/yocapi.png'}" onerror="this.src='/img/yocapi.png'" alt="${c.display_name}" class="today-avatar">
           <div class="today-info">
             <h4>${c.display_name} <span style="font-size:0.75rem; font-weight:700; color:${tagColor}; margin-left:8px;">${tagText}</span></h4>
             <p>${c.custom_message ? `"${c.custom_message}"` : 'Sin mensaje personalizado'} • Sonido: <strong>${c.selected_sound}</strong></p>
@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await authFetch('/api/dashboard/trigger-alert', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user, message, sound, theme, avatar: '/img/yocapi.png' })
+        body: JSON.stringify({ user, message, sound, theme })
       });
       const data = await res.json();
       if (data.success) {

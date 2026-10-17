@@ -225,6 +225,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const regAvatarImg = document.getElementById('reg-avatar-preview');
   const regAvatarName = document.getElementById('reg-avatar-name');
 
+  regAvatarImg.onerror = function() { this.src = '/img/yocapi.png'; };
+
   regUserInput.addEventListener('input', () => {
     const val = regUserInput.value.trim();
     regAvatarName.textContent = val ? `@${val}` : 'Tu Avatar de Twitch';
@@ -235,11 +237,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
           const res = await fetch(`/api/avatar/${encodeURIComponent(val)}`);
           const data = await res.json();
-          if (data.avatar) {
+          if (data.avatar && data.avatar.startsWith('http')) {
             regAvatarImg.src = data.avatar;
+          } else {
+            // Fallback directo a IVR
+            const ivrRes = await fetch(`https://api.ivr.fi/v2/twitch/user?login=${encodeURIComponent(val)}`);
+            const ivrData = await ivrRes.json();
+            const logo = ivrData && ivrData[0]?.logo;
+            if (logo && logo.startsWith('http')) {
+              regAvatarImg.src = logo;
+            } else {
+              regAvatarImg.src = '/img/yocapi.png';
+            }
           }
-        } catch {}
-      }, 500);
+        } catch {
+          regAvatarImg.src = '/img/yocapi.png';
+        }
+      }, 350);
     } else {
       regAvatarImg.src = '/img/yocapi.png';
     }
@@ -439,9 +453,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Llenar datos de usuario logueado
       document.getElementById('user-name').textContent = data.user.display_name;
-      document.getElementById('user-details').textContent = `Cumpleaños: ${data.user.birth_day} del mes ${data.user.birth_month}`;
-      if (data.user.profile_image) {
-        document.getElementById('user-avatar').src = data.user.profile_image;
+      const userAvatarImg = document.getElementById('user-avatar');
+      userAvatarImg.onerror = function() { this.src = '/img/yocapi.png'; };
+      if (data.user.profile_image && data.user.profile_image.startsWith('http')) {
+        userAvatarImg.src = data.user.profile_image;
+      } else {
+        // Cargar avatar en vivo si aún no estaba en la base de datos
+        fetch(`/api/avatar/${encodeURIComponent(data.user.username)}`)
+          .then(r => r.json())
+          .then(d => {
+            if (d.avatar && d.avatar.startsWith('http')) userAvatarImg.src = d.avatar;
+          })
+          .catch(() => {});
       }
 
       // Banner de estado
