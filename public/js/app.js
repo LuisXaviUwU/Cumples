@@ -280,8 +280,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const month = regMonth.value;
     const day = regDay.value;
 
-    if (!/^\d{6,10}$/.test(pin)) {
-      showToast('El PIN debe tener entre 6 y 10 dígitos numéricos', 'error');
+    if (pin.length < 6 || pin.length > 15) {
+      showToast('La contraseña debe tener entre 6 y 15 caracteres', 'error');
       return;
     }
 
@@ -378,8 +378,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const secret_word = document.getElementById('reset-secret').value.trim();
       const new_pin = document.getElementById('reset-new-pin').value.trim();
 
-      if (!/^\d{6,10}$/.test(new_pin)) {
-        showToast('El nuevo PIN debe tener entre 6 y 10 dígitos numéricos', 'error');
+      if (new_pin.length < 6 || new_pin.length > 15) {
+        showToast('La nueva contraseña debe tener entre 6 y 15 caracteres', 'error');
         return;
       }
 
@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           document.getElementById('login-username').value = username;
           document.getElementById('login-pin').value = new_pin;
         } else {
-          showToast(data.error || 'Error al restablecer PIN', 'error');
+          showToast(data.error || 'Error al restablecer contraseña', 'error');
         }
       } catch {
         showToast('Error de conexión con el servidor', 'error');
@@ -494,8 +494,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const soundRadio = document.querySelector('input[name="edit_sound"]:checked');
     const sound = soundRadio ? soundRadio.value : 'HBSilbato.mp3';
 
-    if (pin && !/^\d{6,10}$/.test(pin)) {
-      showToast('El nuevo PIN debe tener entre 6 y 10 dígitos numéricos', 'error');
+    if (pin && (pin.length < 6 || pin.length > 15)) {
+      showToast('La nueva contraseña debe tener entre 6 y 15 caracteres', 'error');
       return;
     }
 

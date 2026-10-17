@@ -216,16 +216,16 @@ async function loadBirthdays() {
         <td><span style="font-size:0.75rem;background:rgba(255,255,255,0.06);padding:3px 8px;border-radius:6px;">${b.selected_sound || 'HBSilbato.mp3'}</span></td>
         <td style="color:#64748b;font-size:0.8rem;">${regDate}</td>
         <td style="text-align:right;white-space:nowrap;">
-          <button class="btn-copy" style="padding: 5px 10px; font-size: 0.75rem; background: rgba(145, 70, 255, 0.2); border: 1px solid rgba(145, 70, 255, 0.4); color: #bf94ff; margin-right: 6px; display:inline-flex;" data-reset="${b.username}">🔑 Reset PIN</button>
+          <button class="btn-copy" style="padding: 5px 10px; font-size: 0.75rem; background: rgba(145, 70, 255, 0.2); border: 1px solid rgba(145, 70, 255, 0.4); color: #bf94ff; margin-right: 6px; display:inline-flex;" data-reset="${b.username}">🔑 Reset Clave</button>
           <button class="btn-del" data-id="${b.username}">Eliminar</button>
         </td>
       `;
 
       tr.querySelector('[data-reset]').addEventListener('click', async () => {
-        const newPin = prompt(`Ingresa el nuevo PIN (6 a 10 dígitos numéricos) para @${b.username}:`, '123456');
+        const newPin = prompt(`Ingresa la nueva contraseña (6 a 15 caracteres) para @${b.username}:`, 'yocapi123');
         if (newPin === null) return;
-        if (!/^\d{6,10}$/.test(newPin.trim())) {
-          showToast('El PIN debe tener entre 6 y 10 dígitos numéricos', 'error');
+        if (newPin.trim().length < 6 || newPin.trim().length > 15) {
+          showToast('La contraseña debe tener entre 6 y 15 caracteres', 'error');
           return;
         }
 
@@ -233,13 +233,13 @@ async function loadBirthdays() {
           const res = await authFetch(`/api/dashboard/users/${b.username}/reset-pin`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ new_pin: newPin.trim() })
+            body: JSON.stringify({ new_password: newPin.trim() })
           });
           const data = await res.json();
           if (data.success) {
             showToast(data.message, 'success');
           } else {
-            showToast(data.error || 'Error al cambiar PIN', 'error');
+            showToast(data.error || 'Error al cambiar contraseña', 'error');
           }
         } catch {
           showToast('Error de conexión', 'error');
