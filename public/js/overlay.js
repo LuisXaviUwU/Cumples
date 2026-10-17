@@ -291,14 +291,14 @@ function showFelicitation(data) {
     <img class="felic-avatar" src="${avatarSrc}" onerror="this.src='/img/yocapi.png'" alt="">
     <div class="felic-body">
       <span class="felic-from">${data.from || 'Alguien'}</span>
-      <span class="felic-text">${randomIcon} ¡Feliz Cumpleaños! ${soundIcon}</span>
+      <span class="felic-text">${randomIcon} ¡Feliz Cumpleaños, ${data.to || 'Cumpleañero'}! ${soundIcon}</span>
     </div>
   `;
 
   // Posición aleatoria segura en zonas perimetrales (sin salirse de la pantalla)
   const winW = window.innerWidth || 1920;
   const winH = window.innerHeight || 1080;
-  const cardW = 430; // ancho estimado de la tarjeta grande
+  const cardW = 480; // ancho estimado de la tarjeta grande
   const cardH = 80;  // alto estimado de la tarjeta
   const pad = 40;    // margen de seguridad respecto a los bordes de la pantalla
 

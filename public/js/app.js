@@ -145,6 +145,16 @@ function updateCelebrationBanner(status, user) {
   const desc = document.getElementById('status-desc');
   const launchBtn = document.getElementById('btn-launch-alert');
 
+  // Si la fecha está desbloqueada por la streamer para corregirla, deshabilitar lanzamiento de alerta
+  if (!user.is_date_locked) {
+    box.className = 'celebration-box';
+    launchBtn.style.display = 'none';
+    tag.textContent = '🔓 Fecha Desbloqueada';
+    title.textContent = 'Modifica y Confirma tu Fecha';
+    desc.textContent = 'La streamer ha desbloqueado tu fecha para que puedas corregirla. Por favor selecciona tu fecha correcta abajo en "Configurar Mi Alerta" y guárdala para confirmarla.';
+    return;
+  }
+
   if (status.canCelebrate) {
     box.className = 'celebration-box active';
     launchBtn.style.display = 'inline-flex';
@@ -259,6 +269,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   ];
 
   let pendingRegistrationPayload = null;
+  let pendingEditPayload = null;
 
   // Interceptar formulario de Registro con el Modal
   formReg.addEventListener('submit', (e) => {
@@ -285,18 +296,30 @@ document.addEventListener('DOMContentLoaded', async () => {
       birth_month: month,
       birth_day: day
     };
+    pendingEditPayload = null;
 
     // Actualizar datos del modal
     modalDateText.textContent = `${day} de ${MONTH_NAMES_ES[month] || ''}`;
+    const subtitle = document.querySelector('.modal-subtitle');
+    if (subtitle) subtitle.textContent = 'Confirma la fecha de tu cumpleaños antes de registrarte';
     modalConfirmBday.style.display = 'flex';
   });
 
   btnModalCancel.addEventListener('click', () => {
     modalConfirmBday.style.display = 'none';
     pendingRegistrationPayload = null;
+    pendingEditPayload = null;
   });
 
   btnModalConfirm.addEventListener('click', async () => {
+    if (pendingEditPayload) {
+      modalConfirmBday.style.display = 'none';
+      const payload = pendingEditPayload;
+      pendingEditPayload = null;
+      await executeSaveCelebration(payload);
+      return;
+    }
+
     if (!pendingRegistrationPayload) return;
     modalConfirmBday.style.display = 'none';
 
@@ -534,7 +557,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Polling de desbloqueo: cuando la fecha está bloqueada, verificar cada 12s
+  // Polling de desbloqueo: cuando la fecha está bloqueada, verificar cada 5s
   let unlockPollInterval = null;
   function startUnlockPolling() {
     if (unlockPollInterval) return;
@@ -550,7 +573,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           checkUserSession();
         }
       } catch {}
-    }, 12000);
+    }, 5000);
   }
 
   // Cargar sección de comunidad (cumpleañeros de hoy + próximos 14 días)
@@ -743,6 +766,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  // Función ejecutora de guardado de celebración
+  async function executeSaveCelebration(payload) {
+    const saveBtn = document.getElementById('btn-save-celebration');
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Guardando...';
+    }
+
+    try {
+      const res = await fetch('/api/birthday/update', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('¡Configuración de cumpleaños guardada y confirmada por 1 año!', 'success');
+        checkUserSession();
+      } else {
+        showToast(data.error || 'Error al guardar', 'error');
+      }
+    } catch {
+      showToast('Error conectando con el servidor', 'error');
+    } finally {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 Guardar Configuración de Alerta';
+      }
+    }
+  }
+
   // Guardar configuración de celebración
   const formCelebration = document.getElementById('form-edit-celebration');
   if (formCelebration) {
@@ -758,35 +812,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       const month = isEditable ? document.getElementById('edit-month').value : undefined;
       const day = isEditable ? document.getElementById('edit-day').value : undefined;
 
-      const saveBtn = document.getElementById('btn-save-celebration');
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Guardando...';
-
       const payload = { custom_message: message, selected_sound: sound };
       if (isEditable && month && day) {
-        payload.birth_month = month;
-        payload.birth_day = day;
+        const m = parseInt(month, 10);
+        const d = parseInt(day, 10);
+        payload.birth_month = m;
+        payload.birth_day = d;
+
+        // Pedir confirmación con el modal antes de fijar por 1 año
+        pendingEditPayload = payload;
+        pendingRegistrationPayload = null;
+        modalDateText.textContent = `${d} de ${MONTH_NAMES_ES[m] || ''}`;
+        const subtitle = document.querySelector('.modal-subtitle');
+        if (subtitle) subtitle.textContent = 'Confirma tu fecha de cumpleaños antes de fijarla por 1 año';
+        modalConfirmBday.style.display = 'flex';
+        return;
       }
 
-      try {
-        const res = await fetch('/api/birthday/update', {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.success) {
-          showToast('¡Configuración de cumpleaños guardada!', 'success');
-          checkUserSession();
-        } else {
-          showToast(data.error || 'Error al guardar', 'error');
-        }
-      } catch {
-        showToast('Error conectando con el servidor', 'error');
-      } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = '💾 Guardar Configuración de Alerta';
-      }
+      await executeSaveCelebration(payload);
     });
   }
 
