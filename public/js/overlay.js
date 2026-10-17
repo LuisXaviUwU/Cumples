@@ -295,20 +295,58 @@ function showFelicitation(data) {
     </div>
   `;
 
-  // Posición aleatoria en zonas perimetrales (evitando el centro ±35%)
-  let x, y;
-  const zone = Math.floor(Math.random() * 4); // 0=top, 1=bottom, 2=left, 3=right
-  switch (zone) {
-    case 0: x = 5 + Math.random() * 90; y = 3 + Math.random() * 18; break;
-    case 1: x = 5 + Math.random() * 90; y = 75 + Math.random() * 20; break;
-    case 2: x = 1 + Math.random() * 18; y = 20 + Math.random() * 55; break;
-    default: x = 76 + Math.random() * 20; y = 20 + Math.random() * 55; break;
+  // Posición aleatoria segura en zonas perimetrales (sin salirse de la pantalla)
+  const winW = window.innerWidth || 1920;
+  const winH = window.innerHeight || 1080;
+  const cardW = 430; // ancho estimado de la tarjeta grande
+  const cardH = 80;  // alto estimado de la tarjeta
+  const pad = 40;    // margen de seguridad respecto a los bordes de la pantalla
+
+  const maxSafeX = Math.max(pad, winW - cardW - pad);
+  const maxSafeY = Math.max(pad, winH - cardH - pad);
+
+  // Zonas perimetrales para no tapar la alerta central:
+  // 0: Franja superior
+  // 1: Franja inferior
+  // 2: Franja lateral izquierda
+  // 3: Franja lateral derecha
+  const zone = Math.floor(Math.random() * 4);
+  let posX = pad;
+  let posY = pad;
+
+  if (zone === 0) {
+    // Franja Superior
+    posX = pad + Math.random() * (maxSafeX - pad);
+    posY = pad + Math.random() * Math.max(10, (winH * 0.18) - pad);
+  } else if (zone === 1) {
+    // Franja Inferior
+    const minY = winH * 0.76;
+    posX = pad + Math.random() * (maxSafeX - pad);
+    posY = minY + Math.random() * Math.max(10, maxSafeY - minY);
+  } else if (zone === 2) {
+    // Lateral Izquierdo
+    const maxX = Math.min(maxSafeX, winW * 0.22);
+    const minY = winH * 0.18;
+    const maxY = Math.min(maxSafeY, winH * 0.74);
+    posX = pad + Math.random() * Math.max(10, maxX - pad);
+    posY = minY + Math.random() * Math.max(10, maxY - minY);
+  } else {
+    // Lateral Derecho
+    const minX = Math.max(pad, winW * 0.70);
+    const minY = winH * 0.18;
+    const maxY = Math.min(maxSafeY, winH * 0.74);
+    posX = minX + Math.random() * Math.max(10, maxSafeX - minX);
+    posY = minY + Math.random() * Math.max(10, maxY - minY);
   }
 
-  card.style.left = `${x}%`;
-  card.style.top = `${y}%`;
-  card.style.setProperty('--felic-dx', `${(Math.random() - 0.5) * 120}px`);
-  card.style.setProperty('--felic-dy', `${-60 - Math.random() * 80}px`);
+  // Clamping estricto: nunca sale de [pad, maxSafeX] ni [pad, maxSafeY]
+  posX = Math.max(pad, Math.min(posX, maxSafeX));
+  posY = Math.max(pad, Math.min(posY, maxSafeY));
+
+  card.style.left = `${Math.round(posX)}px`;
+  card.style.top = `${Math.round(posY)}px`;
+  card.style.setProperty('--felic-dx', `${(Math.random() - 0.5) * 40}px`);
+  card.style.setProperty('--felic-dy', `${-35 - Math.random() * 30}px`);
 
   document.body.appendChild(card);
 
