@@ -36,16 +36,76 @@ app.use(express.static(path.join(__dirname, 'public')));
 const sseClients = new Set();
 const recentAlertsCache = new Map(); // username -> timestamp
 
-// ─── Helper: Obtener Avatar Público de Twitch ───────────────────────────────
-function fetchPublicTwitchAvatar(username) {
-    return new Promise((resolve) => {
-        const cleanName = username.toLowerCase().replace(/[^a-z0-9_]/g, '');
-        if (!cleanName) return resolve('/img/yocapi.png');
+// ─── Cache y Helper Multi-Fuente para Avatar de Twitch ────────────────────────
+const twitchAvatarCache = new Map(); // username -> { url, expires }
+const AVATAR_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hora de caché
 
+function fetchHttpJson(url, options = {}) {
+    return new Promise((resolve) => {
+        const req = https.get(url, {
+            timeout: 4000,
+            headers: { 'User-Agent': 'YoCapi-Birthday-System/2.0', ...(options.headers || {}) }
+        }, (res) => {
+            if (res.statusCode < 200 || res.statusCode >= 300) return resolve(null);
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                try {
+                    resolve(JSON.parse(data));
+                } catch (e) {
+                    resolve(null);
+                }
+            });
+        });
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
+    });
+}
+
+function fetchTwitchGQL(cleanName) {
+    return new Promise((resolve) => {
+        const postData = JSON.stringify({ query: `{ user(login: "${cleanName}") { profileImageURL(width: 300) } }` });
+        const req = https.request('https://gql.twitch.tv/gql', {
+            method: 'POST',
+            timeout: 4000,
+            headers: {
+                'Client-ID': 'kimne78kx3ncx6brgo4mv6wki5h1ko',
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData),
+                'User-Agent': 'Mozilla/5.0'
+            }
+        }, (res) => {
+            if (res.statusCode < 200 || res.statusCode >= 300) return resolve(null);
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                try {
+                    const json = JSON.parse(data);
+                    const url = json?.data?.user?.profileImageURL;
+                    if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+                        resolve(url);
+                    } else {
+                        resolve(null);
+                    }
+                } catch (e) {
+                    resolve(null);
+                }
+            });
+        });
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
+        req.write(postData);
+        req.end();
+    });
+}
+
+function fetchDecapi(cleanName) {
+    return new Promise((resolve) => {
         const req = https.get(`https://decapi.me/twitch/avatar/${cleanName}`, {
             headers: { 'User-Agent': 'YoCapi-Birthday-System/2.0' },
-            timeout: 3000
+            timeout: 4000
         }, (res) => {
+            if (res.statusCode < 200 || res.statusCode >= 300) return resolve(null);
             let data = '';
             res.on('data', chunk => data += chunk);
             res.on('end', () => {
@@ -53,17 +113,53 @@ function fetchPublicTwitchAvatar(username) {
                 if (url.startsWith('http://') || url.startsWith('https://')) {
                     resolve(url);
                 } else {
-                    resolve('/img/yocapi.png');
+                    resolve(null);
                 }
             });
         });
-
-        req.on('error', () => resolve('/img/yocapi.png'));
-        req.on('timeout', () => {
-            req.destroy();
-            resolve('/img/yocapi.png');
-        });
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
     });
+}
+
+async function fetchPublicTwitchAvatar(username) {
+    const cleanName = (username || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+    if (!cleanName) return null;
+
+    const cached = twitchAvatarCache.get(cleanName);
+    if (cached && Date.now() < cached.expires && cached.url) {
+        return cached.url;
+    }
+
+    // Fuente 1: IVR API (CDN Oficial Twitch 600x600 de alta resolución)
+    try {
+        const ivrData = await fetchHttpJson(`https://api.ivr.fi/v2/twitch/user?login=${cleanName}`);
+        const ivrLogo = ivrData && Array.isArray(ivrData) && ivrData[0]?.logo;
+        if (ivrLogo && (ivrLogo.startsWith('http://') || ivrLogo.startsWith('https://'))) {
+            twitchAvatarCache.set(cleanName, { url: ivrLogo, expires: Date.now() + AVATAR_CACHE_TTL_MS });
+            return ivrLogo;
+        }
+    } catch (e) {}
+
+    // Fuente 2: Twitch GQL Oficial
+    try {
+        const gqlLogo = await fetchTwitchGQL(cleanName);
+        if (gqlLogo) {
+            twitchAvatarCache.set(cleanName, { url: gqlLogo, expires: Date.now() + AVATAR_CACHE_TTL_MS });
+            return gqlLogo;
+        }
+    } catch (e) {}
+
+    // Fuente 3: DecAPI
+    try {
+        const decapiLogo = await fetchDecapi(cleanName);
+        if (decapiLogo) {
+            twitchAvatarCache.set(cleanName, { url: decapiLogo, expires: Date.now() + AVATAR_CACHE_TTL_MS });
+            return decapiLogo;
+        }
+    } catch (e) {}
+
+    return null;
 }
 
 // ─── Helper Cálculo de Cumpleaños & Gracia ──────────────────────────────────
@@ -158,8 +254,9 @@ app.post('/api/auth/register', async (req, res) => {
             return res.status(400).json({ error: 'Selecciona un día válido' });
         }
 
-        // Obtener avatar público de Twitch
-        const avatarUrl = await fetchPublicTwitchAvatar(cleanName);
+        // Obtener avatar público de Twitch con multi-fuente
+        const fetchedAvatar = await fetchPublicTwitchAvatar(cleanName);
+        const avatarUrl = (fetchedAvatar && fetchedAvatar.startsWith('http')) ? fetchedAvatar : '/img/yocapi.png';
 
         const newUser = await db.saveUser({
             username: cleanName,
@@ -275,6 +372,16 @@ app.get('/api/me', authenticateUser, async (req, res) => {
         const user = await db.getUser(req.user.username);
         if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
+        // Auto-heal avatar si es default o falta
+        if (!user.profile_image || user.profile_image === '/img/yocapi.png' || !user.profile_image.startsWith('http')) {
+            fetchPublicTwitchAvatar(user.username).then(async (fresh) => {
+                if (fresh && fresh.startsWith('http')) {
+                    user.profile_image = fresh;
+                    await db.saveUser(user);
+                }
+            }).catch(() => {});
+        }
+
         const status = getBirthdayStatus(user.birth_month, user.birth_day);
         res.json({
             user: {
@@ -327,8 +434,13 @@ app.post('/api/birthday/update', authenticateUser, async (req, res) => {
             user.recovery_hash = db.hashSecret(req.body.new_secret);
         }
 
-        // Refrescar avatar de Twitch por si cambió
-        user.profile_image = await fetchPublicTwitchAvatar(user.username);
+        // Refrescar avatar de Twitch por si cambió (sin sobreescribir si la API falla)
+        const freshAvatar = await fetchPublicTwitchAvatar(user.username);
+        if (freshAvatar && freshAvatar.startsWith('http')) {
+            user.profile_image = freshAvatar;
+        } else if (!user.profile_image) {
+            user.profile_image = '/img/yocapi.png';
+        }
 
         await db.saveUser(user);
         const status = getBirthdayStatus(month, day);
@@ -363,6 +475,15 @@ app.post('/api/birthday/alert', authenticateUser, async (req, res) => {
     }
 
     recentAlertsCache.set(user.username, now);
+
+    // Auto-heal avatar si es default o falta antes de lanzar alerta
+    if (!user.profile_image || user.profile_image === '/img/yocapi.png' || !user.profile_image.startsWith('http')) {
+        const freshAvatar = await fetchPublicTwitchAvatar(user.username);
+        if (freshAvatar && freshAvatar.startsWith('http')) {
+            user.profile_image = freshAvatar;
+            await db.saveUser(user);
+        }
+    }
 
     // Actualizar registro
     user.last_activated = new Date().toISOString();
@@ -543,10 +664,16 @@ app.post('/api/dashboard/users/:username/reset-pin', async (req, res) => {
 app.post('/api/dashboard/trigger-alert', async (req, res) => {
     const { user, sound, message, avatar, theme } = req.body;
 
+    let finalAvatar = avatar;
+    if (!finalAvatar || finalAvatar === '/img/yocapi.png' || !finalAvatar.startsWith('http')) {
+        const fetched = await fetchPublicTwitchAvatar(user || 'yocapi_pr');
+        finalAvatar = (fetched && fetched.startsWith('http')) ? fetched : '/img/yocapi.png';
+    }
+
     const alertPayload = {
         type: 'alert',
         user: user || 'Cumpleañero VIP',
-        avatar: avatar || '/img/yocapi.png',
+        avatar: finalAvatar,
         sound: sound || 'HBSilbato.mp3',
         message: message || '¡Felicidades en tu día especial!',
         isToday: true,
