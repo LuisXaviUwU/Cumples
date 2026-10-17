@@ -51,6 +51,13 @@ function showToast(message, type = 'info') {
   }, 4000);
 }
 
+function getAuthHeaders(extra = {}) {
+  const token = localStorage.getItem('yocapi_token');
+  const headers = { 'Content-Type': 'application/json', ...extra };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+}
+
 // Llenar selector de días
 function populateDaysSelect(selectDayEl, selectMonthEl, selectedDay = null) {
   const month = parseInt(selectMonthEl.value, 10);
@@ -296,6 +303,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
       const data = await res.json();
       if (data.success) {
+        if (data.token) localStorage.setItem('yocapi_token', data.token);
         showToast('¡Registro completado con éxito!', 'success');
         checkUserSession();
       } else {
@@ -327,6 +335,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
       const data = await res.json();
       if (data.success) {
+        if (data.token) localStorage.setItem('yocapi_token', data.token);
         showToast(`¡Bienvenido de vuelta, ${data.user.display_name}!`, 'success');
         checkUserSession();
       } else {
@@ -407,16 +416,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Comprobar sesión activa
   async function checkUserSession() {
     try {
-      const res = await fetch('/api/me');
+      const res = await fetch('/api/me', {
+        headers: getAuthHeaders()
+      });
       stateLoading.style.display = 'none';
 
-      if (res.status === 401) {
+      if (!res.ok) {
         stateGuest.style.display = 'block';
         stateUser.style.display = 'none';
         return;
       }
 
       const data = await res.json();
+      if (!data || !data.user) {
+        stateGuest.style.display = 'block';
+        stateUser.style.display = 'none';
+        return;
+      }
+
       stateGuest.style.display = 'none';
       stateUser.style.display = 'block';
 
@@ -489,7 +506,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const res = await fetch('/api/birthday/update', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           birth_month: month,
           birth_day: day,
@@ -518,7 +535,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Cerrar Sesión
   document.getElementById('btn-logout').addEventListener('click', async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    localStorage.removeItem('yocapi_token');
+    await fetch('/api/auth/logout', { method: 'POST', headers: getAuthHeaders() });
     showToast('Sesión cerrada', 'info');
     checkUserSession();
   });
@@ -532,7 +550,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const alertRes = await fetch('/api/birthday/alert', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: getAuthHeaders()
       });
       const result = await alertRes.json();
 
