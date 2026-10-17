@@ -58,7 +58,7 @@
         <!-- Pestañas Registro / Login -->
         <div class="auth-nav-tabs">
           <button type="button" id="tab-btn-register" class="auth-tab-btn active">🎂 Registrarme</button>
-          <button type="button" id="tab-btn-login" class="auth-tab-btn">🔑 Ya tengo PIN</button>
+          <button type="button" id="tab-btn-login" class="auth-tab-btn">🔑 Ya tengo Cuenta</button>
         </div>
 
         <!-- FORMULARIO 1: REGISTRO NUEVO -->
@@ -80,11 +80,11 @@
 
           <div class="input-group">
             <label class="input-label" for="reg-pin">
-              <span>Crea tu PIN Secreto</span>
-              <span style="font-size: 0.7rem; color: var(--text-dim);">6 a 10 dígitos</span>
+              <span>Crea tu Contraseña</span>
+              <span style="font-size: 0.7rem; color: var(--text-dim);">6 a 15 caracteres</span>
             </label>
-            <input type="password" id="reg-pin" class="custom-input" placeholder="Ej: 123456" inputmode="numeric"
-              minlength="6" maxlength="10" pattern="[0-9]{6,10}" required>
+            <input type="password" id="reg-pin" class="custom-input" placeholder="Mínimo 6 caracteres"
+              minlength="6" maxlength="15" required>
           </div>
 
           <div class="form-row-grid">
@@ -123,7 +123,7 @@
           <div class="input-group">
             <label class="input-label" for="reg-secret">
               <span>Palabra Secreta</span>
-              <span style="font-size: 0.7rem; color: var(--text-dim);">Para recuperar tu PIN</span>
+              <span style="font-size: 0.7rem; color: var(--text-dim);">Para recuperar tu contraseña</span>
             </label>
             <input type="text" id="reg-secret" class="custom-input"
               placeholder="Ej: nombre de tu mascota o comida favorita" required>
@@ -133,7 +133,7 @@
           </button>
         </form>
 
-        <!-- FORMULARIO 2: INICIO DE SESIÓN CON PIN -->
+        <!-- FORMULARIO 2: INICIO DE SESIÓN -->
         <form id="form-login" style="display: none;">
           <div class="input-group">
             <label class="input-label" for="login-username">Tu Nombre en Twitch</label>
@@ -142,9 +142,9 @@
           </div>
 
           <div class="input-group">
-            <label class="input-label" for="login-pin">Tu PIN Secreto</label>
-            <input type="password" id="login-pin" class="custom-input" placeholder="PIN de 6 a 10 dígitos"
-              inputmode="numeric" minlength="6" maxlength="10" pattern="[0-9]{6,10}" required>
+            <label class="input-label" for="login-pin">Tu Contraseña</label>
+            <input type="password" id="login-pin" class="custom-input" placeholder="Tu contraseña"
+              minlength="6" maxlength="15" required>
           </div>
 
           <button type="submit" id="btn-submit-login" class="btn-primary">
@@ -154,14 +154,14 @@
           <div style="text-align: center; margin-top: 14px;">
             <a href="#" id="link-forgot-pin"
               style="color: var(--twitch-light); font-size: 0.8rem; text-decoration: none; font-weight: 600;">¿Olvidaste
-              tu PIN? Recupéralo aquí →</a>
+              tu contraseña? Recupérala aquí →</a>
           </div>
         </form>
 
-        <!-- FORMULARIO 3: RESTABLECER PIN CON PALABRA SECRETA -->
+        <!-- FORMULARIO 3: RESTABLECER CONTRASEÑA CON PALABRA SECRETA -->
         <form id="form-reset-pin" style="display: none;">
           <h4 style="font-family: var(--font-heading); font-size: 1.1rem; margin-bottom: 14px; text-align: center;">🔑
-            Recuperar Mi PIN</h4>
+            Recuperar Mi Contraseña</h4>
 
           <div class="input-group">
             <label class="input-label" for="reset-username">Tu Nombre en Twitch</label>
@@ -176,13 +176,13 @@
           </div>
 
           <div class="input-group">
-            <label class="input-label" for="reset-new-pin">Crea tu Nuevo PIN (6 a 10 dígitos)</label>
-            <input type="password" id="reset-new-pin" class="custom-input" placeholder="Nuevo PIN de 6 a 10 dígitos"
-              inputmode="numeric" minlength="6" maxlength="10" pattern="[0-9]{6,10}" required>
+            <label class="input-label" for="reset-new-pin">Crea tu Nueva Contraseña (6 a 15 caracteres)</label>
+            <input type="password" id="reset-new-pin" class="custom-input" placeholder="Nueva contraseña (6-15 caracteres)"
+              minlength="6" maxlength="15" required>
           </div>
 
           <button type="submit" id="btn-submit-reset" class="btn-primary">
-            ✅ Restablecer PIN y Entrar
+            ✅ Restablecer Contraseña y Entrar
           </button>
 
           <div style="text-align: center; margin-top: 14px;">
@@ -269,9 +269,9 @@
           </div>
 
           <div class="input-group">
-            <label class="input-label" for="edit-pin">Cambiar PIN (Opcional, 6 a 10 dígitos)</label>
-            <input type="password" id="edit-pin" class="custom-input" placeholder="Dejar en blanco para no cambiarlo"
-              inputmode="numeric" minlength="6" maxlength="10" pattern="[0-9]{6,10}">
+            <label class="input-label" for="edit-pin">Cambiar Contraseña (Opcional, 6 a 15 caracteres)</label>
+            <input type="password" id="edit-pin" class="custom-input" placeholder="Dejar en blanco para no cambiarla"
+              minlength="6" maxlength="15">
           </div>
 
           <div class="input-group">
