@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,18 +9,19 @@
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
 
   <!-- DASHBOARD PRINCIPAL -->
   <div id="dash-app" class="dash-layout">
-    
+
     <!-- Sidebar -->
     <aside class="dash-sidebar">
       <div class="sidebar-brand">
         <img src="img/yocapi.png" alt="yocapi_pr" class="sidebar-avatar">
         <div class="sidebar-title">
           <h2>yocapi_pr</h2>
-          <p>Streamer Cockpit</p>
+          <p>Panel de Control</p>
         </div>
       </div>
 
@@ -54,18 +56,20 @@
           <span>📊</span> Resumen del Sistema
         </div>
         <div style="display: flex; align-items: center; gap: 14px;">
-          <div id="obs-status-pill" style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 20px; background: rgba(255,255,255,0.04); font-size: 0.78rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.08);">
+          <div id="obs-status-pill"
+            style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 20px; background: rgba(255,255,255,0.04); font-size: 0.78rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.08);">
             <span id="obs-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #64748b;"></span>
             <span id="obs-status-text">OBS: Verificando...</span>
           </div>
-          <button id="btn-refresh" class="btn-copy" style="padding: 8px 14px; background: rgba(255,255,255,0.06); font-size: 0.8rem;">
+          <button id="btn-refresh" class="btn-copy"
+            style="padding: 8px 14px; background: rgba(255,255,255,0.06); font-size: 0.8rem;">
             🔄 Actualizar
           </button>
         </div>
       </header>
 
       <div class="dash-scroll-content">
-        
+
         <!-- PESTAÑA: RESUMEN (OVERVIEW) -->
         <div id="tab-overview" class="dash-tab-content">
           <!-- Métricas -->
@@ -108,10 +112,12 @@
                   📺 URL de Navegador para OBS Studio
                 </h3>
                 <p style="color: #94a3b8; font-size: 0.85rem;">
-                  Copia esta URL y agrégala como <strong>Fuente de Navegador (Browser Source)</strong> en OBS (1920x1080). ¡No necesitas ejecutar nada en tu PC!
+                  Copia esta URL y agrégala como <strong>Fuente de Navegador (Browser Source)</strong> en OBS
+                  (1920x1080). ¡No necesitas ejecutar nada en tu PC!
                 </p>
               </div>
-              <div style="padding: 6px 12px; background: rgba(145, 70, 255, 0.2); border-radius: 8px; font-size: 0.75rem; font-weight: 700; color: #bf94ff;">
+              <div
+                style="padding: 6px 12px; background: rgba(145, 70, 255, 0.2); border-radius: 8px; font-size: 0.75rem; font-weight: 700; color: #bf94ff;">
                 Modo Cloud 24/7
               </div>
             </div>
@@ -123,16 +129,20 @@
 
           <!-- Info del Sistema -->
           <div class="glass-card" style="padding: 24px; margin-bottom: 28px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
               <div>
                 <h4 style="font-family: var(--font-h); font-size: 1.1rem; font-weight: 800; margin-bottom: 4px;">
                   ✨ Sistema Ágil (Nick de Twitch + PIN)
                 </h4>
                 <p style="color: #94a3b8; font-size: 0.85rem;">
-                  Tus seguidores solo ingresan su Nick de Twitch y un PIN de 4 dígitos. El sistema carga automáticamente sus fotos de perfil y lanza las alertas sin depender de inicios de sesión de Twitch ni tokens que expiren.
+                  Tus seguidores solo ingresan su Nick de Twitch y un PIN de 4 dígitos. El sistema carga automáticamente
+                  sus fotos de perfil y lanza las alertas sin depender de inicios de sesión de Twitch ni tokens que
+                  expiren.
                 </p>
               </div>
-              <div style="padding: 6px 14px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 20px; font-size: 0.8rem; font-weight: 700; color: #10b981;">
+              <div
+                style="padding: 6px 14px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 20px; font-size: 0.8rem; font-weight: 700; color: #10b981;">
                 🟢 Sistema Autónomo 24/7
               </div>
             </div>
@@ -143,7 +153,8 @@
         <div id="tab-today" class="dash-tab-content" style="display: none;">
           <div style="margin-bottom: 20px;">
             <h3 style="font-family: var(--font-h); font-size: 1.3rem; font-weight: 800;">Celebrantes Activos</h3>
-            <p style="color: #94a3b8; font-size: 0.85rem;">Seguidores que cumplen años hoy o se encuentran dentro del período de gracia (14 días posteriores).</p>
+            <p style="color: #94a3b8; font-size: 0.85rem;">Seguidores que cumplen años hoy o se encuentran dentro del
+              período de gracia (14 días posteriores).</p>
           </div>
           <div id="today-celebrants-list" class="today-cards-list">
             <!-- Cargado por JS -->
@@ -262,4 +273,5 @@
 
   <script src="js/dashboard.js"></script>
 </body>
+
 </html>
