@@ -6,30 +6,7 @@ let currentAudio = null;
 let currentPlayingFile = null;
 let avatarFetchTimeout = null;
 
-// Cálculo de Signo Zodiacal
-function getZodiac(month, day) {
-  const zodiacs = [
-    { name: '♑ Capricornio', m: 1, d: 19 },
-    { name: '♒ Acuario', m: 2, d: 18 },
-    { name: '♓ Piscis', m: 3, d: 20 },
-    { name: '♈ Aries', m: 4, d: 19 },
-    { name: '♉ Tauro', m: 5, d: 20 },
-    { name: '♊ Géminis', m: 6, d: 20 },
-    { name: '♋ Cáncer', m: 7, d: 22 },
-    { name: '♌ Leo', m: 8, d: 22 },
-    { name: '♍ Virgo', m: 9, d: 22 },
-    { name: '♎ Libra', m: 10, d: 22 },
-    { name: '♏ Escorpio', m: 11, d: 21 },
-    { name: '♐ Sagitario', m: 12, d: 21 },
-    { name: '♑ Capricornio', m: 12, d: 31 }
-  ];
-  for (const z of zodiacs) {
-    if (month < z.m || (month === z.m && day <= z.d)) {
-      return z.name;
-    }
-  }
-  return '♑ Capricornio';
-}
+
 
 function showToast(message, type = 'info') {
   const container = document.getElementById('toast-container');
@@ -259,28 +236,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Selectores de días y zodiaco en registro
+  // Selectores de días en registro
   const regMonth = document.getElementById('reg-month');
   const regDay = document.getElementById('reg-day');
-  const regZodiac = document.getElementById('reg-zodiac');
-
-
-  function updateRegZodiac() {
-    const m = parseInt(regMonth.value, 10);
-    const d = parseInt(regDay.value, 10);
-    if (m && d) {
-      regZodiac.textContent = `✨ Signo: ${getZodiac(m, d)}`;
-      regZodiac.style.display = 'block';
-    } else {
-      regZodiac.style.display = 'none';
-    }
-  }
 
   regMonth.addEventListener('change', () => {
     populateDaysSelect(regDay, regMonth, regDay.value);
-    updateRegZodiac();
   });
-  regDay.addEventListener('change', updateRegZodiac);
 
   // Inicializar días
   populateDaysSelect(regDay, regMonth);
@@ -288,7 +250,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Modal de confirmación de fecha de cumpleaños
   const modalConfirmBday = document.getElementById('modal-confirm-bday');
   const modalDateText = document.getElementById('modal-date-text');
-  const modalZodiacText = document.getElementById('modal-zodiac-text');
   const btnModalCancel = document.getElementById('btn-modal-cancel');
   const btnModalConfirm = document.getElementById('btn-modal-confirm');
 
@@ -327,7 +288,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Actualizar datos del modal
     modalDateText.textContent = `${day} de ${MONTH_NAMES_ES[month] || ''}`;
-    modalZodiacText.textContent = `✨ Signo: ${getZodiac(month, day)}`;
     modalConfirmBday.style.display = 'flex';
   });
 
@@ -510,10 +470,30 @@ document.addEventListener('DOMContentLoaded', async () => {
       const editMonth = document.getElementById('edit-month');
       const editDay = document.getElementById('edit-day');
       const editMsg = document.getElementById('edit-message');
-      const editZodiac = document.getElementById('user-zodiac-badge');
 
-      editMonth.value = data.user.birth_month;
-      populateDaysSelect(editDay, editMonth, data.user.birth_day);
+      // Fecha bloqueada o editable
+      const boxLocked = document.getElementById('box-date-locked');
+      const boxEditable = document.getElementById('box-date-editable');
+      const lockedDisplay = document.getElementById('locked-date-display');
+
+      if (data.user.is_date_locked) {
+        // Mostrar fecha bloqueada como texto estático
+        if (boxLocked) boxLocked.style.display = 'flex';
+        if (boxEditable) boxEditable.style.display = 'none';
+        if (lockedDisplay) {
+          lockedDisplay.textContent = `${data.user.birth_day} de ${MONTH_NAMES_ES[data.user.birth_month] || ''}`;
+        }
+      } else {
+        // Mostrar selectores editables
+        if (boxLocked) boxLocked.style.display = 'none';
+        if (boxEditable) boxEditable.style.display = 'block';
+        if (editMonth) editMonth.value = data.user.birth_month;
+        populateDaysSelect(editDay, editMonth, data.user.birth_day);
+        editMonth.onchange = () => {
+          populateDaysSelect(editDay, editMonth, editDay.value);
+        };
+      }
+
       editMsg.value = data.user.custom_message || '';
       const editCounter = document.getElementById('edit-char-counter');
       if (editCounter) {
@@ -522,15 +502,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           editCounter.textContent = `${editMsg.value.length}/100`;
         };
       }
-      editZodiac.textContent = getZodiac(data.user.birth_month, data.user.birth_day);
-
-      editMonth.onchange = () => {
-        populateDaysSelect(editDay, editMonth, editDay.value);
-        editZodiac.textContent = getZodiac(parseInt(editMonth.value, 10), parseInt(editDay.value, 10));
-      };
-      editDay.onchange = () => {
-        editZodiac.textContent = getZodiac(parseInt(editMonth.value, 10), parseInt(editDay.value, 10));
-      };
 
       await loadSoundCards('edit-sound-container', 'edit_sound', data.user.selected_sound);
 
@@ -560,26 +531,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (formCelebration) {
     formCelebration.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const month = document.getElementById('edit-month').value;
-      const day = document.getElementById('edit-day').value;
       const message = document.getElementById('edit-message').value;
       const soundRadio = document.querySelector('input[name="edit_sound"]:checked');
       const sound = soundRadio ? soundRadio.value : 'HBSilbato.mp3';
+
+      // Solo enviar fecha si está desbloqueada
+      const boxEditable = document.getElementById('box-date-editable');
+      const isEditable = boxEditable && boxEditable.style.display !== 'none';
+      const month = isEditable ? document.getElementById('edit-month').value : undefined;
+      const day = isEditable ? document.getElementById('edit-day').value : undefined;
 
       const saveBtn = document.getElementById('btn-save-celebration');
       saveBtn.disabled = true;
       saveBtn.textContent = 'Guardando...';
 
+      const payload = { custom_message: message, selected_sound: sound };
+      if (isEditable && month && day) {
+        payload.birth_month = month;
+        payload.birth_day = day;
+      }
+
       try {
         const res = await fetch('/api/birthday/update', {
           method: 'POST',
           headers: getAuthHeaders(),
-          body: JSON.stringify({
-            birth_month: month,
-            birth_day: day,
-            custom_message: message,
-            selected_sound: sound
-          })
+          body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (data.success) {
