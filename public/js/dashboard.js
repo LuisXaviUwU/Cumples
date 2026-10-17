@@ -89,8 +89,46 @@ async function loadStats() {
     // URL OBS
     const obsUrl = `${window.location.origin}/overlay?token=${encodeURIComponent(data.overlayToken)}`;
     document.getElementById('obs-url-display').value = obsUrl;
+
+    // Estado de felicitaciones
+    loadFelicitationStatus();
   } catch (err) {
     console.error('Error cargando estadísticas:', err);
+  }
+}
+
+// Cargar y gestionar estado de felicitaciones en directo
+async function loadFelicitationStatus() {
+  try {
+    const res = await authFetch('/api/dashboard/felicitations-status');
+    const data = await res.json();
+    updateFelicitationUI(data.enabled);
+  } catch (err) {
+    console.error('Error cargando estado de felicitaciones:', err);
+  }
+}
+
+function updateFelicitationUI(enabled) {
+  const badge = document.getElementById('felic-status-badge');
+  const btn = document.getElementById('btn-toggle-felic');
+  if (!badge || !btn) return;
+
+  if (enabled) {
+    badge.textContent = '🟢 Activas';
+    badge.style.background = 'rgba(16, 185, 129, 0.2)';
+    badge.style.color = '#10b981';
+    badge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+    btn.textContent = '🛑 Desactivar Felicitaciones';
+    btn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+    btn.style.boxShadow = '0 4px 15px rgba(239, 68, 68, 0.3)';
+  } else {
+    badge.textContent = '🔴 Desactivadas';
+    badge.style.background = 'rgba(239, 68, 68, 0.2)';
+    badge.style.color = '#f87171';
+    badge.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+    btn.textContent = '🎊 Activar Felicitaciones';
+    btn.style.background = 'linear-gradient(135deg, var(--c-purple), var(--c-pink))';
+    btn.style.boxShadow = '0 4px 15px rgba(145, 70, 255, 0.3)';
   }
 }
 
@@ -494,6 +532,31 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('Error conectando con el servidor', 'error');
     }
   });
+
+  // Toggle Felicitaciones en Directo
+  const btnToggleFelic = document.getElementById('btn-toggle-felic');
+  if (btnToggleFelic) {
+    btnToggleFelic.addEventListener('click', async () => {
+      btnToggleFelic.disabled = true;
+      try {
+        const res = await authFetch('/api/dashboard/felicitations-toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success) {
+          updateFelicitationUI(data.enabled);
+          showToast(data.message, data.enabled ? 'success' : 'info');
+        } else {
+          showToast('Error al cambiar estado de felicitaciones', 'error');
+        }
+      } catch {
+        showToast('Error conectando con el servidor', 'error');
+      } finally {
+        btnToggleFelic.disabled = false;
+      }
+    });
+  }
 
   // Cargar estado inicial
   loadStats();

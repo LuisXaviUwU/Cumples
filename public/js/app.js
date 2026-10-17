@@ -570,15 +570,30 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Cumpleañeros de HOY
       if (data.today && data.today.length > 0) {
+        const isFelicEnabled = !!data.felicitations_enabled;
         html += `
           <div class="glass-card" style="margin-bottom:16px; border-color: rgba(244,63,94,0.3);">
-            <h3 style="font-family:var(--font-heading);font-size:1.1rem;font-weight:800;margin-bottom:4px;">
-              🎂 ¡Cumpleaños HOY!
-            </h3>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;flex-wrap:wrap;">
+              <h3 style="font-family:var(--font-heading);font-size:1.1rem;font-weight:800;margin:0;">
+                🎂 ¡Cumpleaños HOY!
+              </h3>
+              ${isFelicEnabled ? `
+                <span style="font-size:0.75rem;padding:3px 10px;border-radius:12px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#10b981;font-weight:700;">
+                  🟢 Felicitaciones Activas
+                </span>
+              ` : `
+                <span style="font-size:0.75rem;padding:3px 10px;border-radius:12px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;font-weight:700;">
+                  🔴 En Pausa por la Streamer
+                </span>
+              `}
+            </div>
             <p style="color:var(--text-dim);font-size:0.82rem;margin-bottom:16px;">
-              Manda un sonido de felicitación que aparecerá en el stream de yocapi_pr
+              ${isFelicEnabled
+                ? 'Manda un sonido de felicitación que aparecerá con efectos en el directo de yocapi_pr'
+                : 'La streamer habilitará las felicitaciones durante el momento especial del directo.'}
             </p>
         `;
+
         data.today.forEach(u => {
           html += `
             <div class="felic-user-card" id="felic-card-${u.username}">
@@ -590,10 +605,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                   <p style="font-size:0.75rem;color:var(--text-dim);">🎂 ¡Cumpleaños Hoy!</p>
                 </div>
               </div>
-              <div class="felic-sound-btns">
-                <button class="btn-felic-sound" data-target="${u.username}" data-sound="HBSilbato.mp3" title="Silbato Festivo">🎺</button>
-                <button class="btn-felic-sound" data-target="${u.username}" data-sound="HBVoz.mp3" title="Felicitación de Voz">🎤</button>
-                <button class="btn-felic-sound" data-target="${u.username}" data-sound="MBMusica.mp3" title="Música de Fiesta">🎵</button>
+              <div class="felic-sound-btns" id="sound-btns-${u.username}">
+                ${isFelicEnabled ? `
+                  <span class="felic-cd-indicator" id="cd-badge-${u.username}" style="display:none;">⏳ 5s</span>
+                  <button class="btn-felic-sound" data-target="${u.username}" data-sound="HBSilbato.mp3" title="Silbato Festivo">🎺</button>
+                  <button class="btn-felic-sound" data-target="${u.username}" data-sound="HBVoz.mp3" title="Felicitación de Voz">🎤</button>
+                  <button class="btn-felic-sound" data-target="${u.username}" data-sound="MBMusica.mp3" title="Música de Fiesta">🎵</button>
+                ` : `
+                  <div style="font-size:0.78rem;color:var(--text-dim);background:rgba(255,255,255,0.04);padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);">
+                    🔒 En espera del directo
+                  </div>
+                `}
               </div>
             </div>
           `;
@@ -646,8 +668,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         btn.addEventListener('click', async () => {
           const target = btn.dataset.target;
           const sound = btn.dataset.sound;
-          btn.disabled = true;
-          btn.style.opacity = '0.4';
+          const card = document.getElementById(`felic-card-${target}`) || btn.closest('.felic-user-card');
+          const allBtns = card ? card.querySelectorAll('.btn-felic-sound') : [btn];
+          const cdBadge = document.getElementById(`cd-badge-${target}`);
+
+          // Oscurecer y deshabilitar los 3 botones en cuestión
+          allBtns.forEach(b => {
+            b.disabled = true;
+            b.classList.add('felic-cooldown');
+          });
+          if (cdBadge) {
+            cdBadge.style.display = 'inline-flex';
+            cdBadge.textContent = '⏳ ...';
+          }
 
           try {
             const res = await fetch('/api/birthday/send-felicitation', {
@@ -658,30 +691,50 @@ document.addEventListener('DOMContentLoaded', async () => {
             const result = await res.json();
             if (result.success) {
               showToast(result.message, 'success');
-              // Mini cooldown visual: 60 segundos
-              let secs = 60;
-              btn.textContent = `${secs}s`;
+              // Cooldown visual de 5 segundos en los 3 botones
+              let secs = 5;
+              if (cdBadge) cdBadge.textContent = `⏳ ${secs}s`;
+              allBtns.forEach(b => {
+                b.textContent = `${secs}s`;
+              });
+
               const countdown = setInterval(() => {
                 secs--;
-                btn.textContent = `${secs}s`;
+                if (cdBadge) cdBadge.textContent = `⏳ ${secs}s`;
+                allBtns.forEach(b => {
+                  b.textContent = `${secs}s`;
+                });
+
                 if (secs <= 0) {
                   clearInterval(countdown);
-                  // Restaurar emoji
+                  if (cdBadge) cdBadge.style.display = 'none';
                   const icons = { 'HBSilbato.mp3': '🎺', 'HBVoz.mp3': '🎤', 'MBMusica.mp3': '🎵' };
-                  btn.textContent = icons[sound] || '🎵';
-                  btn.disabled = false;
-                  btn.style.opacity = '1';
+                  allBtns.forEach(b => {
+                    b.textContent = icons[b.dataset.sound] || '🎵';
+                    b.disabled = false;
+                    b.classList.remove('felic-cooldown');
+                  });
                 }
               }, 1000);
             } else {
               showToast(result.error || 'Error al enviar', 'error');
-              btn.disabled = false;
-              btn.style.opacity = '1';
+              if (cdBadge) cdBadge.style.display = 'none';
+              const icons = { 'HBSilbato.mp3': '🎺', 'HBVoz.mp3': '🎤', 'MBMusica.mp3': '🎵' };
+              allBtns.forEach(b => {
+                b.textContent = icons[b.dataset.sound] || '🎵';
+                b.disabled = false;
+                b.classList.remove('felic-cooldown');
+              });
             }
           } catch {
             showToast('Error de conexión', 'error');
-            btn.disabled = false;
-            btn.style.opacity = '1';
+            if (cdBadge) cdBadge.style.display = 'none';
+            const icons = { 'HBSilbato.mp3': '🎺', 'HBVoz.mp3': '🎤', 'MBMusica.mp3': '🎵' };
+            allBtns.forEach(b => {
+              b.textContent = icons[b.dataset.sound] || '🎵';
+              b.disabled = false;
+              b.classList.remove('felic-cooldown');
+            });
           }
         });
       });
