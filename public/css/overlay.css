@@ -379,19 +379,19 @@ body.debug .obs-debug-status {
   position: fixed;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px 8px 8px;
-  background: rgba(10, 6, 22, 0.88);
-  border: 1px solid rgba(145, 70, 255, 0.5);
-  border-radius: 50px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 0 20px rgba(145, 70, 255, 0.35), 0 4px 16px rgba(0,0,0,0.6);
+  gap: 14px;
+  padding: 10px 22px 10px 12px;
+  background: linear-gradient(135deg, rgba(18, 10, 34, 0.95), rgba(45, 15, 72, 0.95));
+  border: 2px solid rgba(168, 85, 247, 0.65);
+  border-radius: 60px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.45), 0 8px 30px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.2);
   z-index: 200;
   pointer-events: none;
   opacity: 0;
-  transform: scale(0.5) translateY(20px);
+  transform: scale(0.6) translateY(20px);
   white-space: nowrap;
-  max-width: 280px;
+  max-width: 440px;
 }
 
 .felic-card.felic-visible {
@@ -403,10 +403,11 @@ body.debug .obs-debug-status {
 }
 
 .felic-avatar {
-  width: 32px;
-  height: 32px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  border: 2px solid rgba(145, 70, 255, 0.7);
+  border: 2.5px solid #c084fc;
+  box-shadow: 0 0 14px rgba(192, 132, 252, 0.6);
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -414,21 +415,24 @@ body.debug .obs-debug-status {
 .felic-body {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 3px;
 }
 
 .felic-from {
   font-family: 'Outfit', sans-serif;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #bf94ff;
-  line-height: 1;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f3e8ff;
+  letter-spacing: 0.3px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+  line-height: 1.1;
 }
 
 .felic-text {
   font-family: 'Outfit', sans-serif;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
-  line-height: 1;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #fbbf24;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+  line-height: 1.1;
 }
