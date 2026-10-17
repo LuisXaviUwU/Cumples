@@ -163,7 +163,7 @@
 
         <!-- PESTAÑA: BASE DE DATOS -->
         <div id="tab-birthdays" class="dash-tab-content" style="display: none;">
-          <div class="dash-table-wrap">
+          <div class="dash-table-wrap" style="overflow-x: auto;">
             <div class="table-toolbar">
               <input type="text" id="filter-search" class="search-input" placeholder="Buscar por usuario de Twitch...">
               <select id="filter-month" class="filter-select">
@@ -182,7 +182,7 @@
                 <option value="12">Diciembre</option>
               </select>
             </div>
-            <table class="bday-table">
+            <table class="bday-table" style="min-width: 900px;">
               <thead>
                 <tr>
                   <th>Usuario</th>
@@ -190,7 +190,7 @@
                   <th>Mensaje en Pantalla</th>
                   <th>Sonido</th>
                   <th>Registrado el</th>
-                  <th style="text-align: right;">Acciones</th>
+                  <th style="text-align: right; min-width: 320px;">Acciones</th>
                 </tr>
               </thead>
               <tbody id="bday-table-body">
@@ -199,6 +199,7 @@
             </table>
           </div>
         </div>
+
 
         <!-- PESTAÑA: OBS & TEST ALERT -->
         <div id="tab-overlay-test" class="dash-tab-content" style="display: none;">
