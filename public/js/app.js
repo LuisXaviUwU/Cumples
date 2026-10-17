@@ -272,6 +272,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const month = regMonth.value;
     const day = regDay.value;
 
+    if (!/^\d{6,10}$/.test(pin)) {
+      showToast('El PIN debe tener entre 6 y 10 dígitos numéricos', 'error');
+      return;
+    }
+
     const submitBtn = document.getElementById('btn-submit-register');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Registrando...';
@@ -362,6 +367,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       const username = document.getElementById('reset-username').value.trim();
       const secret_word = document.getElementById('reset-secret').value.trim();
       const new_pin = document.getElementById('reset-new-pin').value.trim();
+
+      if (!/^\d{6,10}$/.test(new_pin)) {
+        showToast('El nuevo PIN debe tener entre 6 y 10 dígitos numéricos', 'error');
+        return;
+      }
+
       const resetBtn = document.getElementById('btn-submit-reset');
 
       resetBtn.disabled = true;
@@ -460,10 +471,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const month = document.getElementById('edit-month').value;
     const day = document.getElementById('edit-day').value;
     const message = document.getElementById('edit-message').value;
-    const pin = document.getElementById('edit-pin').value;
+    const pin = document.getElementById('edit-pin').value.trim();
     const secret = document.getElementById('edit-secret').value.trim();
     const soundRadio = document.querySelector('input[name="edit_sound"]:checked');
     const sound = soundRadio ? soundRadio.value : 'HBSilbato.mp3';
+
+    if (pin && !/^\d{6,10}$/.test(pin)) {
+      showToast('El nuevo PIN debe tener entre 6 y 10 dígitos numéricos', 'error');
+      return;
+    }
 
     const saveBtn = document.getElementById('btn-save-edit');
     saveBtn.disabled = true;

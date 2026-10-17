@@ -222,10 +222,10 @@ async function loadBirthdays() {
       `;
 
       tr.querySelector('[data-reset]').addEventListener('click', async () => {
-        const newPin = prompt(`Ingresa el nuevo PIN (mínimo 4 dígitos) para @${b.username}:`, '1234');
+        const newPin = prompt(`Ingresa el nuevo PIN (6 a 10 dígitos numéricos) para @${b.username}:`, '123456');
         if (newPin === null) return;
-        if (newPin.trim().length < 4) {
-          showToast('El PIN debe tener al menos 4 dígitos', 'error');
+        if (!/^\d{6,10}$/.test(newPin.trim())) {
+          showToast('El PIN debe tener entre 6 y 10 dígitos numéricos', 'error');
           return;
         }
 
