@@ -370,6 +370,16 @@ app.post('/api/auth/logout', async (req, res) => {
 
 // ─── API DE USUARIO (DATOS & CUMPLEAÑOS) ────────────────────────────────────
 
+function isUserDateLocked(user) {
+    if (!user) return false;
+    if (user.birthday_unlocked === true) return false;
+    if (!user.birth_month || !user.birth_day) return false;
+    const regTime = user.created_at ? new Date(user.created_at).getTime() : 0;
+    if (!regTime) return true;
+    const oneYearMs = 365 * 24 * 60 * 60 * 1000;
+    return (Date.now() - regTime < oneYearMs);
+}
+
 app.get('/api/me', authenticateUser, async (req, res) => {
     try {
         const user = await db.getUser(req.user.username);
@@ -386,6 +396,8 @@ app.get('/api/me', authenticateUser, async (req, res) => {
         }
 
         const status = getBirthdayStatus(user.birth_month, user.birth_day);
+        const isLocked = isUserDateLocked(user);
+
         res.json({
             user: {
                 username: user.username,
@@ -394,7 +406,8 @@ app.get('/api/me', authenticateUser, async (req, res) => {
                 birth_month: user.birth_month,
                 birth_day: user.birth_day,
                 custom_message: user.custom_message,
-                selected_sound: user.selected_sound
+                selected_sound: user.selected_sound,
+                is_date_locked: isLocked
             },
             status,
             streamer_login: STREAMER_LOGIN
@@ -428,13 +441,9 @@ app.post('/api/birthday/update', authenticateUser, async (req, res) => {
 
             // Validar restricción de cambio de fecha por 1 año
             if (user.birth_month && user.birth_day && (user.birth_month !== m || user.birth_day !== d)) {
-                const registeredAt = user.created_at ? new Date(user.created_at).getTime() : 0;
-                const oneYearMs = 365 * 24 * 60 * 60 * 1000;
-                const now = Date.now();
-                if (registeredAt && (now - registeredAt < oneYearMs)) {
-                    const daysLeft = Math.ceil((oneYearMs - (now - registeredAt)) / (24 * 60 * 60 * 1000));
+                if (isUserDateLocked(user)) {
                     return res.status(400).json({
-                        error: `Tu fecha de cumpleaños no se puede cambiar hasta dentro de ${daysLeft} días (bloqueo de 1 año). Pídele a yocapi_pr que la modifique si necesitas corregirla.`
+                        error: 'Tu fecha de cumpleaños está fijada por 1 año. Si necesitas corregirla, contacta a la streamer para que te la desbloquee.'
                     });
                 }
             }
@@ -443,6 +452,8 @@ app.post('/api/birthday/update', authenticateUser, async (req, res) => {
             day = d;
             user.birth_month = m;
             user.birth_day = d;
+            user.birthday_unlocked = false; // Se vuelve a bloquear por 1 año al actualizarla
+            user.created_at = new Date().toISOString();
         }
 
         if (custom_message !== undefined) {
@@ -695,6 +706,46 @@ app.post('/api/dashboard/users/:username/reset-pin', authenticateDashboard, asyn
         res.json({ success: true, message: `Contraseña de ${req.params.username} cambiada a: ${password}`, new_pin: password });
     } catch (err) {
         res.status(500).json({ error: 'Error al cambiar contraseña' });
+    }
+});
+
+// Desbloquear fecha de cumpleaños para que el seguidor pueda corregirla
+app.post('/api/dashboard/users/:username/unlock-date', authenticateDashboard, async (req, res) => {
+    try {
+        const user = await db.getUser(req.params.username);
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        user.birthday_unlocked = true;
+        await db.saveUser(user);
+
+        res.json({ success: true, message: `¡Fecha de @${user.username} desbloqueada! Ya podrá modificarla en su perfil.` });
+    } catch (err) {
+        res.status(500).json({ error: 'Error al desbloquear fecha' });
+    }
+});
+
+// Modificar directamente la fecha de un usuario desde el Dashboard
+app.post('/api/dashboard/users/:username/change-date', authenticateDashboard, async (req, res) => {
+    try {
+        const { birth_month, birth_day } = req.body;
+        const m = parseInt(birth_month, 10);
+        const d = parseInt(birth_day, 10);
+        if (isNaN(m) || m < 1 || m > 12 || isNaN(d) || d < 1 || d > 31) {
+            return res.status(400).json({ error: 'Mes o día inválido' });
+        }
+
+        const user = await db.getUser(req.params.username);
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        user.birth_month = m;
+        user.birth_day = d;
+        user.birthday_unlocked = false;
+        user.created_at = new Date().toISOString();
+        await db.saveUser(user);
+
+        res.json({ success: true, message: `Fecha de @${user.username} cambiada a ${d}/${m} con éxito.` });
+    } catch (err) {
+        res.status(500).json({ error: 'Error al cambiar fecha' });
     }
 });
 
