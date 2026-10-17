@@ -25,12 +25,7 @@ function showToast(message, type = 'info') {
   }, 3500);
 }
 
-// Fetch con autenticación de dashboard
 async function authFetch(url, options = {}) {
-  options.headers = options.headers || {};
-  if (dashboardKey) {
-    options.headers['x-dashboard-key'] = dashboardKey;
-  }
   return fetch(url, options);
 }
 
@@ -69,10 +64,6 @@ function switchTab(tabId) {
 async function loadStats() {
   try {
     const res = await authFetch('/api/dashboard/stats');
-    if (res.status === 403 || res.status === 401) {
-      showLockScreen();
-      return;
-    }
     const data = await res.json();
 
     document.getElementById('stat-total').textContent = data.totalRegistered;
@@ -98,8 +89,6 @@ async function loadStats() {
     // URL OBS
     const obsUrl = `${window.location.origin}/overlay?token=${encodeURIComponent(data.overlayToken)}`;
     document.getElementById('obs-url-display').value = obsUrl;
-
-    hideLockScreen();
   } catch (err) {
     console.error('Error cargando estadísticas:', err);
   }
@@ -284,16 +273,7 @@ async function loadLogs() {
   }
 }
 
-// Lock screen
-function showLockScreen() {
-  document.getElementById('lock-screen').style.display = 'flex';
-  document.getElementById('dash-app').style.display = 'none';
-}
 
-function hideLockScreen() {
-  document.getElementById('lock-screen').style.display = 'none';
-  document.getElementById('dash-app').style.display = 'flex';
-}
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', () => {
@@ -349,29 +329,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch {
       showToast('Error conectando con el servidor', 'error');
-    }
-  });
-
-  // Formulario de desbloqueo
-  document.getElementById('lock-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const key = document.getElementById('lock-key-input').value;
-    try {
-      const res = await fetch('/api/dashboard/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key })
-      });
-      const data = await res.json();
-      if (data.success) {
-        dashboardKey = key;
-        document.getElementById('lock-error').style.display = 'none';
-        loadStats();
-      } else {
-        document.getElementById('lock-error').style.display = 'block';
-      }
-    } catch {
-      document.getElementById('lock-error').style.display = 'block';
     }
   });
 
