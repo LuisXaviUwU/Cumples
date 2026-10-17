@@ -1,125 +1,97 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cumpleaños — YoCapi Stream Community</title>
-  <meta name="description" content="Registra tu cumpleaños para recibir una alerta personalizada en directo en el stream de yocapi_pr.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Cumpleaños — yocapi_pr Stream</title>
+  <meta name="description"
+    content="Registra tu cumpleaños para recibir una alerta personalizada en directo en el stream de yocapi_pr.">
   <link rel="icon" href="/img/HB.png" type="image/png">
   <link rel="stylesheet" href="/css/style.css">
-  <!-- Canvas Confetti CDN -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 </head>
+
 <body>
 
   <!-- Fondo Cósmico Dinámico -->
   <div class="cosmic-bg">
     <div class="aurora-glow glow-1"></div>
     <div class="aurora-glow glow-2"></div>
-    <div class="aurora-glow glow-3"></div>
   </div>
 
   <!-- Barra Superior -->
   <header class="topbar">
     <a href="/" class="brand-wrap">
       <div class="brand-avatar">
-        <img src="/img/yocapi.png" alt="yocapi_pr" id="streamer-avatar">
+        <img src="/img/yocapi.png" alt="yocapi_pr">
       </div>
       <div class="brand-text">
-        <h1 id="streamer-heading">yocapi_pr</h1>
+        <h1>yocapi_pr</h1>
         <div class="streamer-tag">
-          <span class="live-indicator"></span> Twitch Streamer
+          <span class="live-indicator"></span> Twitch Stream
         </div>
       </div>
     </a>
-    <div class="topbar-actions">
-      <a href="/dashboard" class="btn-logout" style="border-color: var(--border-glow); color: var(--twitch-light);">
-        ⚙️ Panel Streamer
-      </a>
-    </div>
   </header>
 
-  <!-- Contenedor Principal -->
+  <!-- Contenedor Principal Adaptable a Celular -->
   <main class="app-container">
     <div class="hero-header">
       <div class="hero-badge">✨ Celebración en Directo</div>
       <h2 class="hero-title">¡Festeja tu <span>Cumpleaños</span> en Stream!</h2>
       <p class="hero-subtitle">
-        Registra tu fecha especial y cuando llegue tu día, lanza una alerta visual y sonora personalizada directamente en la pantalla de <strong>yocapi_pr</strong>.
+        Elige tu fecha especial y cuando llegue tu día, lanza una alerta visual y con sonido directamente en la pantalla
+        de <strong>yocapi_pr</strong>.
       </p>
     </div>
 
     <!-- ESTADO: CARGANDO -->
-    <div id="state-loading" class="glass-card" style="text-align: center; padding: 48px;">
-      <div style="font-size: 2rem; margin-bottom: 12px; animation: pulse-play 1s infinite alternate;">🎂</div>
-      <p style="color: var(--text-muted); font-weight: 600;">Cargando sistema de cumpleaños...</p>
+    <div id="state-loading" class="glass-card" style="text-align: center; padding: 40px 20px;">
+      <div style="font-size: 2.2rem; margin-bottom: 10px; animation: live-pulse 1s infinite alternate;">🎂</div>
+      <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">Cargando sistema...</p>
     </div>
 
-    <!-- ESTADO: NO LOGUEADO (LOGIN CON TWITCH) -->
-    <div id="state-guest" class="glass-card twitch-login-card" style="display: none;">
-      <div style="margin-bottom: 24px;">
-        <img src="/img/HB.png" alt="Happy Birthday" style="width: 80px; height: 80px; object-fit: contain; filter: drop-shadow(0 0 16px var(--twitch-glow));">
-      </div>
-      <h3 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 10px;">Inicia sesión con tu cuenta de Twitch</h3>
-      <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 440px; margin: 0 auto 28px; line-height: 1.5;">
-        Solo los seguidores del canal pueden registrar su fecha y activar su alerta en vivo.
-      </p>
-      <a href="/auth/twitch/user" class="btn-twitch">
-        <svg viewBox="0 0 24 24"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
-        <span>Conectar con Twitch</span>
-      </a>
-      <div style="margin-top: 24px; display: flex; justify-content: center; gap: 20px; font-size: 0.78rem; color: var(--text-dim);">
-        <span>🔒 Seguro & Oficial</span>
-        <span>🎉 Alerta en OBS</span>
-        <span>🗓️ 14 Días de Gracia</span>
-      </div>
-    </div>
-
-    <!-- ESTADO: LOGUEADO -->
-    <div id="state-user" style="display: none;">
-      <!-- Perfil del usuario -->
-      <div class="profile-pill">
-        <div class="profile-info">
-          <img src="" alt="Avatar" id="user-avatar" class="profile-avatar">
-          <div class="profile-names">
-            <h3 id="user-name">Usuario</h3>
-            <p id="user-login">@usuario</p>
-          </div>
-        </div>
-        <a href="/auth/logout" class="btn-logout">Cerrar Sesión</a>
-      </div>
-
-      <!-- Tarjeta de Estado de Celebración -->
-      <div id="celebration-box" class="celebration-box waiting">
-        <div class="bday-tag" id="status-tag">🗓️ Estado de Cumpleaños</div>
-        <h3 class="celebration-title" id="status-title">Registra tu fecha</h3>
-        <p class="celebration-desc" id="status-desc">
-          Elige tu mes y día abajo para activar tu alerta en stream.
-        </p>
-        <button id="btn-launch-alert" class="btn-launch-alert" style="display: none;">
-          <span>🎉</span> ¡LANZAR ALERTA EN DIRECTO! <span>🚀</span>
-        </button>
-        <div id="alert-cooldown-text" style="font-size: 0.78rem; color: var(--accent-gold); margin-top: 10px; display: none;"></div>
-      </div>
-
-      <!-- Formulario de Cumpleaños -->
+    <!-- ESTADO: VISITANTE / NO LOGUEADO (REGISTRO O LOGIN) -->
+    <div id="state-guest" style="display: none;">
       <div class="glass-card">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-          <div>
-            <h3 style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 700;">Tu Fecha de Cumpleaños</h3>
-            <p style="color: var(--text-dim); font-size: 0.82rem;">Puedes actualizarla cuando lo necesites.</p>
-          </div>
-          <div id="zodiac-badge" style="display: none; padding: 6px 12px; background: rgba(251, 191, 36, 0.12); border: 1px solid var(--border-gold); border-radius: var(--radius-pill); font-size: 0.8rem; font-weight: 700; color: var(--accent-gold);">
-            ✨ Signo Zodiacal
-          </div>
+        <!-- Pestañas Registro / Login -->
+        <div class="auth-nav-tabs">
+          <button type="button" id="tab-btn-register" class="auth-tab-btn active">🎂 Registrarme</button>
+          <button type="button" id="tab-btn-login" class="auth-tab-btn">🔑 Ya tengo PIN</button>
         </div>
 
-        <form id="bday-form">
-          <div class="form-grid">
-            <div class="input-group">
-              <label class="input-label" for="select-month">Mes de Nacimiento</label>
-              <select id="select-month" class="custom-select" required>
-                <option value="" disabled selected>Selecciona tu mes...</option>
+        <!-- FORMULARIO 1: REGISTRO NUEVO -->
+        <form id="form-register">
+          <!-- Vista previa en vivo del avatar de Twitch -->
+          <div class="avatar-preview-wrap">
+            <img src="/img/yocapi.png" id="reg-avatar-preview" alt="Avatar" class="avatar-preview-img">
+            <div class="avatar-preview-text">
+              <h4 id="reg-avatar-name">Tu Avatar de Twitch</h4>
+              <p id="reg-avatar-hint">Escribe tu usuario y se cargará tu foto automáticamente</p>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="reg-username">Tu Nombre en Twitch</label>
+            <input type="text" id="reg-username" class="custom-input" placeholder="Ej: yocapi_pr" autocomplete="off"
+              required>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="reg-pin">
+              <span>Crea tu PIN Secreto</span>
+              <span style="font-size: 0.7rem; color: var(--text-dim);">4 dígitos</span>
+            </label>
+            <input type="password" id="reg-pin" class="custom-input" placeholder="Ej: 1234" inputmode="numeric"
+              maxlength="6" pattern="[0-9]*" required>
+          </div>
+
+          <div class="form-row-grid">
+            <div class="input-group" style="margin-bottom: 0;">
+              <label class="input-label" for="reg-month">Mes</label>
+              <select id="reg-month" class="custom-select" required>
+                <option value="" disabled selected>Mes...</option>
                 <option value="1">❄️ Enero</option>
                 <option value="2">💘 Febrero</option>
                 <option value="3">🍀 Marzo</option>
@@ -135,33 +107,180 @@
               </select>
             </div>
 
-            <div class="input-group">
-              <label class="input-label" for="select-day">Día</label>
-              <select id="select-day" class="custom-select" required>
-                <option value="" disabled selected>Selecciona tu día...</option>
+            <div class="input-group" style="margin-bottom: 0;">
+              <label class="input-label" for="reg-day">Día</label>
+              <select id="reg-day" class="custom-select" required>
+                <option value="" disabled selected>Día...</option>
               </select>
             </div>
           </div>
 
-          <!-- Mensaje personalizado -->
-          <div class="input-group">
-            <label class="input-label" for="input-message">
-              <span>Mensaje en Pantalla</span>
-              <span id="char-counter" style="font-size: 0.72rem; color: var(--text-dim);">0/100</span>
-            </label>
-            <input type="text" id="input-message" class="custom-input" maxlength="100" placeholder="Ej: ¡Un año más acompañando los streams! 🥳">
+          <div id="reg-zodiac"
+            style="display: none; margin: 10px 0 16px; font-size: 0.8rem; font-weight: 700; color: var(--accent-gold);">
+            ✨ Signo Zodiacal
           </div>
 
-          <!-- Sonido de la alerta -->
           <div class="input-group">
-            <label class="input-label">Efecto de Sonido para tu Alerta</label>
-            <div class="sound-cards-grid" id="sound-options-container">
-              <!-- Cargado dinámicamente -->
+            <label class="input-label" for="reg-secret">
+              <span>Palabra Secreta</span>
+              <span style="font-size: 0.7rem; color: var(--text-dim);">Para recuperar tu PIN</span>
+            </label>
+            <input type="text" id="reg-secret" class="custom-input"
+              placeholder="Ej: nombre de tu mascota o comida favorita" required>
+          </div>
+          <button type="submit" id="btn-submit-register" class="btn-primary" style="margin-top: 14px;">
+            🎉 Registrar Mi Cumpleaños
+          </button>
+        </form>
+
+        <!-- FORMULARIO 2: INICIO DE SESIÓN CON PIN -->
+        <form id="form-login" style="display: none;">
+          <div class="input-group">
+            <label class="input-label" for="login-username">Tu Nombre en Twitch</label>
+            <input type="text" id="login-username" class="custom-input" placeholder="Tu usuario registrado"
+              autocomplete="off" required>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="login-pin">Tu PIN Secreto</label>
+            <input type="password" id="login-pin" class="custom-input" placeholder="PIN de 4 dígitos"
+              inputmode="numeric" maxlength="6" pattern="[0-9]*" required>
+          </div>
+
+          <button type="submit" id="btn-submit-login" class="btn-primary">
+            🔓 Iniciar Sesión
+          </button>
+
+          <div style="text-align: center; margin-top: 14px;">
+            <a href="#" id="link-forgot-pin"
+              style="color: var(--twitch-light); font-size: 0.8rem; text-decoration: none; font-weight: 600;">¿Olvidaste
+              tu PIN? Recupéralo aquí →</a>
+          </div>
+        </form>
+
+        <!-- FORMULARIO 3: RESTABLECER PIN CON PALABRA SECRETA -->
+        <form id="form-reset-pin" style="display: none;">
+          <h4 style="font-family: var(--font-heading); font-size: 1.1rem; margin-bottom: 14px; text-align: center;">🔑
+            Recuperar Mi PIN</h4>
+
+          <div class="input-group">
+            <label class="input-label" for="reset-username">Tu Nombre en Twitch</label>
+            <input type="text" id="reset-username" class="custom-input" placeholder="Tu usuario registrado"
+              autocomplete="off" required>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="reset-secret">Tu Palabra Secreta</label>
+            <input type="text" id="reset-secret" class="custom-input"
+              placeholder="La palabra que pusiste al registrarte" required>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="reset-new-pin">Crea tu Nuevo PIN</label>
+            <input type="password" id="reset-new-pin" class="custom-input" placeholder="Nuevo PIN de 4 dígitos"
+              inputmode="numeric" maxlength="6" pattern="[0-9]*" required>
+          </div>
+
+          <button type="submit" id="btn-submit-reset" class="btn-primary">
+            ✅ Restablecer PIN y Entrar
+          </button>
+
+          <div style="text-align: center; margin-top: 14px;">
+            <a href="#" id="link-back-login"
+              style="color: var(--text-dim); font-size: 0.8rem; text-decoration: none; font-weight: 600;">← Volver a
+              Iniciar Sesión</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ESTADO: LOGUEADO -->
+    <div id="state-user" style="display: none;">
+      <!-- Perfil del usuario -->
+      <div class="profile-pill">
+        <div class="profile-info">
+          <img src="/img/yocapi.png" alt="Avatar" id="user-avatar" class="profile-avatar">
+          <div class="profile-names">
+            <h3 id="user-name">Usuario</h3>
+            <p id="user-details">Fecha guardada</p>
+          </div>
+        </div>
+        <button type="button" id="btn-logout" class="btn-logout">Salir</button>
+      </div>
+
+      <!-- Tarjeta de Estado de Celebración -->
+      <div id="celebration-box" class="celebration-box">
+        <div class="bday-tag" id="status-tag">🗓️ Estado de Cumpleaños</div>
+        <h3 class="celebration-title" id="status-title">Preparado</h3>
+        <p class="celebration-desc" id="status-desc">Cargando...</p>
+
+        <button id="btn-launch-alert" class="btn-launch-alert" style="display: none;">
+          <span>🎉</span> ¡LANZAR ALERTA EN DIRECTO! <span>🚀</span>
+        </button>
+        <div id="alert-cooldown-text"
+          style="font-size: 0.78rem; color: var(--accent-gold); margin-top: 10px; display: none;"></div>
+      </div>
+
+      <!-- Editar Datos / Cambiar PIN -->
+      <div class="glass-card">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+          <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700;">Editar Mis Datos</h3>
+          <div id="user-zodiac-badge" style="font-size: 0.78rem; font-weight: 700; color: var(--accent-gold);"></div>
+        </div>
+
+        <form id="form-edit">
+          <div class="form-row-grid">
+            <div class="input-group" style="margin-bottom: 0;">
+              <label class="input-label" for="edit-month">Mes</label>
+              <select id="edit-month" class="custom-select" required>
+                <option value="1">❄️ Enero</option>
+                <option value="2">💘 Febrero</option>
+                <option value="3">🍀 Marzo</option>
+                <option value="4">🌸 Abril</option>
+                <option value="5">💐 Mayo</option>
+                <option value="6">☀️ Junio</option>
+                <option value="7">🏖️ Julio</option>
+                <option value="8">🍉 Agosto</option>
+                <option value="9">🍂 Septiembre</option>
+                <option value="10">🎃 Octubre</option>
+                <option value="11">🍁 Noviembre</option>
+                <option value="12">🎄 Diciembre</option>
+              </select>
+            </div>
+
+            <div class="input-group" style="margin-bottom: 0;">
+              <label class="input-label" for="edit-day">Día</label>
+              <select id="edit-day" class="custom-select" required></select>
             </div>
           </div>
 
-          <button type="submit" id="btn-save-bday" class="btn-save">
-            💾 Guardar Cumpleaños
+          <div class="input-group" style="margin-top: 16px;">
+            <label class="input-label" for="edit-message">
+              <span>Mensaje en Pantalla</span>
+              <span id="edit-char-counter" style="font-size: 0.7rem; color: var(--text-dim);">0/100</span>
+            </label>
+            <input type="text" id="edit-message" class="custom-input" maxlength="100"
+              placeholder="Ej: ¡Un año más en el stream! 🥳">
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Efecto de Sonido</label>
+            <div class="sound-cards-grid" id="edit-sound-container"></div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="edit-pin">Cambiar PIN (Opcional)</label>
+            <input type="password" id="edit-pin" class="custom-input" placeholder="Dejar en blanco para no cambiarlo"
+              inputmode="numeric" maxlength="6" pattern="[0-9]*">
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="edit-secret">Cambiar Palabra Secreta (Opcional)</label>
+            <input type="text" id="edit-secret" class="custom-input" placeholder="Dejar en blanco para no cambiarla">
+          </div>
+
+          <button type="submit" id="btn-save-edit" class="btn-primary">
+            💾 Guardar Cambios
           </button>
         </form>
       </div>
@@ -172,9 +291,11 @@
   <div class="toast-container" id="toast-container"></div>
 
   <footer>
-    <p>YoCapi Birthday System v2.0 • Diseñado para la comunidad de <a href="https://twitch.tv/yocapi_pr" target="_blank" rel="noopener">yocapi_pr</a></p>
+    <p>Sistema realizado por Xavi • Diseñado para la comunidad de <a href="https://twitch.tv/yocapi_pr" target="_blank"
+        rel="noopener">yocapi_pr</a></p>
   </footer>
 
   <script src="/js/app.js"></script>
 </body>
+
 </html>
