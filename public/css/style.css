@@ -774,7 +774,55 @@ footer a {
   margin-top: 2px;
 }
 
-/* ─── Aviso de Fecha Bloqueada ─────────────────────────────────────────── */
+/* ─── Tarjeta de Fecha Confirmada y Bloqueada ───────────────────────────── */
+.locked-date-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(145, 70, 255, 0.1);
+  border: 1.5px solid rgba(145, 70, 255, 0.35);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 18px;
+}
+
+.locked-date-icon {
+  font-size: 2.2rem;
+  flex-shrink: 0;
+}
+
+.locked-date-content {
+  flex: 1;
+}
+
+.locked-date-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+  color: var(--twitch-light);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.locked-date-content h4 {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.locked-date-hint {
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ─── Aviso de Fecha Desbloqueada ──────────────────────────────────────── */
 .bday-lock-notice {
   display: flex;
   align-items: center;
@@ -786,6 +834,7 @@ footer a {
   font-size: 0.78rem;
   color: #fef08a;
   margin-top: 10px;
+  margin-bottom: 12px;
   font-weight: 600;
 }
 
