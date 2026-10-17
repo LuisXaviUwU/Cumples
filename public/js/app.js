@@ -512,8 +512,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Mostrar selectores editables
         if (boxLocked) boxLocked.style.display = 'none';
         if (boxEditable) boxEditable.style.display = 'block';
-        if (editMonth) editMonth.value = data.user.birth_month;
-        populateDaysSelect(editDay, editMonth, data.user.birth_day);
+        const currentM = (data.user.birth_month && data.user.birth_month > 0) ? data.user.birth_month : (new Date().getMonth() + 1);
+        const currentD = (data.user.birth_day && data.user.birth_day > 0) ? data.user.birth_day : new Date().getDate();
+        if (editMonth) editMonth.value = currentM;
+        populateDaysSelect(editDay, editMonth, currentD);
         editMonth.onchange = () => {
           populateDaysSelect(editDay, editMonth, editDay.value);
         };
