@@ -1,6 +1,6 @@
 /**
  * YoCapi Birthday System v2.0 — Backend Server
- * Express + Firebase Firestore (con SQLite fallback) + Twitch OAuth + SSE OBS Overlay
+ * Nick de Twitch + PIN (Sin OAuth de Twitch) + Firebase Firestore + OBS Overlay
  */
 
 require('dotenv').config();
@@ -18,11 +18,8 @@ const PORT = process.env.PORT || 3001;
 
 // Configuración general
 const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
-const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID || '';
-const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET || '';
 const STREAMER_LOGIN = (process.env.STREAMER_LOGIN || 'yocapi_pr').toLowerCase();
-const DASHBOARD_KEY = process.env.DASHBOARD_KEY || 'C4p1!267';
-const OVERLAY_TOKEN = process.env.OVERLAY_TOKEN || 'yocapi_birthday_secret_token';
+const OVERLAY_TOKEN = process.env.OVERLAY_TOKEN || '33c98a5e7659ee191e539ec5cbb7a1b131266643dbd752b6';
 
 const BIRTHDAY_GRACE_DAYS = 14;
 const ALERT_COOLDOWN_MS = 30_000; // 30 segundos entre alertas del mismo usuario
@@ -32,66 +29,40 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-
-// Servir estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── Estado en Memoria para OBS Overlay ──────────────────────────────────────
-const sseClients = new Set(); // Conexiones activas de OBS
-const recentAlertsCache = new Map(); // twitch_id -> timestamp última alerta
+const sseClients = new Set();
+const recentAlertsCache = new Map(); // username -> timestamp
 
-// ─── Helpers Twitch API ──────────────────────────────────────────────────────
-function httpsRequest(options, postData = null) {
-    return new Promise((resolve, reject) => {
-        const req = https.request(options, (res) => {
+// ─── Helper: Obtener Avatar Público de Twitch ───────────────────────────────
+function fetchPublicTwitchAvatar(username) {
+    return new Promise((resolve) => {
+        const cleanName = username.toLowerCase().replace(/[^a-z0-9_]/g, '');
+        if (!cleanName) return resolve('/img/yocapi.png');
+
+        const req = https.get(`https://decapi.me/twitch/avatar/${cleanName}`, {
+            headers: { 'User-Agent': 'YoCapi-Birthday-System/2.0' },
+            timeout: 3000
+        }, (res) => {
             let data = '';
             res.on('data', chunk => data += chunk);
             res.on('end', () => {
-                try {
-                    resolve({ status: res.statusCode, body: JSON.parse(data) });
-                } catch {
-                    resolve({ status: res.statusCode, body: data });
+                const url = data.trim();
+                if (url.startsWith('http://') || url.startsWith('https://')) {
+                    resolve(url);
+                } else {
+                    resolve('/img/yocapi.png');
                 }
             });
         });
-        req.on('error', reject);
-        if (postData) req.write(postData);
-        req.end();
-    });
-}
 
-async function getTwitchUserByToken(accessToken) {
-    const res = await httpsRequest({
-        hostname: 'api.twitch.tv',
-        path: '/helix/users',
-        method: 'GET',
-        headers: {
-            'Client-Id': TWITCH_CLIENT_ID,
-            'Authorization': `Bearer ${accessToken}`
-        }
-    });
-    if (res.status === 200 && res.body?.data?.length > 0) {
-        return res.body.data[0];
-    }
-    return null;
-}
-
-async function checkFollowerStatus(streamerId, userId, streamerToken) {
-    if (!streamerToken || !streamerId) return true; // Si no hay token de streamer, permitir
-    try {
-        const res = await httpsRequest({
-            hostname: 'api.twitch.tv',
-            path: `/helix/channels/followers?broadcaster_id=${streamerId}&user_id=${userId}`,
-            method: 'GET',
-            headers: {
-                'Client-Id': TWITCH_CLIENT_ID,
-                'Authorization': `Bearer ${streamerToken}`
-            }
+        req.on('error', () => resolve('/img/yocapi.png'));
+        req.on('timeout', () => {
+            req.destroy();
+            resolve('/img/yocapi.png');
         });
-        return res.status === 200 && res.body?.data?.length > 0;
-    } catch {
-        return true;
-    }
+    });
 }
 
 // ─── Helper Cálculo de Cumpleaños & Gracia ──────────────────────────────────
@@ -115,7 +86,6 @@ function getBirthdayStatus(birthMonth, birthDay) {
         }
     }
 
-    // Calcular días faltantes para el próximo cumpleaños
     let nextBday = new Date(currentYear, birthMonth - 1, birthDay, 0, 0, 0, 0);
     const graceEnd = new Date(nextBday.getTime() + (BIRTHDAY_GRACE_DAYS + 1) * 24 * 60 * 60 * 1000);
     if (now > graceEnd) {
@@ -131,7 +101,7 @@ function getBirthdayStatus(birthMonth, birthDay) {
     };
 }
 
-// ─── Auth Middleware ────────────────────────────────────────────────────────
+// ─── Middleware Autenticación de Usuario ────────────────────────────────────
 async function authenticateUser(req, res, next) {
     const token = req.cookies.yocapi_session || req.headers.authorization?.replace('Bearer ', '');
     if (!token) return res.status(401).json({ error: 'No autenticado' });
@@ -143,130 +113,267 @@ async function authenticateUser(req, res, next) {
     next();
 }
 
-function authenticateDashboard(req, res, next) {
-    // Ya no se requiere clave para el dashboard
-    next();
-}
+// ─── API DE AUTENTICACIÓN (NICK + PIN) ──────────────────────────────────────
 
-// ─── Rutas de Autenticación Twitch ──────────────────────────────────────────
-
-// Iniciar login de seguidor
-app.get('/auth/twitch/user', async (req, res) => {
-    const state = crypto.randomBytes(16).toString('hex');
-    await db.createOAuthState(state, 'user');
-
-    const redirectUri = `${APP_URL}/auth/twitch/callback`;
-    const twitchUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=user:read:email&state=${state}`;
-    res.redirect(twitchUrl);
+// Vista previa de avatar en tiempo real
+app.get('/api/avatar/:username', async (req, res) => {
+    const avatar = await fetchPublicTwitchAvatar(req.params.username);
+    res.json({ avatar });
 });
 
-// Iniciar login de streamer
-app.get('/auth/twitch/streamer', async (req, res) => {
-    const state = crypto.randomBytes(16).toString('hex');
-    await db.createOAuthState(state, 'streamer');
-
-    const redirectUri = `${APP_URL}/auth/twitch/callback`;
-    const twitchUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=moderator:read:followers&state=${state}`;
-    res.redirect(twitchUrl);
-});
-
-// Callback unificado de Twitch
-app.get('/auth/twitch/callback', async (req, res) => {
-    const { code, state, error } = req.query;
-    if (error || !code || !state) {
-        return res.redirect('/?error=' + encodeURIComponent(error || 'auth_failed'));
-    }
-
-    const savedState = await db.getOAuthState(state);
-    if (!savedState) {
-        return res.redirect('/?error=invalid_state');
-    }
-    await db.deleteOAuthState(state);
-
-    const redirectUri = `${APP_URL}/auth/twitch/callback`;
-    const tokenParams = new URLSearchParams({
-        client_id: TWITCH_CLIENT_ID,
-        client_secret: TWITCH_CLIENT_SECRET,
-        code: String(code),
-        grant_type: 'authorization_code',
-        redirect_uri: redirectUri
-    });
-
+// Registro de usuario nuevo
+app.post('/api/auth/register', async (req, res) => {
     try {
-        const tokenRes = await httpsRequest({
-            hostname: 'id.twitch.tv',
-            path: '/oauth2/token',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-        }, tokenParams.toString());
+        const { username, pin, secret_word, birth_month, birth_day, custom_message, selected_sound } = req.body;
 
-        if (tokenRes.status !== 200 || !tokenRes.body.access_token) {
-            console.error('Error obteniendo token de Twitch:', tokenRes.body);
-            return res.redirect('/?error=token_exchange_failed');
+        if (!username || username.trim().length < 2) {
+            return res.status(400).json({ error: 'Ingresa tu nombre de Twitch válido' });
+        }
+        if (!pin || pin.trim().length < 4) {
+            return res.status(400).json({ error: 'El PIN debe ser de al menos 4 dígitos' });
+        }
+        if (!secret_word || secret_word.trim().length < 2) {
+            return res.status(400).json({ error: 'Ingresa tu palabra secreta para recuperar tu cuenta si olvidas el PIN' });
         }
 
-        const accessToken = tokenRes.body.access_token;
-        const refreshToken = tokenRes.body.refresh_token;
-        const twitchUser = await getTwitchUserByToken(accessToken);
-
-        if (!twitchUser) {
-            return res.redirect('/?error=user_fetch_failed');
+        const cleanName = username.trim();
+        const existing = await db.getUser(cleanName);
+        if (existing) {
+            return res.status(400).json({ error: 'Este usuario ya está registrado. Por favor inicia sesión con tu PIN.' });
         }
 
-        if (savedState.flow === 'streamer') {
-            // Guardar credenciales del streamer
-            await db.setConfig('streamer_access_token', accessToken);
-            if (refreshToken) await db.setConfig('streamer_refresh_token', refreshToken);
-            await db.setConfig('streamer_id', twitchUser.id);
-            await db.setConfig('streamer_login', twitchUser.login);
-            return res.redirect('/dashboard?streamer_connected=1');
-        } else {
-            // Flujo de usuario seguidor
-            const sessionToken = crypto.randomBytes(32).toString('hex');
-            await db.createSession(sessionToken, twitchUser);
-
-            res.cookie('yocapi_session', sessionToken, {
-                httpOnly: true,
-                maxAge: 30 * 24 * 60 * 60 * 1000,
-                sameSite: 'lax'
-            });
-
-            return res.redirect('/');
+        const month = parseInt(birth_month, 10);
+        const day = parseInt(birth_day, 10);
+        if (isNaN(month) || month < 1 || month > 12) {
+            return res.status(400).json({ error: 'Selecciona un mes válido' });
         }
+        if (isNaN(day) || day < 1 || day > 31) {
+            return res.status(400).json({ error: 'Selecciona un día válido' });
+        }
+
+        // Obtener avatar público de Twitch
+        const avatarUrl = await fetchPublicTwitchAvatar(cleanName);
+
+        const newUser = await db.saveUser({
+            username: cleanName,
+            display_name: cleanName,
+            pin_hash: db.hashPin(pin),
+            recovery_hash: db.hashSecret(secret_word),
+            profile_image: avatarUrl,
+            birth_month: month,
+            birth_day: day,
+            custom_message: custom_message || '',
+            selected_sound: selected_sound || 'HBSilbato.mp3'
+        });
+
+        const token = crypto.randomBytes(32).toString('hex');
+        await db.createSession(token, newUser);
+
+        res.cookie('yocapi_session', token, {
+            httpOnly: true,
+            maxAge: 60 * 24 * 60 * 60 * 1000,
+            sameSite: 'lax'
+        });
+
+        res.json({ success: true, user: newUser });
     } catch (err) {
-        console.error('Error en callback:', err);
-        return res.redirect('/?error=server_error');
+        console.error('Error en registro:', err);
+        res.status(500).json({ error: 'Error del servidor al registrar' });
     }
 });
 
-app.get('/auth/logout', async (req, res) => {
+// Recuperar / Restablecer PIN con palabra secreta
+app.post('/api/auth/reset-pin', async (req, res) => {
+    try {
+        const { username, secret_word, new_pin } = req.body;
+        if (!username || !secret_word || !new_pin) {
+            return res.status(400).json({ error: 'Completa todos los campos' });
+        }
+        if (new_pin.trim().length < 4) {
+            return res.status(400).json({ error: 'El nuevo PIN debe tener al menos 4 dígitos' });
+        }
+
+        const user = await db.getUser(username);
+        if (!user) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        if (!user.recovery_hash) {
+            return res.status(400).json({ error: 'No tienes una palabra secreta registrada. Pide a yocapi_pr que restablezca tu PIN desde su panel.' });
+        }
+
+        if (user.recovery_hash !== db.hashSecret(secret_word)) {
+            return res.status(401).json({ error: 'La palabra secreta es incorrecta' });
+        }
+
+        await db.updatePin(user.username, new_pin);
+        res.json({ success: true, message: '¡PIN restablecido con éxito! Ya puedes iniciar sesión con tu nuevo PIN.' });
+    } catch (err) {
+        console.error('Error al resetear PIN:', err);
+        res.status(500).json({ error: 'Error del servidor al restablecer PIN' });
+    }
+});
+
+// Inicio de sesión con Nick + PIN
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { username, pin } = req.body;
+        if (!username || !pin) {
+            return res.status(400).json({ error: 'Ingresa tu usuario y tu PIN' });
+        }
+
+        const user = await db.getUser(username);
+        if (!user) {
+            return res.status(404).json({ error: 'Usuario no encontrado. Regístrate primero.' });
+        }
+
+        const hash = db.hashPin(pin);
+        if (user.pin_hash !== hash) {
+            return res.status(401).json({ error: 'PIN incorrecto' });
+        }
+
+        const token = crypto.randomBytes(32).toString('hex');
+        await db.createSession(token, user);
+
+        res.cookie('yocapi_session', token, {
+            httpOnly: true,
+            maxAge: 60 * 24 * 60 * 60 * 1000,
+            sameSite: 'lax'
+        });
+
+        res.json({ success: true, user });
+    } catch (err) {
+        console.error('Error en login:', err);
+        res.status(500).json({ error: 'Error del servidor al iniciar sesión' });
+    }
+});
+
+// Cerrar sesión
+app.post('/api/auth/logout', async (req, res) => {
     const token = req.cookies.yocapi_session;
     if (token) await db.deleteSession(token);
     res.clearCookie('yocapi_session');
-    res.redirect('/');
+    res.json({ success: true });
 });
 
-// ─── API PÚBLICA / USUARIO ──────────────────────────────────────────────────
+// ─── API DE USUARIO (DATOS & CUMPLEAÑOS) ────────────────────────────────────
 
-// Obtener datos del usuario logueado + su registro de cumpleaños
 app.get('/api/me', authenticateUser, async (req, res) => {
-    const bday = await db.getBirthday(req.user.twitch_id);
-    let status = null;
-    if (bday) {
-        status = getBirthdayStatus(bday.birth_month, bday.birth_day);
-    }
+    const user = await db.getUser(req.user.username);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    const status = getBirthdayStatus(user.birth_month, user.birth_day);
     res.json({
         user: {
-            twitch_id: req.user.twitch_id,
-            login: req.user.login,
-            display_name: req.user.display_name,
-            profile_image: req.user.profile_image
+            username: user.username,
+            display_name: user.display_name,
+            profile_image: user.profile_image,
+            birth_month: user.birth_month,
+            birth_day: user.birth_day,
+            custom_message: user.custom_message,
+            selected_sound: user.selected_sound
         },
-        birthday: bday,
-        status: status,
+        status,
         streamer_login: STREAMER_LOGIN
+    });
+});
+
+// Actualizar cumpleaños o configuración
+app.post('/api/birthday/update', authenticateUser, async (req, res) => {
+    try {
+        const { birth_month, birth_day, custom_message, selected_sound, new_pin } = req.body;
+        const user = await db.getUser(req.user.username);
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        const month = parseInt(birth_month, 10);
+        const day = parseInt(birth_day, 10);
+        if (isNaN(month) || month < 1 || month > 12) {
+            return res.status(400).json({ error: 'Mes inválido' });
+        }
+        if (isNaN(day) || day < 1 || day > 31) {
+            return res.status(400).json({ error: 'Día inválido' });
+        }
+
+        user.birth_month = month;
+        user.birth_day = day;
+        user.custom_message = (custom_message || '').slice(0, 100);
+        user.selected_sound = selected_sound || 'HBSilbato.mp3';
+        if (new_pin && new_pin.trim().length >= 4) {
+            user.pin_hash = db.hashPin(new_pin);
+        }
+        if (req.body.new_secret && req.body.new_secret.trim().length >= 2) {
+            user.recovery_hash = db.hashSecret(req.body.new_secret);
+        }
+
+        // Refrescar avatar de Twitch por si cambió
+        user.profile_image = await fetchPublicTwitchAvatar(user.username);
+
+        await db.saveUser(user);
+        const status = getBirthdayStatus(month, day);
+
+        res.json({ success: true, user, status });
+    } catch (err) {
+        console.error('Error al actualizar:', err);
+        res.status(500).json({ error: 'Error al actualizar datos' });
+    }
+});
+
+// Lanzar alerta al overlay de OBS (Seguidor)
+app.post('/api/birthday/alert', authenticateUser, async (req, res) => {
+    const user = await db.getUser(req.user.username);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    const status = getBirthdayStatus(user.birth_month, user.birth_day);
+    if (!status.canCelebrate) {
+        return res.status(400).json({
+            error: `Aún no es tu período de cumpleaños. Faltan ${status.daysUntilBirthday} días.`
+        });
+    }
+
+    // Cooldown check
+    const lastAlert = recentAlertsCache.get(user.username) || 0;
+    const now = Date.now();
+    if (now - lastAlert < ALERT_COOLDOWN_MS) {
+        const remainingSeconds = Math.ceil((ALERT_COOLDOWN_MS - (now - lastAlert)) / 1000);
+        return res.status(429).json({
+            error: `Espera ${remainingSeconds}s antes de enviar otra alerta.`
+        });
+    }
+
+    recentAlertsCache.set(user.username, now);
+
+    // Actualizar registro
+    user.last_activated = new Date().toISOString();
+    user.last_played_date = new Date().toISOString().split('T')[0];
+    await db.saveUser(user);
+
+    // Registrar en log
+    await db.logAlert({
+        username: user.username,
+        display_name: user.display_name,
+        sound_file: user.selected_sound,
+        message: user.custom_message
+    });
+
+    // Enviar a todos los overlays de OBS conectados
+    const alertPayload = {
+        type: 'alert',
+        user: user.display_name,
+        avatar: user.profile_image,
+        sound: user.selected_sound,
+        message: user.custom_message,
+        isToday: status.isToday,
+        isGrace: status.isGracePeriod,
+        theme: 'purple',
+        timestamp: Date.now()
+    };
+
+    broadcastToOverlay(alertPayload);
+
+    res.json({
+        success: true,
+        message: '¡Alerta enviada al directo con éxito!',
+        activeOverlayCount: sseClients.size
     });
 });
 
@@ -287,101 +394,6 @@ app.get('/api/sounds', (req, res) => {
     } catch {
         res.json([]);
     }
-});
-
-// Registrar o actualizar fecha de cumpleaños
-app.post('/api/birthday/register', authenticateUser, async (req, res) => {
-    const { birth_month, birth_day, custom_message, selected_sound } = req.body;
-    const month = parseInt(birth_month, 10);
-    const day = parseInt(birth_day, 10);
-
-    if (isNaN(month) || month < 1 || month > 12) {
-        return res.status(400).json({ error: 'Mes inválido (1-12)' });
-    }
-    if (isNaN(day) || day < 1 || day > 31) {
-        return res.status(400).json({ error: 'Día inválido (1-31)' });
-    }
-
-    const existing = await db.getBirthday(req.user.twitch_id);
-    const changesCount = existing ? (existing.changes_count || 0) + 1 : 0;
-
-    const saved = await db.saveBirthday({
-        twitch_id: req.user.twitch_id,
-        twitch_login: req.user.login,
-        display_name: req.user.display_name,
-        profile_image: req.user.profile_image,
-        birth_month: month,
-        birth_day: day,
-        custom_message: (custom_message || '').slice(0, 120),
-        selected_sound: selected_sound || 'HBSilbato.mp3',
-        changes_count: changesCount,
-        last_changed_at: new Date().toISOString(),
-        registered_at: existing?.registered_at || new Date().toISOString()
-    });
-
-    const status = getBirthdayStatus(month, day);
-    res.json({ success: true, birthday: saved, status });
-});
-
-// Lanzar alerta en directo a OBS (Seguidor)
-app.post('/api/birthday/alert', authenticateUser, async (req, res) => {
-    const bday = await db.getBirthday(req.user.twitch_id);
-    if (!bday) {
-        return res.status(400).json({ error: 'No tienes un cumpleaños registrado' });
-    }
-
-    const status = getBirthdayStatus(bday.birth_month, bday.birth_day);
-    if (!status.canCelebrate) {
-        return res.status(400).json({
-            error: `Aún no es tu período de cumpleaños. Faltan ${status.daysUntilBirthday} días.`
-        });
-    }
-
-    // Cooldown check
-    const lastAlert = recentAlertsCache.get(req.user.twitch_id) || 0;
-    const now = Date.now();
-    if (now - lastAlert < ALERT_COOLDOWN_MS) {
-        const remainingSeconds = Math.ceil((ALERT_COOLDOWN_MS - (now - lastAlert)) / 1000);
-        return res.status(429).json({
-            error: `Espera ${remainingSeconds}s antes de enviar otra alerta.`
-        });
-    }
-
-    recentAlertsCache.set(req.user.twitch_id, now);
-
-    // Actualizar registro
-    bday.last_activated = new Date().toISOString();
-    bday.last_played_date = new Date().toISOString().split('T')[0];
-    await db.saveBirthday(bday);
-
-    // Registrar en log
-    await db.logAlert({
-        twitch_id: bday.twitch_id,
-        display_name: bday.display_name,
-        sound_file: bday.selected_sound,
-        message: bday.custom_message
-    });
-
-    // Enviar a todos los overlays de OBS conectados
-    const alertPayload = {
-        type: 'alert',
-        user: bday.display_name,
-        avatar: bday.profile_image,
-        sound: bday.selected_sound,
-        message: bday.custom_message,
-        isToday: status.isToday,
-        isGrace: status.isGracePeriod,
-        theme: 'purple',
-        timestamp: Date.now()
-    };
-
-    broadcastToOverlay(alertPayload);
-
-    res.json({
-        success: true,
-        message: '¡Alerta enviada al directo con éxito!',
-        activeOverlayCount: sseClients.size
-    });
 });
 
 // ─── OBS OVERLAY SSE (Server-Sent Events) ────────────────────────────────────
@@ -418,47 +430,29 @@ app.get('/api/overlay/stream', (req, res) => {
     });
 });
 
-// Heartbeat ping a OBS cada 20 segundos para evitar que Render o el navegador cierren la conexión
 setInterval(() => {
     if (sseClients.size > 0) {
         broadcastToOverlay({ type: 'ping', time: Date.now() });
     }
 }, 20_000);
 
-// ─── API DASHBOARD STREAMER ─────────────────────────────────────────────────
+// ─── API DASHBOARD STREAMER (SIN CLAVE) ──────────────────────────────────────
 
-app.post('/api/dashboard/auth', (req, res) => {
-    const { key } = req.body;
-    if (key === DASHBOARD_KEY) {
-        res.cookie('yocapi_dash_key', DASHBOARD_KEY, {
-            httpOnly: true,
-            maxAge: 30 * 86400 * 1000,
-            sameSite: 'lax'
-        });
-        return res.json({ success: true });
-    }
-    return res.status(401).json({ error: 'Clave incorrecta' });
-});
-
-app.get('/api/dashboard/stats', authenticateDashboard, async (req, res) => {
-    const allBirthdays = await db.getAllBirthdays();
+app.get('/api/dashboard/stats', async (req, res) => {
+    const allUsers = await db.getAllUsers();
     const alertLogs = await db.getAlertLogs(100);
-
-    const now = new Date();
-    const currentMonth = now.getMonth() + 1;
-    const currentDay = now.getDate();
 
     let todayCount = 0;
     let graceCount = 0;
 
-    for (const b of allBirthdays) {
-        const status = getBirthdayStatus(b.birth_month, b.birth_day);
+    for (const u of allUsers) {
+        const status = getBirthdayStatus(u.birth_month, u.birth_day);
         if (status.isToday) todayCount++;
         else if (status.isGracePeriod) graceCount++;
     }
 
     res.json({
-        totalRegistered: allBirthdays.length,
+        totalRegistered: allUsers.length,
         todayCount,
         graceCount,
         totalAlertsSent: alertLogs.length,
@@ -469,15 +463,15 @@ app.get('/api/dashboard/stats', authenticateDashboard, async (req, res) => {
     });
 });
 
-app.get('/api/dashboard/today', authenticateDashboard, async (req, res) => {
-    const allBirthdays = await db.getAllBirthdays();
+app.get('/api/dashboard/today', async (req, res) => {
+    const allUsers = await db.getAllUsers();
     const todayList = [];
 
-    for (const b of allBirthdays) {
-        const status = getBirthdayStatus(b.birth_month, b.birth_day);
+    for (const u of allUsers) {
+        const status = getBirthdayStatus(u.birth_month, u.birth_day);
         if (status.canCelebrate) {
             todayList.push({
-                ...b,
+                ...u,
                 status
             });
         }
@@ -486,32 +480,44 @@ app.get('/api/dashboard/today', authenticateDashboard, async (req, res) => {
     res.json(todayList);
 });
 
-app.get('/api/dashboard/birthdays', authenticateDashboard, async (req, res) => {
+app.get('/api/dashboard/birthdays', async (req, res) => {
     const month = req.query.month ? parseInt(req.query.month, 10) : null;
     const search = (req.query.search || '').toLowerCase().trim();
 
-    let all = await db.getAllBirthdays();
+    let all = await db.getAllUsers();
 
     if (month && !isNaN(month)) {
-        all = all.filter(b => b.birth_month === month);
+        all = all.filter(u => u.birth_month === month);
     }
     if (search) {
-        all = all.filter(b =>
-            (b.display_name && b.display_name.toLowerCase().includes(search)) ||
-            (b.twitch_login && b.twitch_login.toLowerCase().includes(search))
+        all = all.filter(u =>
+            (u.display_name && u.display_name.toLowerCase().includes(search)) ||
+            (u.username && u.username.toLowerCase().includes(search))
         );
     }
 
     res.json(all);
 });
 
-app.delete('/api/dashboard/birthdays/:id', authenticateDashboard, async (req, res) => {
-    await db.deleteBirthday(req.params.id);
+app.delete('/api/dashboard/birthdays/:username', async (req, res) => {
+    await db.deleteUser(req.params.username);
     res.json({ success: true });
 });
 
-// Lanzar alerta manual o de test desde el Dashboard
-app.post('/api/dashboard/trigger-alert', authenticateDashboard, async (req, res) => {
+// Cambiar o restablecer PIN de un usuario desde el Dashboard
+app.post('/api/dashboard/users/:username/reset-pin', async (req, res) => {
+    try {
+        const { new_pin } = req.body;
+        const pin = (new_pin && String(new_pin).trim().length >= 4) ? String(new_pin).trim() : '1234';
+        await db.updatePin(req.params.username, pin);
+        res.json({ success: true, message: `PIN de ${req.params.username} cambiado a: ${pin}`, new_pin: pin });
+    } catch (err) {
+        res.status(500).json({ error: 'Error al cambiar PIN' });
+    }
+});
+
+// Lanzar alerta manual o de prueba desde el Dashboard
+app.post('/api/dashboard/trigger-alert', async (req, res) => {
     const { user, sound, message, avatar, theme } = req.body;
 
     const alertPayload = {
@@ -528,7 +534,7 @@ app.post('/api/dashboard/trigger-alert', authenticateDashboard, async (req, res)
 
     broadcastToOverlay(alertPayload);
     await db.logAlert({
-        twitch_id: 'manual_' + Date.now(),
+        username: 'streamer_manual',
         display_name: alertPayload.user,
         sound_file: alertPayload.sound,
         message: alertPayload.message
@@ -541,28 +547,20 @@ app.post('/api/dashboard/trigger-alert', authenticateDashboard, async (req, res)
     });
 });
 
-app.get('/api/dashboard/logs', authenticateDashboard, async (req, res) => {
+app.get('/api/dashboard/logs', async (req, res) => {
     const logs = await db.getAlertLogs(30);
     res.json(logs);
 });
 
-// ─── Rutas Frontend (HTML) ──────────────────────────────────────────────────
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.get('/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
-});
-
-app.get('/overlay', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'overlay.html'));
-});
+// ─── Rutas Frontend ─────────────────────────────────────────────────────────
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
+app.get('/overlay', (req, res) => res.sendFile(path.join(__dirname, 'public', 'overlay.html')));
 
 // ─── Inicio de Servidor ─────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n==================================================`);
-    console.log(`🎂 YoCapi Birthday Platform v2.0 Activa`);
+    console.log(`🎂 YoCapi Birthday Platform v2.0 (Nick + PIN)`);
     console.log(`🌐 Servidor: http://localhost:${PORT}`);
     console.log(`📺 Overlay OBS: http://localhost:${PORT}/overlay?token=${OVERLAY_TOKEN}`);
     console.log(`⚙️  Dashboard: http://localhost:${PORT}/dashboard`);

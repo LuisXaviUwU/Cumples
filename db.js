@@ -1,18 +1,27 @@
 /**
  * YoCapi Birthday System — Capa de Persistencia Universal
+ * Modo: Nick de Twitch + PIN + Palabra Secreta de Recuperación
  * Soporta:
- *  1. Firebase Firestore (Modo Cloud recomendado para Render)
- *  2. SQLite nativo (node:sqlite, Fallback local automático sin configuración extra)
+ *  1. Firebase Firestore (Modo Cloud en Render con proyecto yocapi-cumples)
+ *  2. SQLite nativo (node:sqlite, Fallback local automático)
  */
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
-let mode = 'sqlite'; // 'firestore' | 'sqlite'
+let mode = 'sqlite';
 let firestoreDb = null;
 let sqliteDb = null;
 
-// Inicialización de la base de datos
+function hashPin(pin) {
+    return crypto.createHash('sha256').update('yocapi_pin_salt_' + String(pin).trim()).digest('hex');
+}
+
+function hashSecret(secret) {
+    return crypto.createHash('sha256').update('yocapi_secret_salt_' + String(secret).toLowerCase().trim()).digest('hex');
+}
+
 function initDatabase() {
     // 1. Probar Firebase Firestore si está configurado
     try {
@@ -50,7 +59,7 @@ function initDatabase() {
         console.log('[DB] Firebase no inicializado (' + e.message + '). Usando modo SQLite local.');
     }
 
-    // 2. Modo SQLite (Local)
+    // 2. Modo SQLite Local
     const { DatabaseSync } = require('node:sqlite');
     const dataDir = path.join(__dirname, 'data');
     if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -59,52 +68,44 @@ function initDatabase() {
     sqliteDb = new DatabaseSync(dbPath);
     
     sqliteDb.exec(`
-        CREATE TABLE IF NOT EXISTS birthdays (
-            twitch_id       TEXT PRIMARY KEY,
-            twitch_login    TEXT NOT NULL,
+        CREATE TABLE IF NOT EXISTS users (
+            username        TEXT PRIMARY KEY,
             display_name    TEXT NOT NULL,
+            pin_hash        TEXT NOT NULL,
+            recovery_hash   TEXT DEFAULT '',
             profile_image   TEXT,
             birth_month     INTEGER NOT NULL,
             birth_day       INTEGER NOT NULL,
             custom_message  TEXT DEFAULT '',
             selected_sound  TEXT DEFAULT 'HBSilbato.mp3',
-            changes_count   INTEGER DEFAULT 0,
-            last_changed_at TEXT,
             registered_at   TEXT NOT NULL,
+            last_changed_at TEXT,
             last_activated  TEXT,
             last_played_date TEXT
         );
 
         CREATE TABLE IF NOT EXISTS sessions (
             token        TEXT PRIMARY KEY,
-            twitch_id    TEXT NOT NULL,
-            login        TEXT NOT NULL,
+            username     TEXT NOT NULL,
             display_name TEXT NOT NULL,
             profile_image TEXT,
             created_at   TEXT NOT NULL,
             expires_at   TEXT NOT NULL
         );
 
-        CREATE TABLE IF NOT EXISTS oauth_states (
-            state       TEXT PRIMARY KEY,
-            flow        TEXT NOT NULL,
-            created_at  TEXT NOT NULL
-        );
-
         CREATE TABLE IF NOT EXISTS alert_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            twitch_id TEXT NOT NULL,
+            username TEXT NOT NULL,
             display_name TEXT NOT NULL,
             sound_file TEXT NOT NULL,
             message TEXT DEFAULT '',
             launched_at TEXT NOT NULL
         );
-
-        CREATE TABLE IF NOT EXISTS system_config (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL
-        );
     `);
+
+    try {
+        sqliteDb.exec("ALTER TABLE users ADD COLUMN recovery_hash TEXT DEFAULT '';");
+    } catch (e) {}
 
     mode = 'sqlite';
     console.log('💾 [DB] Conectado a SQLite local (data/birthdays.db)');
@@ -112,103 +113,116 @@ function initDatabase() {
 
 initDatabase();
 
-// ─── API PÚBLICA DE BASE DE DATOS ──────────────────────────────────────────
-
 const db = {
     getMode() {
         return mode;
     },
+    hashPin,
+    hashSecret,
 
-    // ─ CUMPLEAÑOS ───────────────────────────────────────────────────────────
-    async getBirthday(twitch_id) {
+    // ─ USUARIOS / CUMPLEAÑOS ──────────────────────────────────────────────
+    async getUser(rawUsername) {
+        const username = rawUsername.toLowerCase().trim();
         if (mode === 'firestore') {
-            const doc = await firestoreDb.collection('birthdays').doc(String(twitch_id)).get();
+            const doc = await firestoreDb.collection('users').doc(username).get();
             return doc.exists ? doc.data() : null;
         } else {
-            const stmt = sqliteDb.prepare('SELECT * FROM birthdays WHERE twitch_id = ?');
-            return stmt.get(String(twitch_id)) || null;
+            const stmt = sqliteDb.prepare('SELECT * FROM users WHERE username = ?');
+            return stmt.get(username) || null;
         }
     },
 
-    async saveBirthday(data) {
-        const id = String(data.twitch_id);
+    async saveUser(data) {
+        const username = data.username.toLowerCase().trim();
         const record = {
-            twitch_id: id,
-            twitch_login: data.twitch_login || '',
-            display_name: data.display_name || '',
-            profile_image: data.profile_image || '',
+            username,
+            display_name: data.display_name || data.username,
+            pin_hash: data.pin_hash,
+            recovery_hash: data.recovery_hash || '',
+            profile_image: data.profile_image || `/img/yocapi.png`,
             birth_month: parseInt(data.birth_month, 10),
             birth_day: parseInt(data.birth_day, 10),
-            custom_message: data.custom_message || '',
+            custom_message: (data.custom_message || '').slice(0, 100),
             selected_sound: data.selected_sound || 'HBSilbato.mp3',
-            changes_count: data.changes_count !== undefined ? data.changes_count : 0,
-            last_changed_at: data.last_changed_at || new Date().toISOString(),
             registered_at: data.registered_at || new Date().toISOString(),
+            last_changed_at: new Date().toISOString(),
             last_activated: data.last_activated || null,
             last_played_date: data.last_played_date || null
         };
 
         if (mode === 'firestore') {
-            await firestoreDb.collection('birthdays').doc(id).set(record, { merge: true });
+            await firestoreDb.collection('users').doc(username).set(record, { merge: true });
         } else {
             const stmt = sqliteDb.prepare(`
-                INSERT INTO birthdays (
-                    twitch_id, twitch_login, display_name, profile_image,
+                INSERT INTO users (
+                    username, display_name, pin_hash, recovery_hash, profile_image,
                     birth_month, birth_day, custom_message, selected_sound,
-                    changes_count, last_changed_at, registered_at, last_activated, last_played_date
+                    registered_at, last_changed_at, last_activated, last_played_date
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(twitch_id) DO UPDATE SET
-                    twitch_login = excluded.twitch_login,
+                ON CONFLICT(username) DO UPDATE SET
                     display_name = excluded.display_name,
+                    pin_hash = excluded.pin_hash,
+                    recovery_hash = CASE WHEN excluded.recovery_hash != '' THEN excluded.recovery_hash ELSE users.recovery_hash END,
                     profile_image = excluded.profile_image,
                     birth_month = excluded.birth_month,
                     birth_day = excluded.birth_day,
                     custom_message = excluded.custom_message,
                     selected_sound = excluded.selected_sound,
-                    changes_count = excluded.changes_count,
                     last_changed_at = excluded.last_changed_at,
                     last_activated = excluded.last_activated,
                     last_played_date = excluded.last_played_date
             `);
             stmt.run(
-                record.twitch_id, record.twitch_login, record.display_name, record.profile_image,
+                record.username, record.display_name, record.pin_hash, record.recovery_hash, record.profile_image,
                 record.birth_month, record.birth_day, record.custom_message, record.selected_sound,
-                record.changes_count, record.last_changed_at, record.registered_at, record.last_activated, record.last_played_date
+                record.registered_at, record.last_changed_at, record.last_activated, record.last_played_date
             );
         }
         return record;
     },
 
-    async getAllBirthdays() {
+    async updatePin(rawUsername, newPin) {
+        const username = rawUsername.toLowerCase().trim();
+        const pin_hash = hashPin(newPin);
         if (mode === 'firestore') {
-            const snapshot = await firestoreDb.collection('birthdays').get();
+            await firestoreDb.collection('users').doc(username).update({ pin_hash, last_changed_at: new Date().toISOString() });
+        } else {
+            const stmt = sqliteDb.prepare('UPDATE users SET pin_hash = ?, last_changed_at = ? WHERE username = ?');
+            stmt.run(pin_hash, new Date().toISOString(), username);
+        }
+        return true;
+    },
+
+    async getAllUsers() {
+        if (mode === 'firestore') {
+            const snapshot = await firestoreDb.collection('users').get();
             const list = [];
             snapshot.forEach(doc => list.push(doc.data()));
             return list.sort((a, b) => a.birth_month - b.birth_month || a.birth_day - b.birth_day);
         } else {
-            const stmt = sqliteDb.prepare('SELECT * FROM birthdays ORDER BY birth_month ASC, birth_day ASC');
+            const stmt = sqliteDb.prepare('SELECT * FROM users ORDER BY birth_month ASC, birth_day ASC');
             return stmt.all();
         }
     },
 
-    async deleteBirthday(twitch_id) {
+    async deleteUser(rawUsername) {
+        const username = rawUsername.toLowerCase().trim();
         if (mode === 'firestore') {
-            await firestoreDb.collection('birthdays').doc(String(twitch_id)).delete();
+            await firestoreDb.collection('users').doc(username).delete();
         } else {
-            sqliteDb.prepare('DELETE FROM birthdays WHERE twitch_id = ?').run(String(twitch_id));
+            sqliteDb.prepare('DELETE FROM users WHERE username = ?').run(username);
         }
         return true;
     },
 
     // ─ SESIONES ─────────────────────────────────────────────────────────────
     async createSession(token, user) {
-        const expiresAt = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(); // 30 días
+        const expiresAt = new Date(Date.now() + 60 * 24 * 3600 * 1000).toISOString();
         const session = {
             token,
-            twitch_id: String(user.id || user.twitch_id),
-            login: user.login,
+            username: user.username,
             display_name: user.display_name,
-            profile_image: user.profile_image_url || user.profile_image || '',
+            profile_image: user.profile_image,
             created_at: new Date().toISOString(),
             expires_at: expiresAt
         };
@@ -217,9 +231,9 @@ const db = {
             await firestoreDb.collection('sessions').doc(token).set(session);
         } else {
             sqliteDb.prepare(`
-                INSERT INTO sessions (token, twitch_id, login, display_name, profile_image, created_at, expires_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            `).run(session.token, session.twitch_id, session.login, session.display_name, session.profile_image, session.created_at, session.expires_at);
+                INSERT INTO sessions (token, username, display_name, profile_image, created_at, expires_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            `).run(session.token, session.username, session.display_name, session.profile_image, session.created_at, session.expires_at);
         }
         return session;
     },
@@ -250,40 +264,10 @@ const db = {
         }
     },
 
-    // ─ OAUTH STATES ─────────────────────────────────────────────────────────
-    async createOAuthState(state, flow) {
-        const item = { state, flow, created_at: new Date().toISOString() };
-        if (mode === 'firestore') {
-            await firestoreDb.collection('oauth_states').doc(state).set(item);
-        } else {
-            sqliteDb.prepare('INSERT INTO oauth_states (state, flow, created_at) VALUES (?, ?, ?)').run(state, flow, item.created_at);
-        }
-    },
-
-    async getOAuthState(state) {
-        if (!state) return null;
-        if (mode === 'firestore') {
-            const doc = await firestoreDb.collection('oauth_states').doc(state).get();
-            return doc.exists ? doc.data() : null;
-        } else {
-            const stmt = sqliteDb.prepare('SELECT * FROM oauth_states WHERE state = ?');
-            return stmt.get(state) || null;
-        }
-    },
-
-    async deleteOAuthState(state) {
-        if (!state) return;
-        if (mode === 'firestore') {
-            await firestoreDb.collection('oauth_states').doc(state).delete();
-        } else {
-            sqliteDb.prepare('DELETE FROM oauth_states WHERE state = ?').run(state);
-        }
-    },
-
     // ─ ALERT LOG ────────────────────────────────────────────────────────────
     async logAlert(data) {
         const item = {
-            twitch_id: String(data.twitch_id),
+            username: data.username,
             display_name: data.display_name,
             sound_file: data.sound_file,
             message: data.message || '',
@@ -294,10 +278,10 @@ const db = {
             return { id: ref.id, ...item };
         } else {
             const stmt = sqliteDb.prepare(`
-                INSERT INTO alert_log (twitch_id, display_name, sound_file, message, launched_at)
+                INSERT INTO alert_log (username, display_name, sound_file, message, launched_at)
                 VALUES (?, ?, ?, ?, ?)
             `);
-            const res = stmt.run(item.twitch_id, item.display_name, item.sound_file, item.message, item.launched_at);
+            const res = stmt.run(item.username, item.display_name, item.sound_file, item.message, item.launched_at);
             return { id: res.lastInsertRowid, ...item };
         }
     },
@@ -314,26 +298,6 @@ const db = {
         } else {
             const stmt = sqliteDb.prepare('SELECT * FROM alert_log ORDER BY launched_at DESC LIMIT ?');
             return stmt.all(limit);
-        }
-    },
-
-    // ─ CONFIG PERSISTENTE ───────────────────────────────────────────────────
-    async getConfig(key) {
-        if (mode === 'firestore') {
-            const doc = await firestoreDb.collection('system_config').doc(key).get();
-            return doc.exists ? doc.data().value : null;
-        } else {
-            const stmt = sqliteDb.prepare('SELECT value FROM system_config WHERE key = ?');
-            const row = stmt.get(key);
-            return row ? row.value : null;
-        }
-    },
-
-    async setConfig(key, value) {
-        if (mode === 'firestore') {
-            await firestoreDb.collection('system_config').doc(key).set({ key, value });
-        } else {
-            sqliteDb.prepare('INSERT INTO system_config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(key, value);
         }
     }
 };
