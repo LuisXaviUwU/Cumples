@@ -135,18 +135,18 @@ app.post('/api/auth/register', async (req, res) => {
         if (!username || username.trim().length < 2) {
             return res.status(400).json({ error: 'Ingresa tu nombre de Twitch válido' });
         }
-        const cleanPin = pin ? String(pin).trim() : '';
-        if (!cleanPin || cleanPin.length < 6 || cleanPin.length > 10 || !/^\d+$/.test(cleanPin)) {
-            return res.status(400).json({ error: 'El PIN debe ser numérico y tener entre 6 y 10 dígitos' });
+        const cleanPassword = (pin || req.body.password) ? String(pin || req.body.password).trim() : '';
+        if (!cleanPassword || cleanPassword.length < 6 || cleanPassword.length > 15) {
+            return res.status(400).json({ error: 'La contraseña debe tener entre 6 y 15 caracteres' });
         }
         if (!secret_word || secret_word.trim().length < 2) {
-            return res.status(400).json({ error: 'Ingresa tu palabra secreta para recuperar tu cuenta si olvidas el PIN' });
+            return res.status(400).json({ error: 'Ingresa tu palabra secreta para recuperar tu cuenta si olvidas la contraseña' });
         }
 
         const cleanName = username.trim();
         const existing = await db.getUser(cleanName);
         if (existing) {
-            return res.status(400).json({ error: 'Este usuario ya está registrado. Por favor inicia sesión con tu PIN.' });
+            return res.status(400).json({ error: 'Este usuario ya está registrado. Por favor inicia sesión con tu contraseña.' });
         }
 
         const month = parseInt(birth_month, 10);
@@ -164,7 +164,7 @@ app.post('/api/auth/register', async (req, res) => {
         const newUser = await db.saveUser({
             username: cleanName,
             display_name: cleanName,
-            pin_hash: db.hashPin(cleanPin),
+            pin_hash: db.hashPin(cleanPassword),
             recovery_hash: db.hashSecret(secret_word),
             profile_image: avatarUrl,
             birth_month: month,
@@ -190,16 +190,17 @@ app.post('/api/auth/register', async (req, res) => {
     }
 });
 
-// Recuperar / Restablecer PIN con palabra secreta
+// Recuperar / Restablecer Contraseña con palabra secreta
 app.post('/api/auth/reset-pin', async (req, res) => {
     try {
-        const { username, secret_word, new_pin } = req.body;
-        if (!username || !secret_word || !new_pin) {
+        const { username, secret_word, new_pin, new_password } = req.body;
+        const passToReset = new_password || new_pin;
+        if (!username || !secret_word || !passToReset) {
             return res.status(400).json({ error: 'Completa todos los campos' });
         }
-        const cleanNewPin = String(new_pin).trim();
-        if (cleanNewPin.length < 6 || cleanNewPin.length > 10 || !/^\d+$/.test(cleanNewPin)) {
-            return res.status(400).json({ error: 'El nuevo PIN debe ser numérico y tener entre 6 y 10 dígitos' });
+        const cleanNewPass = String(passToReset).trim();
+        if (cleanNewPass.length < 6 || cleanNewPass.length > 15) {
+            return res.status(400).json({ error: 'La nueva contraseña debe tener entre 6 y 15 caracteres' });
         }
 
         const user = await db.getUser(username);
@@ -208,27 +209,28 @@ app.post('/api/auth/reset-pin', async (req, res) => {
         }
 
         if (!user.recovery_hash) {
-            return res.status(400).json({ error: 'No tienes una palabra secreta registrada. Pide a yocapi_pr que restablezca tu PIN desde su panel.' });
+            return res.status(400).json({ error: 'No tienes una palabra secreta registrada. Pide a yocapi_pr que restablezca tu contraseña desde su panel.' });
         }
 
         if (user.recovery_hash !== db.hashSecret(secret_word)) {
             return res.status(401).json({ error: 'La palabra secreta es incorrecta' });
         }
 
-        await db.updatePin(user.username, cleanNewPin);
-        res.json({ success: true, message: '¡PIN restablecido con éxito! Ya puedes iniciar sesión con tu nuevo PIN.' });
+        await db.updatePin(user.username, cleanNewPass);
+        res.json({ success: true, message: '¡Contraseña restablecida con éxito! Ya puedes iniciar sesión con tu nueva contraseña.' });
     } catch (err) {
-        console.error('Error al resetear PIN:', err);
-        res.status(500).json({ error: 'Error del servidor al restablecer PIN' });
+        console.error('Error al resetear contraseña:', err);
+        res.status(500).json({ error: 'Error del servidor al restablecer contraseña' });
     }
 });
 
-// Inicio de sesión con Nick + PIN
+// Inicio de sesión con Nick + Contraseña
 app.post('/api/auth/login', async (req, res) => {
     try {
-        const { username, pin } = req.body;
-        if (!username || !pin) {
-            return res.status(400).json({ error: 'Ingresa tu usuario y tu PIN' });
+        const { username, pin, password } = req.body;
+        const pass = password || pin;
+        if (!username || !pass) {
+            return res.status(400).json({ error: 'Ingresa tu usuario y tu contraseña' });
         }
 
         const user = await db.getUser(username);
@@ -236,9 +238,9 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(404).json({ error: 'Usuario no encontrado. Regístrate primero.' });
         }
 
-        const hash = db.hashPin(pin);
+        const hash = db.hashPin(pass);
         if (user.pin_hash !== hash) {
-            return res.status(401).json({ error: 'PIN incorrecto' });
+            return res.status(401).json({ error: 'Contraseña incorrecta' });
         }
 
         const token = crypto.randomBytes(32).toString('hex');
@@ -313,12 +315,13 @@ app.post('/api/birthday/update', authenticateUser, async (req, res) => {
         user.birth_day = day;
         user.custom_message = (custom_message || '').slice(0, 100);
         user.selected_sound = selected_sound || 'HBSilbato.mp3';
-        if (new_pin && String(new_pin).trim().length > 0) {
-            const cleanPin = String(new_pin).trim();
-            if (cleanPin.length < 6 || cleanPin.length > 10 || !/^\d+$/.test(cleanPin)) {
-                return res.status(400).json({ error: 'El nuevo PIN debe ser numérico y tener entre 6 y 10 dígitos' });
+        const newPass = req.body.new_password || new_pin;
+        if (newPass && String(newPass).trim().length > 0) {
+            const cleanPass = String(newPass).trim();
+            if (cleanPass.length < 6 || cleanPass.length > 15) {
+                return res.status(400).json({ error: 'La nueva contraseña debe tener entre 6 y 15 caracteres' });
             }
-            user.pin_hash = db.hashPin(cleanPin);
+            user.pin_hash = db.hashPin(cleanPass);
         }
         if (req.body.new_secret && req.body.new_secret.trim().length >= 2) {
             user.recovery_hash = db.hashSecret(req.body.new_secret);
@@ -523,16 +526,16 @@ app.delete('/api/dashboard/birthdays/:username', async (req, res) => {
     res.json({ success: true });
 });
 
-// Cambiar o restablecer PIN de un usuario desde el Dashboard
+// Cambiar o restablecer Contraseña de un usuario desde el Dashboard
 app.post('/api/dashboard/users/:username/reset-pin', async (req, res) => {
     try {
-        const { new_pin } = req.body;
-        const candidate = new_pin ? String(new_pin).trim() : '';
-        const pin = (/^\d{6,10}$/.test(candidate)) ? candidate : '123456';
-        await db.updatePin(req.params.username, pin);
-        res.json({ success: true, message: `PIN de ${req.params.username} cambiado a: ${pin}`, new_pin: pin });
+        const { new_pin, new_password } = req.body;
+        const candidate = (new_password || new_pin) ? String(new_password || new_pin).trim() : '';
+        const password = (candidate.length >= 6 && candidate.length <= 15) ? candidate : 'yocapi123';
+        await db.updatePin(req.params.username, password);
+        res.json({ success: true, message: `Contraseña de ${req.params.username} cambiada a: ${password}`, new_pin: password });
     } catch (err) {
-        res.status(500).json({ error: 'Error al cambiar PIN' });
+        res.status(500).json({ error: 'Error al cambiar contraseña' });
     }
 });
 
