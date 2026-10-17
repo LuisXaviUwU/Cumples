@@ -241,6 +241,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Selectores de días y zodiaco en registro
   const regMonth = document.getElementById('reg-month');
   const regDay = document.getElementById('reg-day');
+  const regZodiac = document.getElementById('reg-zodiac');
 
 
   function updateRegZodiac() {
