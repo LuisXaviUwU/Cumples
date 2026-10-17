@@ -219,11 +219,19 @@
       <!-- Barra Superior de Navegación del Usuario (Sidebar Superior) -->
       <div class="user-subnav-bar">
         <button type="button" class="user-subnav-btn active" id="btn-tab-celebration" data-tab="tab-celebration">
-          <span>🎂</span> Mi Cumpleaños & Alerta
+          <span>🎂</span> Mi Cumpleaños &amp; Alerta
+        </button>
+        <button type="button" class="user-subnav-btn" id="btn-tab-community" data-tab="tab-community">
+          <span>🎊</span> Felicitar
         </button>
         <button type="button" class="user-subnav-btn" id="btn-tab-security" data-tab="tab-security">
-          <span>🔐</span> Seguridad & Claves
+          <span>🔐</span> Seguridad &amp; Claves
         </button>
+      </div>
+
+      <!-- SECCIÓN COMUNIDAD: FELICITACIONES -->
+      <div id="tab-community" class="user-tab-pane" style="display:none;">
+        <div id="community-section"><!-- cargado por JS --></div>
       </div>
 
       <!-- SECCIÓN 1: MI CUMPLEAÑOS & ALERTA -->
