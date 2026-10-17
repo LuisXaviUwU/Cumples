@@ -129,8 +129,9 @@ app.post('/api/auth/register', async (req, res) => {
         if (!username || username.trim().length < 2) {
             return res.status(400).json({ error: 'Ingresa tu nombre de Twitch válido' });
         }
-        if (!pin || pin.trim().length < 4) {
-            return res.status(400).json({ error: 'El PIN debe ser de al menos 4 dígitos' });
+        const cleanPin = pin ? String(pin).trim() : '';
+        if (!cleanPin || cleanPin.length < 6 || cleanPin.length > 10 || !/^\d+$/.test(cleanPin)) {
+            return res.status(400).json({ error: 'El PIN debe ser numérico y tener entre 6 y 10 dígitos' });
         }
         if (!secret_word || secret_word.trim().length < 2) {
             return res.status(400).json({ error: 'Ingresa tu palabra secreta para recuperar tu cuenta si olvidas el PIN' });
@@ -157,7 +158,7 @@ app.post('/api/auth/register', async (req, res) => {
         const newUser = await db.saveUser({
             username: cleanName,
             display_name: cleanName,
-            pin_hash: db.hashPin(pin),
+            pin_hash: db.hashPin(cleanPin),
             recovery_hash: db.hashSecret(secret_word),
             profile_image: avatarUrl,
             birth_month: month,
@@ -189,8 +190,9 @@ app.post('/api/auth/reset-pin', async (req, res) => {
         if (!username || !secret_word || !new_pin) {
             return res.status(400).json({ error: 'Completa todos los campos' });
         }
-        if (new_pin.trim().length < 4) {
-            return res.status(400).json({ error: 'El nuevo PIN debe tener al menos 4 dígitos' });
+        const cleanNewPin = String(new_pin).trim();
+        if (cleanNewPin.length < 6 || cleanNewPin.length > 10 || !/^\d+$/.test(cleanNewPin)) {
+            return res.status(400).json({ error: 'El nuevo PIN debe ser numérico y tener entre 6 y 10 dígitos' });
         }
 
         const user = await db.getUser(username);
@@ -206,7 +208,7 @@ app.post('/api/auth/reset-pin', async (req, res) => {
             return res.status(401).json({ error: 'La palabra secreta es incorrecta' });
         }
 
-        await db.updatePin(user.username, new_pin);
+        await db.updatePin(user.username, cleanNewPin);
         res.json({ success: true, message: '¡PIN restablecido con éxito! Ya puedes iniciar sesión con tu nuevo PIN.' });
     } catch (err) {
         console.error('Error al resetear PIN:', err);
@@ -298,8 +300,12 @@ app.post('/api/birthday/update', authenticateUser, async (req, res) => {
         user.birth_day = day;
         user.custom_message = (custom_message || '').slice(0, 100);
         user.selected_sound = selected_sound || 'HBSilbato.mp3';
-        if (new_pin && new_pin.trim().length >= 4) {
-            user.pin_hash = db.hashPin(new_pin);
+        if (new_pin && String(new_pin).trim().length > 0) {
+            const cleanPin = String(new_pin).trim();
+            if (cleanPin.length < 6 || cleanPin.length > 10 || !/^\d+$/.test(cleanPin)) {
+                return res.status(400).json({ error: 'El nuevo PIN debe ser numérico y tener entre 6 y 10 dígitos' });
+            }
+            user.pin_hash = db.hashPin(cleanPin);
         }
         if (req.body.new_secret && req.body.new_secret.trim().length >= 2) {
             user.recovery_hash = db.hashSecret(req.body.new_secret);
@@ -508,7 +514,8 @@ app.delete('/api/dashboard/birthdays/:username', async (req, res) => {
 app.post('/api/dashboard/users/:username/reset-pin', async (req, res) => {
     try {
         const { new_pin } = req.body;
-        const pin = (new_pin && String(new_pin).trim().length >= 4) ? String(new_pin).trim() : '1234';
+        const candidate = new_pin ? String(new_pin).trim() : '';
+        const pin = (/^\d{6,10}$/.test(candidate)) ? candidate : '123456';
         await db.updatePin(req.params.username, pin);
         res.json({ success: true, message: `PIN de ${req.params.username} cambiado a: ${pin}`, new_pin: pin });
     } catch (err) {
