@@ -372,10 +372,12 @@ app.post('/api/auth/logout', async (req, res) => {
 
 function isUserDateLocked(user) {
     if (!user) return false;
-    if (user.birthday_unlocked === true) return false;
+    // SQLite almacena 1/0, Firestore almacena true/false
+    if (user.birthday_unlocked === true || user.birthday_unlocked === 1) return false;
     if (!user.birth_month || !user.birth_day) return false;
     const regTime = user.created_at ? new Date(user.created_at).getTime() : 0;
-    if (!regTime) return true;
+    // Si no hay created_at, es usuario viejo → no bloqueado (para no afectar registros anteriores)
+    if (!regTime) return false;
     const oneYearMs = 365 * 24 * 60 * 60 * 1000;
     return (Date.now() - regTime < oneYearMs);
 }
@@ -559,6 +561,111 @@ app.post('/api/birthday/alert', authenticateUser, async (req, res) => {
         message: '¡Alerta enviada al directo con éxito!',
         activeOverlayCount: sseClients.size
     });
+});
+
+// ─── API PÚBLICA: Cumpleañeros actuales + próximos 14 días ──────────────────
+app.get('/api/birthday/public-today', async (req, res) => {
+    try {
+        const allUsers = await db.getAllUsers();
+        const today = new Date();
+        const todayMonth = today.getMonth() + 1;
+        const todayDay = today.getDate();
+
+        const result = {
+            today: [],
+            upcoming: []
+        };
+
+        for (const u of allUsers) {
+            if (!u.birth_month || !u.birth_day) continue;
+            const status = getBirthdayStatus(u.birth_month, u.birth_day);
+
+            const entry = {
+                username: u.username,
+                display_name: u.display_name,
+                profile_image: u.profile_image || '/img/yocapi.png',
+                birth_month: u.birth_month,
+                birth_day: u.birth_day,
+                selected_sound: u.selected_sound || 'HBSilbato.mp3'
+            };
+
+            if (status.canCelebrate) {
+                result.today.push({ ...entry, status });
+            } else {
+                // Calcular días hasta cumpleaños en los próximos 14 días
+                const days = status.daysUntilBirthday;
+                if (days > 0 && days <= 14) {
+                    result.upcoming.push({ ...entry, daysUntil: days });
+                }
+            }
+        }
+
+        // Ordenar próximos por días
+        result.upcoming.sort((a, b) => a.daysUntil - b.daysUntil);
+
+        res.json(result);
+    } catch (err) {
+        console.error('Error en /api/birthday/public-today:', err);
+        res.status(500).json({ error: 'Error del servidor' });
+    }
+});
+
+// Cooldown de felicitaciones: username -> timestamp último envío
+const felicitationCooldown = new Map();
+const FELICITATION_COOLDOWN_MS = 60_000; // 60 segundos entre felicitaciones del mismo usuario
+
+// Enviar felicitación al overlay (usuario autenticado felicita a un cumpleañero)
+app.post('/api/birthday/send-felicitation', authenticateUser, async (req, res) => {
+    try {
+        const { target_username, sound } = req.body;
+        if (!target_username || !sound) {
+            return res.status(400).json({ error: 'Faltan parámetros: target_username y sound' });
+        }
+
+        const validSounds = ['HBSilbato.mp3', 'HBVoz.mp3', 'MBMusica.mp3'];
+        if (!validSounds.includes(sound)) {
+            return res.status(400).json({ error: 'Sonido no válido' });
+        }
+
+        // Verificar que el target está de cumpleaños hoy
+        const target = await db.getUser(target_username);
+        if (!target) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        const status = getBirthdayStatus(target.birth_month, target.birth_day);
+        if (!status.canCelebrate) {
+            return res.status(400).json({ error: 'Este usuario no está de cumpleaños hoy' });
+        }
+
+        // Cooldown por usuario que felicita
+        const senderKey = `${req.user.username}_${target_username}`;
+        const lastFelic = felicitationCooldown.get(senderKey) || 0;
+        const now = Date.now();
+        if (now - lastFelic < FELICITATION_COOLDOWN_MS) {
+            const remaining = Math.ceil((FELICITATION_COOLDOWN_MS - (now - lastFelic)) / 1000);
+            return res.status(429).json({ error: `Espera ${remaining}s antes de volver a felicitar` });
+        }
+        felicitationCooldown.set(senderKey, now);
+
+        // Obtener avatar del remitente
+        const sender = await db.getUser(req.user.username);
+        const senderAvatar = sender?.profile_image || '/img/yocapi.png';
+        const senderName = sender?.display_name || req.user.username;
+
+        // Broadcast al overlay como evento de felicitación
+        broadcastToOverlay({
+            type: 'felicitation',
+            from: senderName,
+            fromAvatar: senderAvatar,
+            to: target.display_name,
+            sound,
+            timestamp: Date.now()
+        });
+
+        res.json({ success: true, message: `¡Felicitación enviada a ${target.display_name}!` });
+    } catch (err) {
+        console.error('Error en send-felicitation:', err);
+        res.status(500).json({ error: 'Error del servidor' });
+    }
 });
 
 // Lista de sonidos disponibles
