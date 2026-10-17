@@ -1,0 +1,28 @@
+{
+  "name": "yocapi-birthday-system",
+  "version": "2.0.0",
+  "description": "Plataforma Cloud de Cumpleaños para Twitch & OBS — yocapi_pr",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "twitch",
+    "streamer",
+    "obs",
+    "overlay",
+    "birthday",
+    "render",
+    "firebase"
+  ],
+  "author": "YoCapi Stream Team",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "cors": "^2.8.5",
+    "cookie-parser": "^1.4.7",
+    "firebase-admin": "^13.1.0"
+  }
+}
