@@ -425,8 +425,10 @@ app.get('/api/me', authenticateUser, async (req, res) => {
             }).catch(() => {});
         }
 
-        const status = getBirthdayStatus(user.birth_month, user.birth_day);
         const isLocked = isUserDateLocked(user);
+        const status = (!isLocked || !user.birth_month || !user.birth_day)
+            ? { canCelebrate: false, isToday: false, isGracePeriod: false, daysUntilBirthday: 0 }
+            : getBirthdayStatus(user.birth_month, user.birth_day);
 
         res.json({
             user: {
@@ -612,7 +614,7 @@ app.get('/api/birthday/public-today', async (req, res) => {
         };
 
         for (const u of allUsers) {
-            if (!u.birth_month || !u.birth_day) continue;
+            if (!u.birth_month || !u.birth_day || u.birthday_unlocked === true || u.birthday_unlocked === 1) continue;
             const status = getBirthdayStatus(u.birth_month, u.birth_day);
 
             const entry = {
@@ -811,6 +813,7 @@ app.get('/api/dashboard/today', authenticateDashboard, async (req, res) => {
     const todayList = [];
 
     for (const u of allUsers) {
+        if (!u.birth_month || !u.birth_day || u.birthday_unlocked === true || u.birthday_unlocked === 1) continue;
         const status = getBirthdayStatus(u.birth_month, u.birth_day);
         if (status.canCelebrate) {
             todayList.push({
@@ -867,9 +870,11 @@ app.post('/api/dashboard/users/:username/unlock-date', authenticateDashboard, as
         if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
         user.birthday_unlocked = true;
+        user.birth_month = 0;
+        user.birth_day = 0;
         await db.saveUser(user);
 
-        res.json({ success: true, message: `¡Fecha de @${user.username} desbloqueada! Ya podrá modificarla en su perfil.` });
+        res.json({ success: true, message: `¡Fecha de @${user.username} desbloqueada y reseteada! Ya puede elegir y confirmar su fecha correcta en su perfil.` });
     } catch (err) {
         res.status(500).json({ error: 'Error al desbloquear fecha' });
     }

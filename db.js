@@ -119,6 +119,12 @@ function initDatabase() {
     try {
         sqliteDb.exec("ALTER TABLE users ADD COLUMN recovery_hash TEXT DEFAULT '';");
     } catch (e) {}
+    try {
+        sqliteDb.exec("ALTER TABLE users ADD COLUMN birthday_unlocked INTEGER DEFAULT 0;");
+    } catch (e) {}
+    try {
+        sqliteDb.exec("ALTER TABLE users ADD COLUMN created_at TEXT DEFAULT '';");
+    } catch (e) {}
 
     mode = 'sqlite';
     console.log('💾 [DB] Conectado a SQLite local (data/birthdays.db)');
@@ -153,25 +159,33 @@ const db = {
             pin_hash: data.pin_hash,
             recovery_hash: data.recovery_hash || '',
             profile_image: data.profile_image || `/img/yocapi.png`,
-            birth_month: parseInt(data.birth_month, 10),
-            birth_day: parseInt(data.birth_day, 10),
+            birth_month: parseInt(data.birth_month, 10) || 0,
+            birth_day: parseInt(data.birth_day, 10) || 0,
             custom_message: (data.custom_message || '').slice(0, 100),
             selected_sound: data.selected_sound || 'HBSilbato.mp3',
             registered_at: data.registered_at || new Date().toISOString(),
             last_changed_at: new Date().toISOString(),
             last_activated: data.last_activated || null,
-            last_played_date: data.last_played_date || null
+            last_played_date: data.last_played_date || null,
+            birthday_unlocked: (data.birthday_unlocked === true || data.birthday_unlocked === 1) ? 1 : 0,
+            created_at: data.created_at || data.registered_at || new Date().toISOString()
         };
 
         if (mode === 'firestore') {
-            await firestoreDb.collection('users').doc(username).set(record, { merge: true });
+            // In Firestore, store boolean directly
+            const firestoreRecord = {
+                ...record,
+                birthday_unlocked: (data.birthday_unlocked === true || data.birthday_unlocked === 1)
+            };
+            await firestoreDb.collection('users').doc(username).set(firestoreRecord, { merge: true });
         } else {
             const stmt = sqliteDb.prepare(`
                 INSERT INTO users (
                     username, display_name, pin_hash, recovery_hash, profile_image,
                     birth_month, birth_day, custom_message, selected_sound,
-                    registered_at, last_changed_at, last_activated, last_played_date
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    registered_at, last_changed_at, last_activated, last_played_date,
+                    birthday_unlocked, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(username) DO UPDATE SET
                     display_name = excluded.display_name,
                     pin_hash = excluded.pin_hash,
@@ -183,12 +197,15 @@ const db = {
                     selected_sound = excluded.selected_sound,
                     last_changed_at = excluded.last_changed_at,
                     last_activated = excluded.last_activated,
-                    last_played_date = excluded.last_played_date
+                    last_played_date = excluded.last_played_date,
+                    birthday_unlocked = excluded.birthday_unlocked,
+                    created_at = CASE WHEN excluded.created_at != '' THEN excluded.created_at ELSE users.created_at END
             `);
             stmt.run(
                 record.username, record.display_name, record.pin_hash, record.recovery_hash, record.profile_image,
                 record.birth_month, record.birth_day, record.custom_message, record.selected_sound,
-                record.registered_at, record.last_changed_at, record.last_activated, record.last_played_date
+                record.registered_at, record.last_changed_at, record.last_activated, record.last_played_date,
+                record.birthday_unlocked, record.created_at
             );
         }
         return record;
