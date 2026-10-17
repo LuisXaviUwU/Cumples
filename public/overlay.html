@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YoCapi OBS Birthday Overlay</title>
+  <link rel="stylesheet" href="/css/overlay.css">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+  <!-- Alerta Principal para OBS -->
+  <div id="alert-wrapper" class="alert-wrapper">
+    <div class="alert-card">
+      <div class="alert-avatar-box">
+        <div class="alert-avatar-ring"></div>
+        <img id="alert-avatar" src="/img/yocapi.png" alt="Avatar" class="alert-avatar-img">
+      </div>
+      <div class="alert-details">
+        <div class="alert-tagline" id="alert-tagline">
+          <span>🎂</span> <span id="alert-tagline-text">¡Hoy es su Cumpleaños!</span>
+        </div>
+        <div class="alert-username" id="alert-username">Usuario</div>
+        <div class="alert-quote" id="alert-quote" style="display: none;"></div>
+        <div class="alert-queue-tag" id="alert-queue-tag" style="display: none;"></div>
+      </div>
+      <div class="alert-decor">🎉</div>
+    </div>
+  </div>
+
+  <!-- Estado de conexión para pruebas con ?debug=1 -->
+  <div id="debug-status" class="obs-debug-status">OBS: Conectando...</div>
+
+  <script src="/js/overlay.js"></script>
+</body>
+</html>

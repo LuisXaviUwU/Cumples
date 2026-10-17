@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cumpleaños — YoCapi Stream Community</title>
+  <meta name="description" content="Registra tu cumpleaños para recibir una alerta personalizada en directo en el stream de yocapi_pr.">
+  <link rel="icon" href="/img/HB.png" type="image/png">
+  <link rel="stylesheet" href="/css/style.css">
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+  <!-- Fondo Cósmico Dinámico -->
+  <div class="cosmic-bg">
+    <div class="aurora-glow glow-1"></div>
+    <div class="aurora-glow glow-2"></div>
+    <div class="aurora-glow glow-3"></div>
+  </div>
+
+  <!-- Barra Superior -->
+  <header class="topbar">
+    <a href="/" class="brand-wrap">
+      <div class="brand-avatar">
+        <img src="/img/yocapi.png" alt="yocapi_pr" id="streamer-avatar">
+      </div>
+      <div class="brand-text">
+        <h1 id="streamer-heading">yocapi_pr</h1>
+        <div class="streamer-tag">
+          <span class="live-indicator"></span> Twitch Streamer
+        </div>
+      </div>
+    </a>
+    <div class="topbar-actions">
+      <a href="/dashboard" class="btn-logout" style="border-color: var(--border-glow); color: var(--twitch-light);">
+        ⚙️ Panel Streamer
+      </a>
+    </div>
+  </header>
+
+  <!-- Contenedor Principal -->
+  <main class="app-container">
+    <div class="hero-header">
+      <div class="hero-badge">✨ Celebración en Directo</div>
+      <h2 class="hero-title">¡Festeja tu <span>Cumpleaños</span> en Stream!</h2>
+      <p class="hero-subtitle">
+        Registra tu fecha especial y cuando llegue tu día, lanza una alerta visual y sonora personalizada directamente en la pantalla de <strong>yocapi_pr</strong>.
+      </p>
+    </div>
+
+    <!-- ESTADO: CARGANDO -->
+    <div id="state-loading" class="glass-card" style="text-align: center; padding: 48px;">
+      <div style="font-size: 2rem; margin-bottom: 12px; animation: pulse-play 1s infinite alternate;">🎂</div>
+      <p style="color: var(--text-muted); font-weight: 600;">Cargando sistema de cumpleaños...</p>
+    </div>
+
+    <!-- ESTADO: NO LOGUEADO (LOGIN CON TWITCH) -->
+    <div id="state-guest" class="glass-card twitch-login-card" style="display: none;">
+      <div style="margin-bottom: 24px;">
+        <img src="/img/HB.png" alt="Happy Birthday" style="width: 80px; height: 80px; object-fit: contain; filter: drop-shadow(0 0 16px var(--twitch-glow));">
+      </div>
+      <h3 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 10px;">Inicia sesión con tu cuenta de Twitch</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 440px; margin: 0 auto 28px; line-height: 1.5;">
+        Solo los seguidores del canal pueden registrar su fecha y activar su alerta en vivo.
+      </p>
+      <a href="/auth/twitch/user" class="btn-twitch">
+        <svg viewBox="0 0 24 24"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
+        <span>Conectar con Twitch</span>
+      </a>
+      <div style="margin-top: 24px; display: flex; justify-content: center; gap: 20px; font-size: 0.78rem; color: var(--text-dim);">
+        <span>🔒 Seguro & Oficial</span>
+        <span>🎉 Alerta en OBS</span>
+        <span>🗓️ 14 Días de Gracia</span>
+      </div>
+    </div>
+
+    <!-- ESTADO: LOGUEADO -->
+    <div id="state-user" style="display: none;">
+      <!-- Perfil del usuario -->
+      <div class="profile-pill">
+        <div class="profile-info">
+          <img src="" alt="Avatar" id="user-avatar" class="profile-avatar">
+          <div class="profile-names">
+            <h3 id="user-name">Usuario</h3>
+            <p id="user-login">@usuario</p>
+          </div>
+        </div>
+        <a href="/auth/logout" class="btn-logout">Cerrar Sesión</a>
+      </div>
+
+      <!-- Tarjeta de Estado de Celebración -->
+      <div id="celebration-box" class="celebration-box waiting">
+        <div class="bday-tag" id="status-tag">🗓️ Estado de Cumpleaños</div>
+        <h3 class="celebration-title" id="status-title">Registra tu fecha</h3>
+        <p class="celebration-desc" id="status-desc">
+          Elige tu mes y día abajo para activar tu alerta en stream.
+        </p>
+        <button id="btn-launch-alert" class="btn-launch-alert" style="display: none;">
+          <span>🎉</span> ¡LANZAR ALERTA EN DIRECTO! <span>🚀</span>
+        </button>
+        <div id="alert-cooldown-text" style="font-size: 0.78rem; color: var(--accent-gold); margin-top: 10px; display: none;"></div>
+      </div>
+
+      <!-- Formulario de Cumpleaños -->
+      <div class="glass-card">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+          <div>
+            <h3 style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 700;">Tu Fecha de Cumpleaños</h3>
+            <p style="color: var(--text-dim); font-size: 0.82rem;">Puedes actualizarla cuando lo necesites.</p>
+          </div>
+          <div id="zodiac-badge" style="display: none; padding: 6px 12px; background: rgba(251, 191, 36, 0.12); border: 1px solid var(--border-gold); border-radius: var(--radius-pill); font-size: 0.8rem; font-weight: 700; color: var(--accent-gold);">
+            ✨ Signo Zodiacal
+          </div>
+        </div>
+
+        <form id="bday-form">
+          <div class="form-grid">
+            <div class="input-group">
+              <label class="input-label" for="select-month">Mes de Nacimiento</label>
+              <select id="select-month" class="custom-select" required>
+                <option value="" disabled selected>Selecciona tu mes...</option>
+                <option value="1">❄️ Enero</option>
+                <option value="2">💘 Febrero</option>
+                <option value="3">🍀 Marzo</option>
+                <option value="4">🌸 Abril</option>
+                <option value="5">💐 Mayo</option>
+                <option value="6">☀️ Junio</option>
+                <option value="7">🏖️ Julio</option>
+                <option value="8">🍉 Agosto</option>
+                <option value="9">🍂 Septiembre</option>
+                <option value="10">🎃 Octubre</option>
+                <option value="11">🍁 Noviembre</option>
+                <option value="12">🎄 Diciembre</option>
+              </select>
+            </div>
+
+            <div class="input-group">
+              <label class="input-label" for="select-day">Día</label>
+              <select id="select-day" class="custom-select" required>
+                <option value="" disabled selected>Selecciona tu día...</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Mensaje personalizado -->
+          <div class="input-group">
+            <label class="input-label" for="input-message">
+              <span>Mensaje en Pantalla</span>
+              <span id="char-counter" style="font-size: 0.72rem; color: var(--text-dim);">0/100</span>
+            </label>
+            <input type="text" id="input-message" class="custom-input" maxlength="100" placeholder="Ej: ¡Un año más acompañando los streams! 🥳">
+          </div>
+
+          <!-- Sonido de la alerta -->
+          <div class="input-group">
+            <label class="input-label">Efecto de Sonido para tu Alerta</label>
+            <div class="sound-cards-grid" id="sound-options-container">
+              <!-- Cargado dinámicamente -->
+            </div>
+          </div>
+
+          <button type="submit" id="btn-save-bday" class="btn-save">
+            💾 Guardar Cumpleaños
+          </button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <!-- Contenedor Toasts -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <footer>
+    <p>YoCapi Birthday System v2.0 • Diseñado para la comunidad de <a href="https://twitch.tv/yocapi_pr" target="_blank" rel="noopener">yocapi_pr</a></p>
+  </footer>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
