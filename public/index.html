@@ -221,71 +221,168 @@
           style="font-size: 0.78rem; color: var(--accent-gold); margin-top: 10px; display: none;"></div>
       </div>
 
-      <!-- Editar Datos / Cambiar PIN -->
-      <div class="glass-card">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-          <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700;">Editar Mis Datos</h3>
-          <div id="user-zodiac-badge" style="font-size: 0.78rem; font-weight: 700; color: var(--accent-gold);"></div>
+      <!-- Barra Superior de Navegación del Usuario (Sidebar Superior) -->
+      <div class="user-subnav-bar">
+        <button type="button" class="user-subnav-btn active" id="btn-tab-celebration" data-tab="tab-celebration">
+          <span>🎂</span> Mi Cumpleaños & Alerta
+        </button>
+        <button type="button" class="user-subnav-btn" id="btn-tab-security" data-tab="tab-security">
+          <span>🔐</span> Seguridad & Claves
+        </button>
+      </div>
+
+      <!-- SECCIÓN 1: MI CUMPLEAÑOS & ALERTA -->
+      <div id="tab-celebration" class="user-tab-pane">
+        <div class="glass-card">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+            <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700;">Configurar Mi Alerta</h3>
+            <div id="user-zodiac-badge" style="font-size: 0.78rem; font-weight: 700; color: var(--accent-gold);"></div>
+          </div>
+
+          <form id="form-edit-celebration">
+            <div class="form-row-grid">
+              <div class="input-group" style="margin-bottom: 0;">
+                <label class="input-label" for="edit-month">Mes</label>
+                <select id="edit-month" class="custom-select" required>
+                  <option value="1">❄️ Enero</option>
+                  <option value="2">💘 Febrero</option>
+                  <option value="3">🍀 Marzo</option>
+                  <option value="4">🌸 Abril</option>
+                  <option value="5">💐 Mayo</option>
+                  <option value="6">☀️ Junio</option>
+                  <option value="7">🏖️ Julio</option>
+                  <option value="8">🍉 Agosto</option>
+                  <option value="9">🍂 Septiembre</option>
+                  <option value="10">🎃 Octubre</option>
+                  <option value="11">🍁 Noviembre</option>
+                  <option value="12">🎄 Diciembre</option>
+                </select>
+              </div>
+
+              <div class="input-group" style="margin-bottom: 0;">
+                <label class="input-label" for="edit-day">Día</label>
+                <select id="edit-day" class="custom-select" required></select>
+              </div>
+            </div>
+
+            <!-- Aviso de fecha de 1 año -->
+            <div class="bday-lock-notice">
+              <span>🔒</span>
+              <span>Tu fecha de cumpleaños está fijada por 1 año para evitar alertas duplicadas.</span>
+            </div>
+
+            <div class="input-group" style="margin-top: 16px;">
+              <label class="input-label" for="edit-message">
+                <span>Mensaje en Pantalla</span>
+                <span id="edit-char-counter" style="font-size: 0.7rem; color: var(--text-dim);">0/100</span>
+              </label>
+              <input type="text" id="edit-message" class="custom-input" maxlength="100"
+                placeholder="Ej: ¡Un año más en el stream! 🥳">
+            </div>
+
+            <div class="input-group">
+              <label class="input-label">Efecto de Sonido</label>
+              <div class="sound-cards-grid" id="edit-sound-container"></div>
+            </div>
+
+            <button type="submit" id="btn-save-celebration" class="btn-primary">
+              💾 Guardar Configuración de Alerta
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- SECCIÓN 2: SEGURIDAD & RECUPERACIÓN (SECCIÓN APARTE) -->
+      <div id="tab-security" class="user-tab-pane" style="display: none;">
+        <!-- Caja explicativa de cómo funciona el sistema -->
+        <div class="security-explainer-card">
+          <div class="security-explainer-header">
+            <span style="font-size: 1.4rem;">🛡️</span>
+            <h4>¿Cómo funciona la seguridad de tu cuenta?</h4>
+          </div>
+          <div class="security-points-list">
+            <div class="security-point">
+              <span class="security-point-icon">🔑</span>
+              <div>
+                <strong>Tu Contraseña (6 a 15 caracteres):</strong> Te permite iniciar sesión para modificar tu mensaje, escuchar tus sonidos y activar tu alerta en tu día especial.
+              </div>
+            </div>
+            <div class="security-point">
+              <span class="security-point-icon">🛟</span>
+              <div>
+                <strong>Tu Palabra Secreta:</strong> Es tu llave de rescate. Si alguna vez olvidas tu contraseña, vas a <em>"¿Olvidaste tu contraseña?"</em> en el inicio, introduces tu usuario y esta palabra, y podrás crear una nueva contraseña tú mismo al instante sin necesidad de pedir ayuda al streamer.
+              </div>
+            </div>
+            <div class="security-point">
+              <span class="security-point-icon">🔒</span>
+              <div>
+                <strong>Privacidad y Cifrado:</strong> Toda tu información está resguardada con cifrado hash criptográfico seguro (SHA-256 con salt) en Firestore.
+              </div>
+            </div>
+          </div>
         </div>
 
-        <form id="form-edit">
-          <div class="form-row-grid">
-            <div class="input-group" style="margin-bottom: 0;">
-              <label class="input-label" for="edit-month">Mes</label>
-              <select id="edit-month" class="custom-select" required>
-                <option value="1">❄️ Enero</option>
-                <option value="2">💘 Febrero</option>
-                <option value="3">🍀 Marzo</option>
-                <option value="4">🌸 Abril</option>
-                <option value="5">💐 Mayo</option>
-                <option value="6">☀️ Junio</option>
-                <option value="7">🏖️ Julio</option>
-                <option value="8">🍉 Agosto</option>
-                <option value="9">🍂 Septiembre</option>
-                <option value="10">🎃 Octubre</option>
-                <option value="11">🍁 Noviembre</option>
-                <option value="12">🎄 Diciembre</option>
-              </select>
+        <!-- Formulario de cambio de contraseña y palabra secreta -->
+        <div class="glass-card">
+          <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700; margin-bottom: 16px;">
+            Cambiar Contraseña o Palabra Secreta
+          </h3>
+
+          <form id="form-edit-security">
+            <div class="input-group">
+              <label class="input-label" for="edit-pin">Nueva Contraseña (Opcional, 6 a 15 caracteres)</label>
+              <input type="password" id="edit-pin" class="custom-input" placeholder="Escribe tu nueva contraseña"
+                minlength="6" maxlength="15">
             </div>
 
-            <div class="input-group" style="margin-bottom: 0;">
-              <label class="input-label" for="edit-day">Día</label>
-              <select id="edit-day" class="custom-select" required></select>
+            <div class="input-group">
+              <label class="input-label" for="edit-secret">Nueva Palabra Secreta de Recuperación (Opcional)</label>
+              <input type="text" id="edit-secret" class="custom-input" placeholder="Escribe tu nueva palabra secreta">
             </div>
-          </div>
 
-          <div class="input-group" style="margin-top: 16px;">
-            <label class="input-label" for="edit-message">
-              <span>Mensaje en Pantalla</span>
-              <span id="edit-char-counter" style="font-size: 0.7rem; color: var(--text-dim);">0/100</span>
-            </label>
-            <input type="text" id="edit-message" class="custom-input" maxlength="100"
-              placeholder="Ej: ¡Un año más en el stream! 🥳">
-          </div>
-
-          <div class="input-group">
-            <label class="input-label">Efecto de Sonido</label>
-            <div class="sound-cards-grid" id="edit-sound-container"></div>
-          </div>
-
-          <div class="input-group">
-            <label class="input-label" for="edit-pin">Cambiar Contraseña (Opcional, 6 a 15 caracteres)</label>
-            <input type="password" id="edit-pin" class="custom-input" placeholder="Dejar en blanco para no cambiarla"
-              minlength="6" maxlength="15">
-          </div>
-
-          <div class="input-group">
-            <label class="input-label" for="edit-secret">Cambiar Palabra Secreta (Opcional)</label>
-            <input type="text" id="edit-secret" class="custom-input" placeholder="Dejar en blanco para no cambiarla">
-          </div>
-
-          <button type="submit" id="btn-save-edit" class="btn-primary">
-            💾 Guardar Cambios
-          </button>
-        </form>
+            <button type="submit" id="btn-save-security" class="btn-primary">
+              💾 Actualizar Seguridad
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   </main>
+
+  <!-- Modal de Confirmación de Fecha de Cumpleaños (En la Página) -->
+  <div id="modal-confirm-bday" class="custom-modal-backdrop" style="display: none;">
+    <div class="custom-modal-card">
+      <div class="modal-icon-wrap">
+        <span>⚠️</span>
+      </div>
+      <h3 class="modal-title">¿Tu fecha es correcta?</h3>
+      <p class="modal-subtitle">Confirma la fecha de tu cumpleaños antes de registrarte</p>
+
+      <div class="modal-date-display">
+        <span class="modal-date-cake">🎂</span>
+        <div class="modal-date-info">
+          <h4 id="modal-date-text">17 de Octubre</h4>
+          <p id="modal-zodiac-text">✨ Signo: Libra</p>
+        </div>
+      </div>
+
+      <div class="modal-alert-box">
+        <span class="modal-alert-icon">🔒</span>
+        <p>
+          <strong>Aviso importante:</strong> Verifica que la fecha sea la correcta, porque <strong>no podrás volver a cambiarla dentro de 1 año</strong>. Esto evita que se lancen alertas repetidas en el directo.
+        </p>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="btn-modal-cancel" class="btn-modal-secondary">
+          ✏️ Corregir Fecha
+        </button>
+        <button type="button" id="btn-modal-confirm" class="btn-modal-primary">
+          ✅ Sí, es correcta
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Contenedor Toasts -->
   <div class="toast-container" id="toast-container"></div>
