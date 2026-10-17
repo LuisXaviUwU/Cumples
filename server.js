@@ -528,6 +528,13 @@ app.post('/api/birthday/alert', authenticateUser, async (req, res) => {
     const user = await db.getUser(req.user.username);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
+    // Si la fecha fue desbloqueada para corrección, no se puede lanzar alerta hasta confirmar la nueva fecha
+    if (!isUserDateLocked(user)) {
+        return res.status(400).json({
+            error: 'Tu fecha de cumpleaños está desbloqueada para corrección. Por favor selecciona tu fecha correcta y guárdala para confirmarla antes de lanzar alertas.'
+        });
+    }
+
     const status = getBirthdayStatus(user.birth_month, user.birth_day);
     if (!status.canCelebrate) {
         return res.status(400).json({
