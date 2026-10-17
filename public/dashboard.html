@@ -10,23 +10,8 @@
 </head>
 <body>
 
-  <!-- PANTALLA DE BLOQUEO / CLAVE DE ACCESO -->
-  <div id="lock-screen" class="lock-screen" style="display: none;">
-    <div class="lock-card">
-      <img src="/img/yocapi.png" alt="yocapi_pr" class="lock-avatar">
-      <h2 style="font-family: var(--font-h); font-size: 1.6rem; margin-bottom: 6px;">Panel de Streamer</h2>
-      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 24px;">Ingresa tu clave de acceso para administrar los cumpleaños y el overlay de OBS.</p>
-      
-      <form id="lock-form">
-        <input type="password" id="lock-key-input" class="custom-input" placeholder="Clave de acceso (DASHBOARD_KEY)" style="margin-bottom: 14px; text-align: center;" required autofocus>
-        <button type="submit" class="btn-save" style="margin-top: 0;">Desbloquear Panel →</button>
-      </form>
-      <div id="lock-error" style="color: var(--c-pink); font-size: 0.82rem; margin-top: 12px; display: none;">Clave incorrecta</div>
-    </div>
-  </div>
-
   <!-- DASHBOARD PRINCIPAL -->
-  <div id="dash-app" class="dash-layout" style="display: none;">
+  <div id="dash-app" class="dash-layout">
     
     <!-- Sidebar -->
     <aside class="dash-sidebar">
