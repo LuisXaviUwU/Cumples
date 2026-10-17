@@ -115,11 +115,6 @@
             </div>
           </div>
 
-          <div id="reg-zodiac"
-            style="display: none; margin: 10px 0 16px; font-size: 0.8rem; font-weight: 700; color: var(--accent-gold);">
-            ✨ Signo Zodiacal
-          </div>
-
           <div class="input-group">
             <label class="input-label" for="reg-secret">
               <span>Palabra Secreta</span>
@@ -234,41 +229,54 @@
       <!-- SECCIÓN 1: MI CUMPLEAÑOS & ALERTA -->
       <div id="tab-celebration" class="user-tab-pane">
         <div class="glass-card">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+          <div style="margin-bottom: 16px;">
             <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700;">Configurar Mi Alerta</h3>
-            <div id="user-zodiac-badge" style="font-size: 0.78rem; font-weight: 700; color: var(--accent-gold);"></div>
           </div>
 
           <form id="form-edit-celebration">
-            <div class="form-row-grid">
-              <div class="input-group" style="margin-bottom: 0;">
-                <label class="input-label" for="edit-month">Mes</label>
-                <select id="edit-month" class="custom-select" required>
-                  <option value="1">❄️ Enero</option>
-                  <option value="2">💘 Febrero</option>
-                  <option value="3">🍀 Marzo</option>
-                  <option value="4">🌸 Abril</option>
-                  <option value="5">💐 Mayo</option>
-                  <option value="6">☀️ Junio</option>
-                  <option value="7">🏖️ Julio</option>
-                  <option value="8">🍉 Agosto</option>
-                  <option value="9">🍂 Septiembre</option>
-                  <option value="10">🎃 Octubre</option>
-                  <option value="11">🍁 Noviembre</option>
-                  <option value="12">🎄 Diciembre</option>
-                </select>
-              </div>
-
-              <div class="input-group" style="margin-bottom: 0;">
-                <label class="input-label" for="edit-day">Día</label>
-                <select id="edit-day" class="custom-select" required></select>
+            <!-- Tarjeta de Fecha Confirmada y Bloqueada -->
+            <div id="box-date-locked" class="locked-date-card" style="display: none;">
+              <div class="locked-date-icon">🎂</div>
+              <div class="locked-date-content">
+                <span class="locked-date-label">Fecha de Cumpleaños Confirmada</span>
+                <h4 id="locked-date-display">17 de Octubre</h4>
+                <p class="locked-date-hint">
+                  <span>🔒</span> Fecha fijada por 1 año. Si necesitas corregirla, contacta a la streamer para desbloquearla.
+                </p>
               </div>
             </div>
 
-            <!-- Aviso de fecha de 1 año -->
-            <div class="bday-lock-notice">
-              <span>🔒</span>
-              <span>Tu fecha de cumpleaños está fijada por 1 año para evitar alertas duplicadas.</span>
+            <!-- Selectores de Fecha (Solo visibles si la streamer la desbloqueó o expiró el año) -->
+            <div id="box-date-editable" style="display: none;">
+              <div class="form-row-grid">
+                <div class="input-group" style="margin-bottom: 0;">
+                  <label class="input-label" for="edit-month">Mes</label>
+                  <select id="edit-month" class="custom-select">
+                    <option value="1">❄️ Enero</option>
+                    <option value="2">💘 Febrero</option>
+                    <option value="3">🍀 Marzo</option>
+                    <option value="4">🌸 Abril</option>
+                    <option value="5">💐 Mayo</option>
+                    <option value="6">☀️ Junio</option>
+                    <option value="7">🏖️ Julio</option>
+                    <option value="8">🍉 Agosto</option>
+                    <option value="9">🍂 Septiembre</option>
+                    <option value="10">🎃 Octubre</option>
+                    <option value="11">🍁 Noviembre</option>
+                    <option value="12">🎄 Diciembre</option>
+                  </select>
+                </div>
+
+                <div class="input-group" style="margin-bottom: 0;">
+                  <label class="input-label" for="edit-day">Día</label>
+                  <select id="edit-day" class="custom-select"></select>
+                </div>
+              </div>
+
+              <div class="bday-lock-notice">
+                <span>⚠️</span>
+                <span>Tu fecha está desbloqueada. Al guardar, quedará fijada por 1 año.</span>
+              </div>
             </div>
 
             <div class="input-group" style="margin-top: 16px;">
@@ -362,7 +370,6 @@
         <span class="modal-date-cake">🎂</span>
         <div class="modal-date-info">
           <h4 id="modal-date-text">17 de Octubre</h4>
-          <p id="modal-zodiac-text">✨ Signo: Libra</p>
         </div>
       </div>
 
