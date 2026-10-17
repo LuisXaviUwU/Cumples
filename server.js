@@ -21,6 +21,8 @@ const PORT = process.env.PORT || 3001;
 const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
 const STREAMER_LOGIN = (process.env.STREAMER_LOGIN || 'yocapi_pr').toLowerCase();
 const OVERLAY_TOKEN = process.env.OVERLAY_TOKEN || '33c98a5e7659ee191e539ec5cbb7a1b131266643dbd752b6';
+const DASHBOARD_SECRET_PATH = process.env.DASHBOARD_PATH || 'panel-streamer-yocapi-9842';
+const DASHBOARD_KEY = process.env.DASHBOARD_KEY || 'yocapi_dash_auth_8492';
 
 const BIRTHDAY_GRACE_DAYS = 14;
 const ALERT_COOLDOWN_MS = 30_000; // 30 segundos entre alertas del mismo usuario
@@ -267,7 +269,8 @@ app.post('/api/auth/register', async (req, res) => {
             birth_month: month,
             birth_day: day,
             custom_message: custom_message || '',
-            selected_sound: selected_sound || 'HBSilbato.mp3'
+            selected_sound: selected_sound || 'HBSilbato.mp3',
+            created_at: new Date().toISOString()
         });
 
         const token = crypto.randomBytes(32).toString('hex');
@@ -409,19 +412,46 @@ app.post('/api/birthday/update', authenticateUser, async (req, res) => {
         const user = await db.getUser(req.user.username);
         if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-        const month = parseInt(birth_month, 10);
-        const day = parseInt(birth_day, 10);
-        if (isNaN(month) || month < 1 || month > 12) {
-            return res.status(400).json({ error: 'Mes inválido' });
-        }
-        if (isNaN(day) || day < 1 || day > 31) {
-            return res.status(400).json({ error: 'Día inválido' });
+        let month = user.birth_month;
+        let day = user.birth_day;
+
+        // Si se envió mes o día para actualizar
+        if (birth_month !== undefined && birth_day !== undefined) {
+            const m = parseInt(birth_month, 10);
+            const d = parseInt(birth_day, 10);
+            if (isNaN(m) || m < 1 || m > 12) {
+                return res.status(400).json({ error: 'Mes inválido' });
+            }
+            if (isNaN(d) || d < 1 || d > 31) {
+                return res.status(400).json({ error: 'Día inválido' });
+            }
+
+            // Validar restricción de cambio de fecha por 1 año
+            if (user.birth_month && user.birth_day && (user.birth_month !== m || user.birth_day !== d)) {
+                const registeredAt = user.created_at ? new Date(user.created_at).getTime() : 0;
+                const oneYearMs = 365 * 24 * 60 * 60 * 1000;
+                const now = Date.now();
+                if (registeredAt && (now - registeredAt < oneYearMs)) {
+                    const daysLeft = Math.ceil((oneYearMs - (now - registeredAt)) / (24 * 60 * 60 * 1000));
+                    return res.status(400).json({
+                        error: `Tu fecha de cumpleaños no se puede cambiar hasta dentro de ${daysLeft} días (bloqueo de 1 año). Pídele a yocapi_pr que la modifique si necesitas corregirla.`
+                    });
+                }
+            }
+
+            month = m;
+            day = d;
+            user.birth_month = m;
+            user.birth_day = d;
         }
 
-        user.birth_month = month;
-        user.birth_day = day;
-        user.custom_message = (custom_message || '').slice(0, 100);
-        user.selected_sound = selected_sound || 'HBSilbato.mp3';
+        if (custom_message !== undefined) {
+            user.custom_message = (custom_message || '').slice(0, 100);
+        }
+        if (selected_sound) {
+            user.selected_sound = selected_sound;
+        }
+
         const newPass = req.body.new_password || new_pin;
         if (newPass && String(newPass).trim().length > 0) {
             const cleanPass = String(newPass).trim();
@@ -579,9 +609,17 @@ setInterval(() => {
     }
 }, 20_000);
 
-// ─── API DASHBOARD STREAMER (SIN CLAVE) ──────────────────────────────────────
+// ─── Middleware de Seguridad para el Dashboard ──────────────────────────────
+function authenticateDashboard(req, res, next) {
+    if (req.cookies?.yocapi_dashboard_auth === DASHBOARD_KEY) {
+        return next();
+    }
+    return res.status(403).json({ error: 'Acceso no autorizado al panel de streamer' });
+}
 
-app.get('/api/dashboard/stats', async (req, res) => {
+// ─── API DASHBOARD STREAMER (PROTEGIDA) ──────────────────────────────────────
+
+app.get('/api/dashboard/stats', authenticateDashboard, async (req, res) => {
     const allUsers = await db.getAllUsers();
     const alertLogs = await db.getAlertLogs(100);
 
@@ -606,7 +644,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
     });
 });
 
-app.get('/api/dashboard/today', async (req, res) => {
+app.get('/api/dashboard/today', authenticateDashboard, async (req, res) => {
     const allUsers = await db.getAllUsers();
     const todayList = [];
 
@@ -623,7 +661,7 @@ app.get('/api/dashboard/today', async (req, res) => {
     res.json(todayList);
 });
 
-app.get('/api/dashboard/birthdays', async (req, res) => {
+app.get('/api/dashboard/birthdays', authenticateDashboard, async (req, res) => {
     const month = req.query.month ? parseInt(req.query.month, 10) : null;
     const search = (req.query.search || '').toLowerCase().trim();
 
@@ -642,13 +680,13 @@ app.get('/api/dashboard/birthdays', async (req, res) => {
     res.json(all);
 });
 
-app.delete('/api/dashboard/birthdays/:username', async (req, res) => {
+app.delete('/api/dashboard/birthdays/:username', authenticateDashboard, async (req, res) => {
     await db.deleteUser(req.params.username);
     res.json({ success: true });
 });
 
 // Cambiar o restablecer Contraseña de un usuario desde el Dashboard
-app.post('/api/dashboard/users/:username/reset-pin', async (req, res) => {
+app.post('/api/dashboard/users/:username/reset-pin', authenticateDashboard, async (req, res) => {
     try {
         const { new_pin, new_password } = req.body;
         const candidate = (new_password || new_pin) ? String(new_password || new_pin).trim() : '';
@@ -661,7 +699,7 @@ app.post('/api/dashboard/users/:username/reset-pin', async (req, res) => {
 });
 
 // Lanzar alerta manual o de prueba desde el Dashboard
-app.post('/api/dashboard/trigger-alert', async (req, res) => {
+app.post('/api/dashboard/trigger-alert', authenticateDashboard, async (req, res) => {
     const { user, sound, message, avatar, theme } = req.body;
 
     let finalAvatar = avatar;
@@ -697,15 +735,29 @@ app.post('/api/dashboard/trigger-alert', async (req, res) => {
     });
 });
 
-app.get('/api/dashboard/logs', async (req, res) => {
+app.get('/api/dashboard/logs', authenticateDashboard, async (req, res) => {
     const logs = await db.getAlertLogs(30);
     res.json(logs);
 });
 
 // ─── Rutas Frontend ─────────────────────────────────────────────────────────
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
 app.get('/overlay', (req, res) => res.sendFile(path.join(__dirname, 'public', 'overlay.html')));
+
+// Ruta secreta del Dashboard
+app.get(`/${DASHBOARD_SECRET_PATH}`, (req, res) => {
+    res.cookie('yocapi_dashboard_auth', DASHBOARD_KEY, {
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 días
+    });
+    res.sendFile(path.join(__dirname, 'private', 'dashboard.html'));
+});
+
+// Bloquear rutas comunes de dashboard con 404 para evitar que curiosos las encuentren
+app.get(['/dashboard', '/dashboard.html', '/admin', '/panel'], (req, res) => {
+    res.status(404).send('Página no encontrada');
+});
 
 // ─── Inicio de Servidor ─────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
@@ -713,7 +765,7 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`🎂 YoCapi Birthday Platform v2.0 (Nick + PIN)`);
     console.log(`🌐 Servidor: http://localhost:${PORT}`);
     console.log(`📺 Overlay OBS: http://localhost:${PORT}/overlay?token=${OVERLAY_TOKEN}`);
-    console.log(`⚙️  Dashboard: http://localhost:${PORT}/dashboard`);
+    console.log(`⚙️  Dashboard Secreto: http://localhost:${PORT}/${DASHBOARD_SECRET_PATH}`);
     console.log(`💾 Base de datos: ${db.getMode().toUpperCase()}`);
     console.log(`==================================================\n`);
 });
