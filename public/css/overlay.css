@@ -363,3 +363,72 @@ body {
 body.debug .obs-debug-status {
   display: block;
 }
+
+/* ─── Felicitation Floating Cards ────────────────────────────────────────── */
+@keyframes felicEnter {
+  from { opacity: 0; transform: scale(0.5) translateY(20px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes felicExit {
+  from { opacity: 1; transform: translate(0, 0); }
+  to   { opacity: 0; transform: translate(var(--felic-dx, 0px), var(--felic-dy, -80px)) scale(0.7); }
+}
+
+.felic-card {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 8px;
+  background: rgba(10, 6, 22, 0.88);
+  border: 1px solid rgba(145, 70, 255, 0.5);
+  border-radius: 50px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 20px rgba(145, 70, 255, 0.35), 0 4px 16px rgba(0,0,0,0.6);
+  z-index: 200;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.5) translateY(20px);
+  white-space: nowrap;
+  max-width: 280px;
+}
+
+.felic-card.felic-visible {
+  animation: felicEnter 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.felic-card.felic-exit {
+  animation: felicExit 0.7s ease-in forwards;
+}
+
+.felic-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(145, 70, 255, 0.7);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.felic-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.felic-from {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #bf94ff;
+  line-height: 1;
+}
+
+.felic-text {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1;
+}

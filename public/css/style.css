@@ -1008,3 +1008,76 @@ footer a {
   transform: translateY(-2px);
   box-shadow: 0 6px 22px rgba(145, 70, 255, 0.55);
 }
+
+/* --- Felicitation Community Cards ---------------------------------------- */
+.felic-user-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(145, 70, 255, 0.06);
+  border: 1px solid rgba(145, 70, 255, 0.15);
+  border-radius: 14px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.felic-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.felic-user-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(244, 63, 94, 0.5);
+}
+
+.felic-sound-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-felic-sound {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(145, 70, 255, 0.3);
+  background: rgba(145, 70, 255, 0.12);
+  color: #fff;
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+}
+
+.btn-felic-sound:hover:not(:disabled) {
+  background: rgba(145, 70, 255, 0.3);
+  border-color: rgba(145, 70, 255, 0.7);
+  transform: scale(1.1);
+}
+
+.btn-felic-sound:disabled {
+  cursor: not-allowed;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.felic-upcoming-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.felic-upcoming-row:last-child {
+  border-bottom: none;
+}
