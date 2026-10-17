@@ -81,10 +81,10 @@
           <div class="input-group">
             <label class="input-label" for="reg-pin">
               <span>Crea tu PIN Secreto</span>
-              <span style="font-size: 0.7rem; color: var(--text-dim);">4 dígitos</span>
+              <span style="font-size: 0.7rem; color: var(--text-dim);">6 a 10 dígitos</span>
             </label>
-            <input type="password" id="reg-pin" class="custom-input" placeholder="Ej: 1234" inputmode="numeric"
-              maxlength="6" pattern="[0-9]*" required>
+            <input type="password" id="reg-pin" class="custom-input" placeholder="Ej: 123456" inputmode="numeric"
+              minlength="6" maxlength="10" pattern="[0-9]{6,10}" required>
           </div>
 
           <div class="form-row-grid">
@@ -143,8 +143,8 @@
 
           <div class="input-group">
             <label class="input-label" for="login-pin">Tu PIN Secreto</label>
-            <input type="password" id="login-pin" class="custom-input" placeholder="PIN de 4 dígitos"
-              inputmode="numeric" maxlength="6" pattern="[0-9]*" required>
+            <input type="password" id="login-pin" class="custom-input" placeholder="PIN de 6 a 10 dígitos"
+              inputmode="numeric" minlength="6" maxlength="10" pattern="[0-9]{6,10}" required>
           </div>
 
           <button type="submit" id="btn-submit-login" class="btn-primary">
@@ -176,9 +176,9 @@
           </div>
 
           <div class="input-group">
-            <label class="input-label" for="reset-new-pin">Crea tu Nuevo PIN</label>
-            <input type="password" id="reset-new-pin" class="custom-input" placeholder="Nuevo PIN de 4 dígitos"
-              inputmode="numeric" maxlength="6" pattern="[0-9]*" required>
+            <label class="input-label" for="reset-new-pin">Crea tu Nuevo PIN (6 a 10 dígitos)</label>
+            <input type="password" id="reset-new-pin" class="custom-input" placeholder="Nuevo PIN de 6 a 10 dígitos"
+              inputmode="numeric" minlength="6" maxlength="10" pattern="[0-9]{6,10}" required>
           </div>
 
           <button type="submit" id="btn-submit-reset" class="btn-primary">
@@ -269,9 +269,9 @@
           </div>
 
           <div class="input-group">
-            <label class="input-label" for="edit-pin">Cambiar PIN (Opcional)</label>
+            <label class="input-label" for="edit-pin">Cambiar PIN (Opcional, 6 a 10 dígitos)</label>
             <input type="password" id="edit-pin" class="custom-input" placeholder="Dejar en blanco para no cambiarlo"
-              inputmode="numeric" maxlength="6" pattern="[0-9]*">
+              inputmode="numeric" minlength="6" maxlength="10" pattern="[0-9]{6,10}">
           </div>
 
           <div class="input-group">
