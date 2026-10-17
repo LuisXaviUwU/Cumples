@@ -86,8 +86,7 @@ CumpleNuevo/
    - `TWITCH_CLIENT_ID`: Tu Client ID de Twitch Developer Console
    - `TWITCH_CLIENT_SECRET`: Tu Client Secret de Twitch
    - `STREAMER_LOGIN`: `yocapi_pr`
-   - `DASHBOARD_KEY`: Tu clave privada de acceso al dashboard
-   - `OVERLAY_TOKEN`: Un token seguro para OBS
+   - `OVERLAY_TOKEN`: Un token seguro para OBS (ej: `33c98a5e7659ee191e539ec5cbb7a1b131266643dbd752b6`)
    - `FIREBASE_SERVICE_ACCOUNT`: *Pega aquí el contenido JSON completo de la clave de Firebase*
 6. Haz clic en **Deploy Web Service**.
 

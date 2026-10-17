@@ -144,10 +144,7 @@ async function authenticateUser(req, res, next) {
 }
 
 function authenticateDashboard(req, res, next) {
-    const key = req.headers['x-dashboard-key'] || req.cookies.yocapi_dash_key;
-    if (key !== DASHBOARD_KEY) {
-        return res.status(403).json({ error: 'Clave de acceso de streamer inválida' });
-    }
+    // Ya no se requiere clave para el dashboard
     next();
 }
 
@@ -224,8 +221,6 @@ app.get('/auth/twitch/callback', async (req, res) => {
             if (refreshToken) await db.setConfig('streamer_refresh_token', refreshToken);
             await db.setConfig('streamer_id', twitchUser.id);
             await db.setConfig('streamer_login', twitchUser.login);
-
-            res.cookie('yocapi_dash_key', DASHBOARD_KEY, { httpOnly: true, maxAge: 30 * 86400 * 1000 });
             return res.redirect('/dashboard?streamer_connected=1');
         } else {
             // Flujo de usuario seguidor
