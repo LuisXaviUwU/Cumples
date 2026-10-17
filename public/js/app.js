@@ -285,19 +285,60 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Inicializar días
   populateDaysSelect(regDay, regMonth);
 
-  // Submit Registro
-  formReg.addEventListener('submit', async (e) => {
+  // Modal de confirmación de fecha de cumpleaños
+  const modalConfirmBday = document.getElementById('modal-confirm-bday');
+  const modalDateText = document.getElementById('modal-date-text');
+  const modalZodiacText = document.getElementById('modal-zodiac-text');
+  const btnModalCancel = document.getElementById('btn-modal-cancel');
+  const btnModalConfirm = document.getElementById('btn-modal-confirm');
+
+  const MONTH_NAMES_ES = [
+    '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+
+  let pendingRegistrationPayload = null;
+
+  // Interceptar formulario de Registro con el Modal
+  formReg.addEventListener('submit', (e) => {
     e.preventDefault();
     const username = regUserInput.value.trim();
     const pin = document.getElementById('reg-pin').value.trim();
     const secret = document.getElementById('reg-secret').value.trim();
-    const month = regMonth.value;
-    const day = regDay.value;
+    const month = parseInt(regMonth.value, 10);
+    const day = parseInt(regDay.value, 10);
 
     if (pin.length < 6 || pin.length > 15) {
       showToast('La contraseña debe tener entre 6 y 15 caracteres', 'error');
       return;
     }
+    if (!secret || secret.length < 2) {
+      showToast('Ingresa tu palabra secreta para poder recuperar tu cuenta si lo necesitas', 'error');
+      return;
+    }
+
+    pendingRegistrationPayload = {
+      username,
+      pin,
+      secret_word: secret,
+      birth_month: month,
+      birth_day: day
+    };
+
+    // Actualizar datos del modal
+    modalDateText.textContent = `${day} de ${MONTH_NAMES_ES[month] || ''}`;
+    modalZodiacText.textContent = `✨ Signo: ${getZodiac(month, day)}`;
+    modalConfirmBday.style.display = 'flex';
+  });
+
+  btnModalCancel.addEventListener('click', () => {
+    modalConfirmBday.style.display = 'none';
+    pendingRegistrationPayload = null;
+  });
+
+  btnModalConfirm.addEventListener('click', async () => {
+    if (!pendingRegistrationPayload) return;
+    modalConfirmBday.style.display = 'none';
 
     const submitBtn = document.getElementById('btn-submit-register');
     submitBtn.disabled = true;
@@ -307,13 +348,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username,
-          pin,
-          secret_word: secret,
-          birth_month: month,
-          birth_day: day
-        })
+        body: JSON.stringify(pendingRegistrationPayload)
       });
       const data = await res.json();
       if (data.success) {
@@ -328,6 +363,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = '🎉 Registrar Mi Cumpleaños';
+      pendingRegistrationPayload = null;
     }
   });
 
@@ -505,56 +541,112 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Guardar edición
-  const formEdit = document.getElementById('form-edit');
-  formEdit.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const month = document.getElementById('edit-month').value;
-    const day = document.getElementById('edit-day').value;
-    const message = document.getElementById('edit-message').value;
-    const pin = document.getElementById('edit-pin').value.trim();
-    const secret = document.getElementById('edit-secret').value.trim();
-    const soundRadio = document.querySelector('input[name="edit_sound"]:checked');
-    const sound = soundRadio ? soundRadio.value : 'HBSilbato.mp3';
+  // Pestañas superiores de usuario (Sidebar Superior)
+  const userSubnavBtns = document.querySelectorAll('.user-subnav-btn');
+  const userTabPanes = document.querySelectorAll('.user-tab-pane');
 
-    if (pin && (pin.length < 6 || pin.length > 15)) {
-      showToast('La nueva contraseña debe tener entre 6 y 15 caracteres', 'error');
-      return;
-    }
-
-    const saveBtn = document.getElementById('btn-save-edit');
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'Guardando...';
-
-    try {
-      const res = await fetch('/api/birthday/update', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
-          birth_month: month,
-          birth_day: day,
-          custom_message: message,
-          selected_sound: sound,
-          new_pin: pin || null,
-          new_secret: secret || null
-        })
+  userSubnavBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetTab = btn.dataset.tab;
+      userSubnavBtns.forEach(b => b.classList.toggle('active', b === btn));
+      userTabPanes.forEach(pane => {
+        pane.style.display = pane.id === targetTab ? 'block' : 'none';
       });
-      const data = await res.json();
-      if (data.success) {
-        showToast('¡Datos actualizados correctamente!', 'success');
-        document.getElementById('edit-pin').value = '';
-        document.getElementById('edit-secret').value = '';
-        checkUserSession();
-      } else {
-        showToast(data.error || 'Error al actualizar', 'error');
-      }
-    } catch {
-      showToast('Error conectando con el servidor', 'error');
-    } finally {
-      saveBtn.disabled = false;
-      saveBtn.textContent = '💾 Guardar Cambios';
-    }
+    });
   });
+
+  // Guardar configuración de celebración
+  const formCelebration = document.getElementById('form-edit-celebration');
+  if (formCelebration) {
+    formCelebration.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const month = document.getElementById('edit-month').value;
+      const day = document.getElementById('edit-day').value;
+      const message = document.getElementById('edit-message').value;
+      const soundRadio = document.querySelector('input[name="edit_sound"]:checked');
+      const sound = soundRadio ? soundRadio.value : 'HBSilbato.mp3';
+
+      const saveBtn = document.getElementById('btn-save-celebration');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Guardando...';
+
+      try {
+        const res = await fetch('/api/birthday/update', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            birth_month: month,
+            birth_day: day,
+            custom_message: message,
+            selected_sound: sound
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('¡Configuración de cumpleaños guardada!', 'success');
+          checkUserSession();
+        } else {
+          showToast(data.error || 'Error al guardar', 'error');
+        }
+      } catch {
+        showToast('Error conectando con el servidor', 'error');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 Guardar Configuración de Alerta';
+      }
+    });
+  }
+
+  // Guardar configuración de seguridad (Contraseña / Palabra Secreta)
+  const formSecurity = document.getElementById('form-edit-security');
+  if (formSecurity) {
+    formSecurity.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pin = document.getElementById('edit-pin').value.trim();
+      const secret = document.getElementById('edit-secret').value.trim();
+
+      if (!pin && !secret) {
+        showToast('Escribe una nueva contraseña o palabra secreta para actualizar', 'info');
+        return;
+      }
+      if (pin && (pin.length < 6 || pin.length > 15)) {
+        showToast('La nueva contraseña debe tener entre 6 y 15 caracteres', 'error');
+        return;
+      }
+      if (secret && secret.length < 2) {
+        showToast('La palabra secreta debe tener al menos 2 caracteres', 'error');
+        return;
+      }
+
+      const saveBtn = document.getElementById('btn-save-security');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Actualizando...';
+
+      try {
+        const res = await fetch('/api/birthday/update', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            new_password: pin || null,
+            new_secret: secret || null
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('¡Contraseña y palabra secreta actualizadas con éxito!', 'success');
+          document.getElementById('edit-pin').value = '';
+          document.getElementById('edit-secret').value = '';
+        } else {
+          showToast(data.error || 'Error al actualizar seguridad', 'error');
+        }
+      } catch {
+        showToast('Error conectando con el servidor', 'error');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 Actualizar Seguridad';
+      }
+    });
+  }
 
   // Cerrar Sesión
   document.getElementById('btn-logout').addEventListener('click', async () => {
