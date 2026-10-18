@@ -60,6 +60,17 @@ function switchTab(tabId) {
   }
 }
 
+let baseObsToken = '';
+let selectedScale = '0.8';
+
+function updateObsUrlDisplay() {
+  if (!baseObsToken) return;
+  const scaleParam = (selectedScale && selectedScale !== '1.0') ? `&scale=${selectedScale}` : '';
+  const obsUrl = `${window.location.origin}/overlay?token=${encodeURIComponent(baseObsToken)}${scaleParam}`;
+  const input = document.getElementById('obs-url-display');
+  if (input) input.value = obsUrl;
+}
+
 // Cargar Estadísticas y OBS URL
 async function loadStats() {
   try {
@@ -86,9 +97,9 @@ async function loadStats() {
       obsText.style.color = '#94a3b8';
     }
 
-    // URL OBS
-    const obsUrl = `${window.location.origin}/overlay?token=${encodeURIComponent(data.overlayToken)}`;
-    document.getElementById('obs-url-display').value = obsUrl;
+    // URL OBS con escala
+    baseObsToken = data.overlayToken;
+    updateObsUrlDisplay();
 
     // Estado de felicitaciones
     loadFelicitationStatus();
@@ -491,6 +502,28 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('¡URL de OBS copiada al portapapeles!', 'success');
     }).catch(() => {
       showToast('Selecciona y copia la URL manualmente', 'info');
+    });
+  });
+
+  // Selector de escala de OBS
+  document.querySelectorAll('.btn-scale-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.btn-scale-preset').forEach(b => {
+        b.classList.remove('active');
+        b.style.borderColor = 'rgba(145, 70, 255, 0.3)';
+        b.style.background = 'rgba(255, 255, 255, 0.04)';
+        b.style.color = '#cbd5e1';
+        b.style.fontWeight = '600';
+      });
+      btn.classList.add('active');
+      btn.style.borderColor = '#9146ff';
+      btn.style.background = 'rgba(145, 70, 255, 0.25)';
+      btn.style.color = '#fff';
+      btn.style.fontWeight = '700';
+
+      selectedScale = btn.dataset.scale || '0.8';
+      updateObsUrlDisplay();
+      showToast(`Tamaño de OBS configurado al ${Math.round(parseFloat(selectedScale) * 100)}%`, 'info');
     });
   });
 

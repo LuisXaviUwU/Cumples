@@ -4,10 +4,15 @@
 
 const params = new URLSearchParams(window.location.search);
 const token = params.get('token');
-const isDebug = params.get('debug') === '1';
 
-if (isDebug) {
-  document.body.classList.add('debug');
+// Escala personalizada para OBS (?scale=0.8 o ?scale=80)
+const rawScale = params.get('scale');
+if (rawScale) {
+  const parsed = parseFloat(rawScale);
+  if (!isNaN(parsed) && parsed > 0) {
+    const finalScale = parsed > 2 ? parsed / 100 : parsed;
+    document.documentElement.style.setProperty('--alert-scale', finalScale);
+  }
 }
 
 const alertWrapper = document.getElementById('alert-wrapper');
@@ -212,15 +217,15 @@ function playNext() {
 // ─── Conexión SSE con Reconexión Automática ────────────────────────────────
 function connectSSE() {
   if (!token) {
-    debugStatus.textContent = 'ERROR: Falta el parámetro ?token= en la URL de OBS.';
+    if (debugStatus) debugStatus.textContent = 'ERROR: Falta el parámetro ?token= en la URL de OBS.';
     return;
   }
 
-  debugStatus.textContent = 'Conectando a stream SSE...';
+  if (debugStatus) debugStatus.textContent = 'Conectando a stream SSE...';
   const evtSource = new EventSource(`/api/overlay/stream?token=${encodeURIComponent(token)}`);
 
   evtSource.onopen = () => {
-    debugStatus.textContent = 'OBS Conectado a YoCapi Cumpleaños 🟢';
+    if (debugStatus) debugStatus.textContent = 'OBS Conectado a YoCapi Cumpleaños 🟢';
     console.log('[OBS Overlay] Conexión SSE establecida con éxito.');
   };
 
@@ -243,7 +248,7 @@ function connectSSE() {
   };
 
   evtSource.onerror = () => {
-    debugStatus.textContent = 'Desconectado 🔴 Reconectando en 5s...';
+    if (debugStatus) debugStatus.textContent = 'Desconectado 🔴 Reconectando en 5s...';
     evtSource.close();
     setTimeout(connectSSE, 5000);
   };
