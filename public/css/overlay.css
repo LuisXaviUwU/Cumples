@@ -5,6 +5,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,600;0,700;1,600;1,700&display=swap');
 
 :root {
+  --alert-scale: 0.85; /* Escala predeterminada (85% para tamaño ideal en 1080p) */
   --theme-solid: #9146ff;
   --theme-glow: rgba(145, 70, 255, 0.55);
   --theme-bg: linear-gradient(135deg, rgba(20, 15, 38, 0.96) 0%, rgba(10, 8, 22, 0.98) 100%);
@@ -39,7 +40,7 @@ body {
   position: fixed;
   bottom: 85px;
   left: 50%;
-  transform: translateX(-50%) translateY(240px) scale(0.85);
+  transform: translateX(-50%) translateY(240px) scale(calc(var(--alert-scale, 0.85) * 0.85));
   opacity: 0;
   z-index: 100;
   pointer-events: none;
@@ -48,20 +49,20 @@ body {
 }
 
 .alert-wrapper.active {
-  transform: translateX(-50%) translateY(0) scale(1);
+  transform: translateX(-50%) translateY(0) scale(var(--alert-scale, 0.85));
   opacity: 1;
   animation: bday-card-float 3.5s ease-in-out infinite alternate 0.75s;
 }
 
 @keyframes bday-card-float {
   0% {
-    transform: translateX(-50%) translateY(0) scale(1) rotate(0deg);
+    transform: translateX(-50%) translateY(0) scale(var(--alert-scale, 0.85)) rotate(0deg);
   }
   50% {
-    transform: translateX(-50%) translateY(-6px) scale(1.008) rotate(0.4deg);
+    transform: translateX(-50%) translateY(-6px) scale(calc(var(--alert-scale, 0.85) * 1.008)) rotate(0.4deg);
   }
   100% {
-    transform: translateX(-50%) translateY(4px) scale(0.995) rotate(-0.4deg);
+    transform: translateX(-50%) translateY(4px) scale(calc(var(--alert-scale, 0.85) * 0.995)) rotate(-0.4deg);
   }
 }
 
@@ -118,20 +119,20 @@ body {
 .alert-card {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 24px;
   background: var(--theme-bg);
-  border: 2.5px solid var(--theme-solid);
-  border-radius: 36px;
-  padding: 26px 42px 26px 32px;
+  border: 2px solid var(--theme-solid);
+  border-radius: 30px;
+  padding: 20px 34px 20px 24px;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.16) inset,
     0 25px 65px -10px rgba(0, 0, 0, 0.9),
-    0 0 55px -5px var(--theme-glow),
-    0 0 110px -15px var(--theme-glow);
+    0 0 45px -5px var(--theme-glow),
+    0 0 90px -15px var(--theme-glow);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
-  min-width: 680px;
-  max-width: 980px;
+  min-width: 520px;
+  max-width: 780px;
   position: relative;
 }
 
@@ -168,8 +169,8 @@ body {
 .alert-avatar-box {
   position: relative;
   flex-shrink: 0;
-  width: 125px;
-  height: 125px;
+  width: 105px;
+  height: 105px;
 }
 
 /* Gorrito festivo animado */
@@ -347,21 +348,12 @@ body {
   filter: drop-shadow(0 0 8px #fbbf24);
 }
 
-/* ─── Debug overlay indicator ───────────────────────────────────────────── */
+/* ─── Debug overlay indicator (completamente oculto en stream) ───────────── */
 .obs-debug-status {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  font-family: monospace;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.4);
-  background: rgba(0, 0, 0, 0.6);
-  padding: 4px 10px;
-  border-radius: 6px;
-  display: none;
+  display: none !important;
 }
 body.debug .obs-debug-status {
-  display: block;
+  display: none !important;
 }
 
 /* ─── Felicitation Floating Cards ────────────────────────────────────────── */
