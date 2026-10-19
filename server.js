@@ -33,13 +33,17 @@ const DEFAULT_OVERLAY_CONFIG = {
     posX: 50,
     posY: 85,
     scale: 0.85,
-    animation: 'slide-up'
+    animation: 'slide-up',
+    volume: 0.85
 };
 
 let appSettings = { 
     felicitations_enabled: false,
+    alerts_paused: false,
     overlay_config: { ...DEFAULT_OVERLAY_CONFIG }
 };
+
+const pausedAlertsQueue = []; // Alertas en cola cuando la streamer pausa las alertas en vivo
 
 try {
     if (fs.existsSync(settingsFile)) {
@@ -594,7 +598,7 @@ app.post('/api/birthday/alert', authenticateUser, async (req, res) => {
         message: user.custom_message
     });
 
-    // Enviar a todos los overlays de OBS conectados
+    // Enviar a todos los overlays de OBS conectados (o poner en cola si la streamer pausó)
     const alertPayload = {
         type: 'alert',
         user: user.display_name,
@@ -607,10 +611,30 @@ app.post('/api/birthday/alert', authenticateUser, async (req, res) => {
         timestamp: Date.now()
     };
 
+    if (appSettings.alerts_paused) {
+        pausedAlertsQueue.push({
+            id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+            user: user.display_name,
+            avatar: user.profile_image,
+            message: user.custom_message,
+            sound: user.selected_sound,
+            time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+            payload: alertPayload
+        });
+
+        return res.json({
+            success: true,
+            queued: true,
+            message: '🎂 ¡Tu alerta fue guardada! La streamer tiene las alertas pausadas momentáneamente; saldrá en cuanto reanude.',
+            activeOverlayCount: sseClients.size
+        });
+    }
+
     broadcastToOverlay(alertPayload);
 
     res.json({
         success: true,
+        queued: false,
         message: '¡Alerta enviada al directo con éxito!',
         activeOverlayCount: sseClients.size
     });
@@ -713,6 +737,8 @@ app.post('/api/birthday/send-felicitation', authenticateUser, async (req, res) =
         const senderAvatar = sender?.profile_image || '/img/yocapi.png';
         const senderName = sender?.display_name || req.user.username;
 
+        const customMsg = (req.body.message || '').trim().slice(0, 60);
+
         // Broadcast al overlay como evento de felicitación
         broadcastToOverlay({
             type: 'felicitation',
@@ -720,6 +746,7 @@ app.post('/api/birthday/send-felicitation', authenticateUser, async (req, res) =
             fromAvatar: senderAvatar,
             to: target.display_name,
             sound,
+            message: customMsg,
             timestamp: Date.now()
         });
 
@@ -952,20 +979,20 @@ app.post('/api/dashboard/felicitations-toggle', authenticateDashboard, (req, res
 
 // Lanzar alerta manual o de prueba desde el Dashboard
 app.post('/api/dashboard/trigger-alert', authenticateDashboard, async (req, res) => {
-    const { user, sound, message, avatar, theme } = req.body;
+    const { user, sound, message, avatar, theme, isTest } = req.body;
 
     let finalAvatar = avatar;
     if (!finalAvatar || finalAvatar === '/img/yocapi.png' || !finalAvatar.startsWith('http')) {
-        const fetched = await fetchPublicTwitchAvatar(user || 'yocapi_pr');
+        const fetched = await fetchPublicTwitchAvatar(user || 'capiluisxavi');
         finalAvatar = (fetched && fetched.startsWith('http')) ? fetched : '/img/yocapi.png';
     }
 
     const alertPayload = {
         type: 'alert',
-        user: user || 'Cumpleañero VIP',
+        user: user || 'capiluisxavi',
         avatar: finalAvatar,
         sound: sound || 'HBSilbato.mp3',
-        message: message || '¡Felicidades en tu día especial!',
+        message: message || '¡Festejando en directo con la comunidad! 🎂✨',
         isToday: true,
         isGrace: false,
         theme: theme || 'purple',
@@ -973,12 +1000,16 @@ app.post('/api/dashboard/trigger-alert', authenticateDashboard, async (req, res)
     };
 
     broadcastToOverlay(alertPayload);
-    await db.logAlert({
-        username: 'streamer_manual',
-        display_name: alertPayload.user,
-        sound_file: alertPayload.sound,
-        message: alertPayload.message
-    });
+
+    // Solo guardar en base de datos si NO es una prueba
+    if (!isTest) {
+        await db.logAlert({
+            username: 'streamer_manual',
+            display_name: alertPayload.user,
+            sound_file: alertPayload.sound,
+            message: alertPayload.message
+        });
+    }
 
     res.json({
         success: true,
@@ -1000,18 +1031,20 @@ app.get('/api/dashboard/overlay-config', authenticateDashboard, (req, res) => {
 // Guardar y Aplicar en tiempo real la configuración del Overlay (Dashboard)
 app.post('/api/dashboard/overlay-config', authenticateDashboard, (req, res) => {
     try {
-        const { posX, posY, scale, animation } = req.body;
+        const { posX, posY, scale, animation, volume } = req.body;
         const cleanX = Math.max(5, Math.min(95, parseFloat(posX) || 50));
         const cleanY = Math.max(5, Math.min(95, parseFloat(posY) || 85));
         const cleanScale = Math.max(0.4, Math.min(1.5, parseFloat(scale) || 0.85));
         const validAnims = ['slide-up', 'slide-down', 'slide-left', 'slide-right', 'pop-zoom', 'bounce-drop', 'fade-glow'];
         const cleanAnim = validAnims.includes(animation) ? animation : 'slide-up';
+        const cleanVol = Math.max(0, Math.min(1, parseFloat(volume) !== undefined && !isNaN(parseFloat(volume)) ? parseFloat(volume) : 0.85));
 
         appSettings.overlay_config = {
             posX: Math.round(cleanX * 10) / 10,
             posY: Math.round(cleanY * 10) / 10,
             scale: Math.round(cleanScale * 100) / 100,
             animation: cleanAnim,
+            volume: Math.round(cleanVol * 100) / 100,
             updatedAt: Date.now()
         };
 
@@ -1031,6 +1064,152 @@ app.post('/api/dashboard/overlay-config', authenticateDashboard, (req, res) => {
     } catch (err) {
         console.error('Error guardando overlay-config:', err);
         res.status(500).json({ error: 'Error del servidor al guardar configuración' });
+    }
+});
+
+// ─── BOTÓN DE PÁNICO (DETENER / OCULTAR ALERTA EN OBS) ──────────────────────
+app.post('/api/dashboard/stop-alert', authenticateDashboard, (req, res) => {
+    broadcastToOverlay({ type: 'stop_alert' });
+    res.json({
+        success: true,
+        message: '🛑 Alerta detenida y silenciada en OBS de emergencia'
+    });
+});
+
+// ─── PAUSAR / REANUDAR ENTRADA DE ALERTAS (MODO PARTIDA) ────────────────────
+app.post('/api/dashboard/toggle-pause-alerts', authenticateDashboard, (req, res) => {
+    if (typeof req.body.paused === 'boolean') {
+        appSettings.alerts_paused = req.body.paused;
+    } else {
+        appSettings.alerts_paused = !appSettings.alerts_paused;
+    }
+    saveAppSettings();
+    res.json({
+        success: true,
+        alerts_paused: appSettings.alerts_paused,
+        message: appSettings.alerts_paused ? '⏸️ Alertas pausadas (se guardarán en cola)' : '▶️ Alertas reanudadas'
+    });
+});
+
+app.get('/api/dashboard/paused-queue', authenticateDashboard, (req, res) => {
+    res.json({
+        alerts_paused: !!appSettings.alerts_paused,
+        queue: pausedAlertsQueue
+    });
+});
+
+app.post('/api/dashboard/release-paused-alert', authenticateDashboard, (req, res) => {
+    const { id, releaseAll } = req.body;
+    if (releaseAll) {
+        const released = [...pausedAlertsQueue];
+        pausedAlertsQueue.length = 0;
+        released.forEach((item, index) => {
+            setTimeout(() => {
+                broadcastToOverlay(item.payload);
+            }, index * 2500);
+        });
+        return res.json({ success: true, releasedCount: released.length, message: `Se liberaron ${released.length} alertas a OBS` });
+    }
+
+    const idx = pausedAlertsQueue.findIndex(a => a.id === id);
+    if (idx !== -1) {
+        const item = pausedAlertsQueue.splice(idx, 1)[0];
+        broadcastToOverlay(item.payload);
+        return res.json({ success: true, message: `Alerta de ${item.user} enviada a OBS` });
+    }
+    res.status(404).json({ error: 'Alerta no encontrada en la cola' });
+});
+
+// ─── EXPORTAR RESPALDO A CSV PARA EXCEL ────────────────────────────────────
+app.get('/api/dashboard/export-csv', authenticateDashboard, async (req, res) => {
+    try {
+        const users = await db.getAllUsers();
+        const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+        let csv = '\uFEFF'; // BOM para que Excel abra UTF-8 con tildes y caracteres especiales
+        csv += 'Usuario,Nombre_Pantalla,Mes,Dia,Mensaje,Sonido,Fecha_Registro,Fecha_Fijada\n';
+
+        for (const u of users) {
+            const m = monthNames[u.birth_month] || u.birth_month || '';
+            const d = u.birth_day || '';
+            const msg = `"${(u.custom_message || '').replace(/"/g, '""')}"`;
+            const sound = u.selected_sound || 'HBSilbato.mp3';
+            const regDate = u.created_at ? new Date(u.created_at).toLocaleDateString('es-ES') : '';
+            const lockDate = u.birthday_locked_at ? new Date(u.birthday_locked_at).toLocaleDateString('es-ES') : '';
+
+            csv += `"${u.username}","${u.display_name || u.username}","${m}",${d},${msg},"${sound}","${regDate}","${lockDate}"\n`;
+        }
+
+        const dateStr = new Date().toISOString().split('T')[0];
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="yocapi_cumpleanos_${dateStr}.csv"`);
+        res.send(csv);
+    } catch (err) {
+        console.error('Error exportando CSV:', err);
+        res.status(500).send('Error exportando archivo CSV');
+    }
+});
+
+// ─── API PARA NIGHTBOT & BOTS DE TWITCH (PLAIN TEXT) ─────────────────────────
+app.get('/api/bot/today', async (req, res) => {
+    res.type('text/plain; charset=utf-8');
+    try {
+        const users = await db.getAllUsers();
+        const todayUsers = [];
+
+        for (const u of users) {
+            if (!u.birth_month || !u.birth_day || u.birthday_unlocked) continue;
+            const status = getBirthdayStatus(u.birth_month, u.birth_day);
+            if (status.canCelebrate) {
+                todayUsers.push(u.display_name || u.username);
+            }
+        }
+
+        const protocol = req.headers['x-forwarded-proto'] || 'http';
+        const host = req.headers.host || `localhost:${PORT}`;
+        const siteUrl = `${protocol}://${host}`;
+
+        if (todayUsers.length > 0) {
+            const list = todayUsers.map(name => `@${name}`).join(', ');
+            return res.send(`🎂 ¡Hoy está(n) de cumpleaños en la comunidad: ${list}! 🎉 Festeja en directo o registra tu fecha aquí: ${siteUrl}`);
+        } else {
+            return res.send(`✨ Hoy no hay cumpleaños registrados en la comunidad. ¡Registra el tuyo para que te festejemos en stream! 👉 ${siteUrl}`);
+        }
+    } catch (err) {
+        res.send('⚠️ Error consultando cumpleaños.');
+    }
+});
+
+app.get('/api/bot/check', async (req, res) => {
+    res.type('text/plain; charset=utf-8');
+    try {
+        const queryUser = (req.query.user || '').trim().replace(/^@/, '').toLowerCase();
+        const protocol = req.headers['x-forwarded-proto'] || 'http';
+        const host = req.headers.host || `localhost:${PORT}`;
+        const siteUrl = `${protocol}://${host}`;
+
+        if (!queryUser) {
+            return res.send(`ℹ️ Usa: !micumple <tu_usuario> | Para registrarte: ${siteUrl}`);
+        }
+
+        const user = await db.getUser(queryUser);
+        if (!user || !user.birth_month || !user.birth_day || user.birthday_unlocked) {
+            return res.send(`⚠️ @${queryUser}, aún no has registrado tu cumpleaños en la plataforma. ¡Hazlo gratis aquí! 👉 ${siteUrl}`);
+        }
+
+        const status = getBirthdayStatus(user.birth_month, user.birth_day);
+        const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const monthText = monthNames[user.birth_month] || user.birth_month;
+
+        if (status.canCelebrate) {
+            return res.send(`🎂 ¡HOY ES TU CUMPLEAÑOS @${user.display_name || user.username}! 🥳 Entra ya a lanzar tu alerta con sonido en directo: ${siteUrl}`);
+        }
+
+        const days = status.daysUntilBirthday;
+        const daysText = days === 1 ? '¡falta solo 1 día!' : `faltan ${days} días`;
+        return res.send(`🎉 @${user.display_name || user.username}, tu cumpleaños está registrado para el ${user.birth_day} de ${monthText} (${daysText}). ¡Te esperamos en stream! 🎂`);
+    } catch (err) {
+        res.send('⚠️ Error consultando usuario.');
     }
 });
 
