@@ -17,6 +17,9 @@ const debugStatus = document.getElementById('debug-status');
 // La configuración viene SIEMPRE del servidor (guardada por el Simulador Visual).
 // No se leen parámetros de URL para escala/posición — la URL solo lleva ?token=
 
+let currentAudio = null;
+let currentOverlayVolume = 0.85;
+
 function applyOverlayConfig(cfg) {
   if (!cfg) return;
 
@@ -31,6 +34,13 @@ function applyOverlayConfig(cfg) {
     if (!isNaN(parsedScale) && parsedScale > 0) {
       const finalScale = parsedScale > 2 ? parsedScale / 100 : parsedScale;
       document.documentElement.style.setProperty('--alert-scale', finalScale);
+    }
+  }
+  if (cfg.volume !== undefined && cfg.volume !== null) {
+    const parsedVol = parseFloat(cfg.volume);
+    if (!isNaN(parsedVol) && parsedVol >= 0) {
+      currentOverlayVolume = Math.max(0, Math.min(1, parsedVol));
+      if (currentAudio) currentAudio.volume = currentOverlayVolume;
     }
   }
   if (cfg.animation) {
@@ -226,10 +236,17 @@ function playNext() {
 
   applyTheme(current.theme || 'purple');
 
-  // Reproducir audio seleccionado
+  // Reproducir audio seleccionado con control de volumen
   if (current.sound) {
-    const audio = new Audio(`/music/${current.sound}`);
-    audio.play().catch(e => console.warn('Audio play error:', e));
+    if (currentAudio) {
+      try {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+      } catch (e) {}
+    }
+    currentAudio = new Audio(`/music/${current.sound}`);
+    currentAudio.volume = currentOverlayVolume;
+    currentAudio.play().catch(e => console.warn('Audio play error:', e));
   }
 
   // Activar confeti y fuegos artificiales
@@ -277,6 +294,21 @@ function connectSSE() {
       if (data.type === 'overlay_config' && data.config) {
         console.log('[OBS Overlay] Configuración actualizada en vivo desde el Dashboard:', data.config);
         applyOverlayConfig(data.config);
+        return;
+      }
+      if (data.type === 'stop_alert') {
+        console.log('[OBS Overlay] 🛑 Alerta detenida por la streamer.');
+        if (currentAudio) {
+          try {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            currentAudio = null;
+          } catch (e) {}
+        }
+        alertWrapper.classList.remove('active');
+        isPlaying = false;
+        alertQueue = [];
+        updateQueueTag();
         return;
       }
       if (data.type === 'alert') {
@@ -340,6 +372,7 @@ function showFelicitation(data) {
     <div class="felic-body">
       <span class="felic-from">${data.from || 'Alguien'}</span>
       <span class="felic-text">${randomIcon} ¡Feliz Cumpleaños, ${data.to || 'Cumpleañero'}! ${soundIcon}</span>
+      ${data.message ? `<span style="display:block; font-size: 0.8rem; color: #fde047; margin-top: 3px; font-weight: 700; word-break: break-word;">“${data.message}”</span>` : ''}
     </div>
   `;
 

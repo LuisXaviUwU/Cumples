@@ -643,6 +643,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 `}
               </div>
             </div>
+            ${isFelicEnabled ? `
+              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);">
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px;">
+                  <button type="button" class="btn-quick-chip" data-target="${u.username}" data-text="¡Feliz cumple capo! 🎂">¡Feliz cumple! 🎂</button>
+                  <button type="button" class="btn-quick-chip" data-target="${u.username}" data-text="¡Un año más de fiesta! 🥳">¡Un año más! 🥳</button>
+                  <button type="button" class="btn-quick-chip" data-target="${u.username}" data-text="¡GG por otro año de vida! 🎮">¡GG por otro año! 🎮</button>
+                </div>
+                <input type="text" id="felic-input-${u.username}" class="custom-input" placeholder="Escribe un mensaje corto (opcional)..." maxlength="60" style="padding: 6px 10px; font-size: 0.78rem;">
+              </div>
+            ` : ''}
           `;
         });
         html += `</div>`;
@@ -707,11 +717,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             cdBadge.textContent = '⏳ ...';
           }
 
+          // Mensaje personalizado opcional
+          const inputEl = document.getElementById(`felic-input-${target}`);
+          const felicMsg = inputEl ? inputEl.value.trim() : '';
+
           try {
             const res = await fetch('/api/birthday/send-felicitation', {
               method: 'POST',
               headers: getAuthHeaders(),
-              body: JSON.stringify({ target_username: target, sound })
+              body: JSON.stringify({ target_username: target, sound, message: felicMsg })
             });
             const result = await res.json();
             if (result.success) {
@@ -937,6 +951,182 @@ document.addEventListener('DOMContentLoaded', async () => {
       showToast('Error de comunicación con el servidor', 'error');
       launchAlertBtn.disabled = false;
       launchAlertBtn.innerHTML = '<span>🎉</span> ¡LANZAR ALERTA EN DIRECTO! <span>🚀</span>';
+    }
+  });
+
+  // ─── Modal de Previsualización de Alerta ──────────────────────────────────
+  const btnPreview = document.getElementById('btn-preview-alert');
+  const modalPreview = document.getElementById('modal-preview-alert');
+  const btnClosePreview = document.getElementById('btn-close-preview');
+  const btnReplayPreview = document.getElementById('btn-replay-preview');
+  let previewAudio = null;
+
+  function runPreview() {
+    if (!currentUser) return;
+    const msg = (document.getElementById('edit-message')?.value || currentUser.custom_message || '').trim();
+    const selSoundCard = document.querySelector('#edit-sound-container .sound-card.selected');
+    const sound = selSoundCard?.dataset?.sound || currentUser.selected_sound || 'HBSilbato.mp3';
+
+    const avatarEl = document.getElementById('preview-card-avatar');
+    if (avatarEl) avatarEl.src = currentUser.profile_image || '/img/yocapi.png';
+    const nameEl = document.getElementById('preview-card-name');
+    if (nameEl) nameEl.textContent = currentUser.display_name || currentUser.username;
+    const msgEl = document.getElementById('preview-card-msg');
+    if (msgEl) msgEl.textContent = msg ? `“${msg}”` : '“¡Festejando en directo con la comunidad! 🎂✨”';
+    const soundEl = document.getElementById('preview-card-sound');
+    if (soundEl) soundEl.textContent = sound;
+
+    if (modalPreview) modalPreview.style.display = 'flex';
+
+    if (previewAudio) {
+      try { previewAudio.pause(); previewAudio.currentTime = 0; } catch (e) {}
+    }
+    previewAudio = new Audio(`/music/${sound}`);
+    previewAudio.volume = 0.85;
+    previewAudio.play().catch(() => {});
+
+    if (typeof confetti === 'function') {
+      confetti({
+        particleCount: 95,
+        spread: 85,
+        origin: { y: 0.65 },
+        colors: ['#9146ff', '#f43f5e', '#fbbf24', '#10b981', '#38bdf8']
+      });
+    }
+  }
+
+  function closePreview() {
+    if (previewAudio) {
+      try { previewAudio.pause(); previewAudio.currentTime = 0; } catch (e) {}
+      previewAudio = null;
+    }
+    if (modalPreview) modalPreview.style.display = 'none';
+  }
+
+  if (btnPreview) btnPreview.addEventListener('click', runPreview);
+  if (btnReplayPreview) btnReplayPreview.addEventListener('click', runPreview);
+  if (btnClosePreview) btnClosePreview.addEventListener('click', closePreview);
+  if (modalPreview) {
+    modalPreview.addEventListener('click', (e) => {
+      if (e.target === modalPreview) closePreview();
+    });
+  }
+
+  // ─── Switcher Público: Mi Cuenta vs Muro Comunitario ──────────────────────
+  const btnShowAccount = document.getElementById('btn-show-account');
+  const btnShowWall = document.getElementById('btn-show-community-wall');
+  const stateWall = document.getElementById('state-community-wall');
+  const stateGuest = document.getElementById('state-guest');
+  const stateUser = document.getElementById('state-user');
+
+  async function loadPublicWall() {
+    const wallContent = document.getElementById('public-wall-content');
+    if (!wallContent) return;
+    wallContent.innerHTML = '<div style="text-align:center;padding:30px;"><div style="font-size:2rem;margin-bottom:8px;">⏳</div><p style="color:var(--text-dim);font-size:0.85rem;">Cargando muro de la comunidad...</p></div>';
+
+    try {
+      const res = await fetch('/api/birthday/public-today');
+      const data = await res.json();
+      let html = '';
+
+      if (data.today && data.today.length > 0) {
+        html += `
+          <div class="glass-card" style="margin-bottom: 20px; border-color: rgba(244,63,94,0.4); background: linear-gradient(135deg, rgba(244,63,94,0.12), rgba(145,70,255,0.06));">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+              <span style="font-size:1.8rem;">🎂</span>
+              <div>
+                <h3 style="font-family:var(--font-heading);font-size:1.15rem;font-weight:800;margin:0;">¡Cumpleañeros de Hoy en Stream!</h3>
+                <p style="color:var(--text-dim);font-size:0.8rem;margin:0;">Pásate por el directo a felicitarlos con sonido en pantalla</p>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+        `;
+        data.today.forEach(u => {
+          html += `
+            <div class="felic-user-card" style="padding:12px 16px;">
+              <div class="felic-user-info">
+                <img src="${u.profile_image || '/img/yocapi.png'}" onerror="this.src='/img/yocapi.png'" class="felic-user-avatar" alt="${u.display_name}">
+                <div>
+                  <strong style="font-size:1rem;color:#fff;">${u.display_name}</strong>
+                  <p style="font-size:0.75rem;color:#fbbf24;margin:2px 0 0 0;">✨ ¡De fiesta en el directo de yocapi_pr!</p>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        html += `</div></div>`;
+      } else {
+        html += `
+          <div class="glass-card" style="text-align:center;padding:28px;margin-bottom:20px;">
+            <div style="font-size:2rem;margin-bottom:6px;">☕</div>
+            <h4 style="font-size:1rem;font-weight:700;">Hoy no hay cumpleaños en stream</h4>
+            <p style="color:var(--text-dim);font-size:0.82rem;margin-top:4px;">¡Revisa los que vienen pronto o registra el tuyo!</p>
+          </div>
+        `;
+      }
+
+      if (data.upcoming && data.upcoming.length > 0) {
+        html += `
+          <div class="glass-card" style="border-color: rgba(145,70,255,0.3);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+              <span style="font-size:1.5rem;">🎈</span>
+              <h3 style="font-family:var(--font-heading);font-size:1.05rem;font-weight:800;margin:0;">Próximos en los siguientes 14 días</h3>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+        `;
+        const mNames = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        data.upcoming.forEach(u => {
+          const badge = u.daysUntil === 1 ? '¡Mañana!' : `En ${u.daysUntil} días`;
+          html += `
+            <div class="felic-upcoming-row" style="background:rgba(255,255,255,0.03);padding:10px 14px;border-radius:12px;display:flex;align-items:center;gap:12px;">
+              <img src="${u.profile_image || '/img/yocapi.png'}" onerror="this.src='/img/yocapi.png'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid rgba(145,70,255,0.4);" alt="">
+              <div style="flex:1;">
+                <strong style="font-size:0.9rem;color:#fff;">${u.display_name}</strong>
+                <p style="font-size:0.75rem;color:var(--text-dim);margin:0;">${u.birth_day} de ${mNames[u.birth_month]}</p>
+              </div>
+              <span style="font-size:0.75rem;font-weight:800;padding:3px 10px;border-radius:12px;background:rgba(145,70,255,0.2);color:#c4b5fd;">${badge}</span>
+            </div>
+          `;
+        });
+        html += `</div></div>`;
+      }
+
+      wallContent.innerHTML = html;
+    } catch {
+      wallContent.innerHTML = '<p style="color:var(--c-pink);text-align:center;">Error al cargar el muro comunitario.</p>';
+    }
+  }
+
+  if (btnShowAccount && btnShowWall) {
+    btnShowAccount.addEventListener('click', () => {
+      btnShowAccount.classList.add('active');
+      btnShowWall.classList.remove('active');
+      if (stateWall) stateWall.style.display = 'none';
+      if (currentUser) {
+        if (stateUser) stateUser.style.display = 'block';
+      } else {
+        if (stateGuest) stateGuest.style.display = 'block';
+      }
+    });
+
+    btnShowWall.addEventListener('click', () => {
+      btnShowWall.classList.add('active');
+      btnShowAccount.classList.remove('active');
+      if (stateGuest) stateGuest.style.display = 'none';
+      if (stateUser) stateUser.style.display = 'none';
+      if (stateWall) stateWall.style.display = 'block';
+      loadPublicWall();
+    });
+  }
+
+  // Listener delegado para los chips de mensajes rápidos de felicitación
+  document.addEventListener('click', (e) => {
+    const chip = e.target.closest('.btn-quick-chip');
+    if (chip) {
+      const target = chip.dataset.target;
+      const text = chip.dataset.text;
+      const input = document.getElementById(`felic-input-${target}`);
+      if (input) input.value = text;
     }
   });
 

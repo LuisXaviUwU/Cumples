@@ -227,6 +227,38 @@ async function loadTodayCelebrants() {
       container.appendChild(card);
     });
 
+    // Cargar también lista de próximos celebrantes (siguientes 14 días)
+    const upContainer = document.getElementById('upcoming-celebrants-list');
+    if (upContainer) {
+      try {
+        const pubRes = await fetch('/api/birthday/public-today');
+        const pubData = await pubRes.json();
+        if (!pubData.upcoming || pubData.upcoming.length === 0) {
+          upContainer.innerHTML = '<p style="color:#94a3b8; padding: 12px 0;">No hay cumpleaños registrados en los próximos 14 días.</p>';
+        } else {
+          upContainer.innerHTML = '';
+          const monthShortNames = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+          pubData.upcoming.forEach(u => {
+            const card = document.createElement('div');
+            card.className = 'today-item-card';
+            const daysBadge = u.daysUntil === 1 ? '¡Mañana!' : `En ${u.daysUntil} días`;
+            card.innerHTML = `
+              <div class="today-item-left">
+                <img src="${u.profile_image || '/img/yocapi.png'}" onerror="this.src='/img/yocapi.png'" alt="${u.display_name}" class="today-avatar">
+                <div class="today-info">
+                  <h4>${u.display_name} <span style="font-size:0.75rem; font-weight:800; background:rgba(168, 85, 247, 0.2); color:#c084fc; padding:2px 8px; border-radius:10px; margin-left:8px;">${daysBadge} (${u.birth_day} de ${monthShortNames[u.birth_month]})</span></h4>
+                  <p>Sonido registrado: <strong>${u.selected_sound || 'HBSilbato.mp3'}</strong></p>
+                </div>
+              </div>
+            `;
+            upContainer.appendChild(card);
+          });
+        }
+      } catch {
+        upContainer.innerHTML = '<p style="color:#94a3b8;">No se pudieron cargar próximos cumpleaños.</p>';
+      }
+    }
+
   } catch (err) {
     container.innerHTML = '<p style="color:var(--c-pink);">Error al obtener celebrantes.</p>';
   }
@@ -505,59 +537,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Selector de escala de OBS
-  document.querySelectorAll('.btn-scale-preset').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.btn-scale-preset').forEach(b => {
-        b.classList.remove('active');
-        b.style.borderColor = 'rgba(145, 70, 255, 0.3)';
-        b.style.background = 'rgba(255, 255, 255, 0.04)';
-        b.style.color = '#cbd5e1';
-        b.style.fontWeight = '600';
-      });
-      btn.classList.add('active');
-      btn.style.borderColor = '#9146ff';
-      btn.style.background = 'rgba(145, 70, 255, 0.25)';
-      btn.style.color = '#fff';
-      btn.style.fontWeight = '700';
-
-      selectedScale = btn.dataset.scale || '0.8';
-      updateObsUrlDisplay();
-      showToast(`Tamaño de OBS configurado al ${Math.round(parseFloat(selectedScale) * 100)}%`, 'info');
-    });
-  });
-
-  // Selector de posición de OBS
-  document.querySelectorAll('.btn-pos-preset').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.btn-pos-preset').forEach(b => {
-        b.classList.remove('active');
-        b.style.borderColor = (b.dataset.pos === 'free') ? 'rgba(16, 185, 129, 0.4)' : 'rgba(145, 70, 255, 0.3)';
-        b.style.background = 'rgba(255, 255, 255, 0.04)';
-        b.style.color = (b.dataset.pos === 'free') ? '#34d399' : '#cbd5e1';
-        b.style.fontWeight = '600';
-      });
-      btn.classList.add('active');
-      if (btn.dataset.pos === 'free') {
-        btn.style.borderColor = '#10b981';
-        btn.style.background = 'rgba(16, 185, 129, 0.25)';
-        btn.style.color = '#fff';
-      } else {
-        btn.style.borderColor = '#9146ff';
-        btn.style.background = 'rgba(145, 70, 255, 0.25)';
-        btn.style.color = '#fff';
-      }
-      btn.style.fontWeight = '700';
-
-      selectedPos = btn.dataset.pos || 'bottom';
-      updateObsUrlDisplay();
-      if (selectedPos === 'free') {
-        showToast('Modo Libre activado: Configura tu fuente de OBS a 850x300', 'success');
-      } else {
-        showToast(`Ubicación configurada: ${btn.textContent.trim()}`, 'info');
+  // Botón directo para lanzar alerta de prueba a OBS
+  const btnTestObsDirect = document.getElementById('btn-test-obs-direct');
+  if (btnTestObsDirect) {
+    btnTestObsDirect.addEventListener('click', async () => {
+      btnTestObsDirect.disabled = true;
+      btnTestObsDirect.innerHTML = '<span>📡</span><span>Enviando...</span>';
+      try {
+        const res = await authFetch('/api/dashboard/trigger-alert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            isTest: true,
+            user: 'capiluisxavi',
+            message: '¡Prueba en vivo de la tarjeta en OBS! 🎂✨',
+            sound: 'HBSilbato.mp3'
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          if (data.activeOverlayConnections > 0) {
+            showToast(`🎉 ¡Alerta de prueba lanzada a OBS! (${data.activeOverlayConnections} conectado)`, 'success');
+          } else {
+            showToast('⚠️ Prueba enviada, pero no hay ninguna fuente de OBS abierta en este momento', 'warning');
+          }
+        } else {
+          showToast(data.error || 'Error al lanzar prueba', 'error');
+        }
+      } catch (err) {
+        showToast('Error conectando con el servidor', 'error');
+      } finally {
+        btnTestObsDirect.disabled = false;
+        btnTestObsDirect.innerHTML = '<span>🚀</span><span>Probar en OBS</span>';
       }
     });
-  });
+  }
 
   // Botón refrescar
   document.getElementById('btn-refresh').addEventListener('click', () => {
@@ -623,8 +637,169 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ─── Botón de Pánico: Detener Alerta de Emergencia en OBS ────────────────
+  const btnPanic = document.getElementById('btn-panic-stop');
+  if (btnPanic) {
+    btnPanic.addEventListener('click', async () => {
+      btnPanic.disabled = true;
+      try {
+        const res = await authFetch('/api/dashboard/stop-alert', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('🛑 Alerta detenida y silenciada en OBS de emergencia', 'success');
+        }
+      } catch {
+        showToast('Error conectando con el servidor', 'error');
+      } finally {
+        btnPanic.disabled = false;
+      }
+    });
+  }
+
+  // ─── Pausar / Reanudar Alertas Entrantes (Modo Partida) ────────────────────
+  const btnPause = document.getElementById('btn-pause-alerts');
+  const pauseLabel = document.getElementById('pause-alerts-label');
+
+  function updatePauseUI(isPaused) {
+    if (!btnPause || !pauseLabel) return;
+    if (isPaused) {
+      pauseLabel.textContent = '▶️ Reanudar Alertas';
+      btnPause.style.background = 'rgba(239, 68, 68, 0.25)';
+      btnPause.style.borderColor = 'rgba(239, 68, 68, 0.6)';
+      btnPause.style.color = '#fca5a5';
+    } else {
+      pauseLabel.textContent = '⏸️ Pausar Alertas';
+      btnPause.style.background = 'rgba(245, 158, 11, 0.15)';
+      btnPause.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+      btnPause.style.color = '#fcd34d';
+    }
+  }
+
+  async function loadPausedQueue() {
+    try {
+      const res = await authFetch('/api/dashboard/paused-queue');
+      const data = await res.json();
+      updatePauseUI(data.alerts_paused);
+      const banner = document.getElementById('paused-queue-banner');
+      const countEl = document.getElementById('paused-queue-count');
+      const itemsEl = document.getElementById('paused-queue-items');
+      if (!banner) return;
+
+      if (data.queue && data.queue.length > 0) {
+        banner.style.display = 'block';
+        if (countEl) countEl.textContent = data.queue.length;
+        if (itemsEl) {
+          itemsEl.innerHTML = '';
+          data.queue.forEach(item => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,0.3);padding:8px 12px;border-radius:8px;font-size:0.82rem;gap:10px;flex-wrap:wrap;';
+            row.innerHTML = `
+              <div style="flex:1;">
+                <strong style="color:#fff;">${item.user}</strong> <span style="color:#94a3b8;font-size:0.75rem;">(${item.time})</span>: 
+                <span style="color:#fde047;">"${item.message || 'Sin mensaje'}"</span>
+              </div>
+              <button type="button" class="btn-copy btn-release-single" data-id="${item.id}" style="padding:4px 10px;font-size:0.75rem;background:rgba(16,185,129,0.2);color:#34d399;border-color:rgba(16,185,129,0.4);cursor:pointer;">
+                ▶️ Soltar a OBS
+              </button>
+            `;
+            row.querySelector('.btn-release-single').addEventListener('click', async () => {
+              await authFetch('/api/dashboard/release-paused-alert', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: item.id })
+              });
+              showToast(`Alerta de ${item.user} enviada a OBS`, 'success');
+              loadPausedQueue();
+            });
+            itemsEl.appendChild(row);
+          });
+        }
+      } else {
+        banner.style.display = 'none';
+      }
+    } catch (e) {
+      console.warn('Error cargando cola de alertas:', e);
+    }
+  }
+
+  if (btnPause) {
+    btnPause.addEventListener('click', async () => {
+      btnPause.disabled = true;
+      try {
+        const res = await authFetch('/api/dashboard/toggle-pause-alerts', { method: 'POST' });
+        const data = await res.json();
+        updatePauseUI(data.alerts_paused);
+        showToast(data.message, data.alerts_paused ? 'warning' : 'success');
+        loadPausedQueue();
+      } catch {
+        showToast('Error cambiando estado de pausa', 'error');
+      } finally {
+        btnPause.disabled = false;
+      }
+    });
+  }
+
+  const btnReleaseAll = document.getElementById('btn-release-all-alerts');
+  if (btnReleaseAll) {
+    btnReleaseAll.addEventListener('click', async () => {
+      const res = await authFetch('/api/dashboard/release-paused-alert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ releaseAll: true })
+      });
+      const data = await res.json();
+      showToast(data.message || 'Alertas liberadas a OBS', 'success');
+      loadPausedQueue();
+    });
+  }
+
+  const btnReleaseNext = document.getElementById('btn-release-next-alert');
+  if (btnReleaseNext) {
+    btnReleaseNext.addEventListener('click', async () => {
+      const qRes = await authFetch('/api/dashboard/paused-queue');
+      const qData = await qRes.json();
+      if (qData.queue && qData.queue.length > 0) {
+        const first = qData.queue[0];
+        await authFetch('/api/dashboard/release-paused-alert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: first.id })
+        });
+        showToast(`Alerta de ${first.user} enviada a OBS`, 'success');
+        loadPausedQueue();
+      } else {
+        showToast('No hay alertas en cola', 'info');
+      }
+    });
+  }
+
+  // ─── Exportar Base de Datos a CSV (Excel) ─────────────────────────────────
+  const btnExportCsv = document.getElementById('btn-export-csv');
+  if (btnExportCsv) {
+    btnExportCsv.addEventListener('click', () => {
+      window.location.href = '/api/dashboard/export-csv';
+      showToast('📥 Descargando archivo CSV de cumpleaños...', 'info');
+    });
+  }
+
+  // ─── Copiar Comandos de Nightbot ──────────────────────────────────────────
+  document.querySelectorAll('.btn-copy-cmd').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.dataset.target;
+      const codeEl = document.getElementById(targetId);
+      if (codeEl) {
+        navigator.clipboard.writeText(codeEl.textContent.trim()).then(() => {
+          showToast('📋 ¡Comando de Nightbot copiado al portapapeles!', 'success');
+        }).catch(() => {
+          showToast('Selecciona y copia el comando manualmente', 'info');
+        });
+      }
+    });
+  });
+
   // Cargar estado inicial
   loadStats();
+  loadPausedQueue();
 });
 
 // =============================================================================
@@ -647,7 +822,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!modal || !btnOpen) return;
 
   // State
-  let simState = { posX: 50, posY: 85, scale: 0.85, animation: 'slide-up' };
+  let simState = { posX: 50, posY: 85, scale: 0.85, animation: 'slide-up', volume: 0.85 };
+  const volSlider   = document.getElementById('sim-vol-slider');
+  const volVal      = document.getElementById('sim-vol-val');
 
   // ─── Animación Dinámica de la Tarjeta ──────────────────────────────────────
   function updateCardScale(val) {
@@ -696,6 +873,12 @@ document.addEventListener('DOMContentLoaded', () => {
         scaleSlider.value = sliderPct;
         scaleVal.textContent = `${sliderPct}%`;
         updateCardScale(simState.scale);
+        if (typeof cfg.volume === 'number' && volSlider && volVal) {
+          const volPct = Math.round(cfg.volume * 100);
+          volSlider.value = volPct;
+          volVal.textContent = `${volPct}%`;
+          simState.volume = cfg.volume;
+        }
         // Activar botón de animación correcta
         document.querySelectorAll('.btn-anim-choice').forEach(b => {
           b.classList.toggle('active', b.dataset.anim === simState.animation);
@@ -811,6 +994,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // ─── Slider de Volumen ────────────────────────────────────────────────────
+  if (volSlider && volVal) {
+    volSlider.addEventListener('input', () => {
+      const pct = parseInt(volSlider.value);
+      simState.volume = pct / 100;
+      volVal.textContent = `${pct}%`;
+    });
+  }
+
   // ─── Selección de Animación ────────────────────────────────────────────────
   document.querySelectorAll('.btn-anim-choice').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -881,6 +1073,55 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ─── Lanzar Prueba a OBS Studio desde el Simulador ──────────────────────────
+  const btnTestObs = document.getElementById('btn-sim-test-obs');
+  if (btnTestObs) {
+    btnTestObs.addEventListener('click', async () => {
+      btnTestObs.disabled = true;
+      btnTestObs.innerHTML = '<span>📡 Enviando...</span>';
+      try {
+        // 1. Sincronizar en tiempo real la posición/escala/animación actual al overlay de OBS
+        await authFetch('/api/dashboard/overlay-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            posX: simState.posX,
+            posY: simState.posY,
+            scale: simState.scale,
+            animation: simState.animation
+          })
+        });
+
+        // 2. Disparar alerta de prueba con confeti y sonido
+        const res = await authFetch('/api/dashboard/trigger-alert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            isTest: true,
+            user: 'capiluisxavi',
+            message: '¡Prueba en vivo con tu diseño y animación! 🎂✨',
+            sound: 'HBSilbato.mp3'
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          if (data.activeOverlayConnections > 0) {
+            showToast(`🎉 ¡Prueba lanzada a OBS! (${data.activeOverlayConnections} conectado)`, 'success');
+          } else {
+            showToast('⚠️ Prueba enviada a OBS, pero no hay ninguna fuente de OBS abierta en este momento', 'warning');
+          }
+        } else {
+          showToast(data.error || 'Error al lanzar prueba a OBS', 'error');
+        }
+      } catch (err) {
+        showToast('Error conectando con el servidor', 'error');
+      } finally {
+        btnTestObs.disabled = false;
+        btnTestObs.innerHTML = '🚀 Lanzar a OBS';
+      }
+    });
+  }
+
   // ─── Guardar y Aplicar en OBS en Tiempo Real ──────────────────────────────
   const btnSave = document.getElementById('btn-sim-save');
   if (btnSave) {
@@ -895,15 +1136,13 @@ document.addEventListener('DOMContentLoaded', () => {
             posX: simState.posX,
             posY: simState.posY,
             scale: simState.scale,
-            animation: simState.animation
+            animation: simState.animation,
+            volume: simState.volume
           })
         });
         const data = await res.json();
         if (data.success) {
           showToast('🎯 ¡Configuración guardada y aplicada en OBS en tiempo real!', 'success');
-          // Actualizar también la URL de OBS con la escala nueva
-          selectedScale = String(simState.scale);
-          updateObsUrlDisplay();
           setTimeout(() => closeModal(), 1200);
         } else {
           showToast(data.error || 'Error al guardar', 'error');
