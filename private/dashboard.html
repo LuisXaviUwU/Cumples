@@ -55,14 +55,26 @@
         <div class="topbar-page-title" id="page-title">
           <span>📊</span> Resumen del Sistema
         </div>
-        <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
           <div id="obs-status-pill"
             style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 20px; background: rgba(255,255,255,0.04); font-size: 0.78rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.08);">
             <span id="obs-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #64748b;"></span>
             <span id="obs-status-text">OBS: Verificando...</span>
           </div>
+          <button type="button" id="btn-panic-stop" class="btn-copy"
+            style="padding: 7px 14px; background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;"
+            title="Detiene y silencia inmediatamente cualquier alerta en directo">
+            <span>🛑</span>
+            <span>Detener Alerta</span>
+          </button>
+          <button type="button" id="btn-pause-alerts" class="btn-copy"
+            style="padding: 7px 14px; background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.4); color: #fcd34d; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;"
+            title="Pausa la aparición de alertas en stream (se guardarán en cola)">
+            <span>⏸️</span>
+            <span id="pause-alerts-label">Pausar Alertas</span>
+          </button>
           <button id="btn-refresh" class="btn-copy"
-            style="padding: 8px 14px; background: rgba(255,255,255,0.06); font-size: 0.8rem;">
+            style="padding: 7px 14px; background: rgba(255,255,255,0.06); font-size: 0.8rem;">
             🔄 Actualizar
           </button>
         </div>
@@ -102,6 +114,32 @@
               </div>
               <div class="stat-value" id="stat-alerts">0</div>
             </div>
+          </div>
+
+          <!-- Banner de Alertas Pausadas / Cola (Modo Partida) -->
+          <div id="paused-queue-banner" class="glass-card" style="display: none; padding: 18px 22px; margin-bottom: 22px; border: 1.5px solid #f59e0b; background: rgba(245, 158, 11, 0.1);">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 1.8rem;">⏸️</span>
+                <div>
+                  <h4 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #fcd34d; margin: 0 0 2px 0;">
+                    Alertas Pausadas en Cola (<span id="paused-queue-count">0</span> pendientes)
+                  </h4>
+                  <p style="color: #fef3c7; font-size: 0.8rem; margin: 0;">
+                    Las alertas enviadas por los seguidores se están guardando aquí para no interrumpir tu directo.
+                  </p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" id="btn-release-next-alert" class="btn-copy" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5); color: #34d399; font-weight: 700;">
+                  ▶️ Soltar Siguiente
+                </button>
+                <button type="button" id="btn-release-all-alerts" class="btn-primary" style="padding: 8px 16px; font-size: 0.82rem; font-weight: 800;">
+                  🚀 Soltar Todas
+                </button>
+              </div>
+            </div>
+            <div id="paused-queue-items" style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px;"></div>
           </div>
 
           <!-- Control de Felicitaciones en Directo para Espectadores -->
@@ -151,6 +189,10 @@
             <div class="obs-copy-row">
               <input type="text" id="obs-url-display" class="obs-url-input" readonly>
               <button id="btn-copy-obs" class="btn-copy">📋 Copiar URL</button>
+              <button type="button" id="btn-test-obs-direct" class="btn-copy" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #34d399; display: inline-flex; align-items: center; gap: 6px;" title="Dispara una alerta de cumpleaños de prueba directamente a OBS Studio">
+                <span>🚀</span>
+                <span>Probar en OBS</span>
+              </button>
             </div>
 
             <!-- Botón Destacado: Diseñador Visual de OBS -->
@@ -174,6 +216,56 @@
               </div>
             </div>
 
+          </div>
+
+          <!-- Integración con Nightbot / Bot de Twitch -->
+          <div class="glass-card" style="padding: 22px 24px; margin-bottom: 24px; border: 1.5px solid rgba(59, 130, 246, 0.4); background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(145, 70, 255, 0.06));">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <span style="font-size: 2.2rem;">🤖</span>
+                <div>
+                  <h4 style="font-family: var(--font-h); font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0 0 2px 0;">
+                    Comandos de Twitch para Nightbot
+                  </h4>
+                  <p style="color: #cbd5e1; font-size: 0.82rem; margin: 0;">
+                    Copia y pega estos comandos directamente en tu chat de Twitch para que tu comunidad consulte los cumpleaños en directo:
+                  </p>
+                </div>
+              </div>
+              <span style="padding: 4px 12px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 20px; font-size: 0.75rem; font-weight: 700; color: #93c5fd;">
+                Nightbot Ready
+              </span>
+            </div>
+
+            <!-- Comando 1: !cumple -->
+            <div style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 250px;">
+                <div style="font-size: 0.75rem; color: #93c5fd; font-weight: 800; text-transform: uppercase; margin-bottom: 3px;">
+                  1. Comando para ver quién cumple hoy (!cumple)
+                </div>
+                <code id="cmd-nightbot-today" style="color: #f1f5f9; font-family: monospace; font-size: 0.82rem; word-break: break-all;">
+                  !addcom !cumple $(urlfetch https://cumples.onrender.com/api/bot/today)
+                </code>
+              </div>
+              <button type="button" class="btn-copy btn-copy-cmd" data-target="cmd-nightbot-today" style="padding: 6px 14px; font-size: 0.78rem;">
+                📋 Copiar Comando
+              </button>
+            </div>
+
+            <!-- Comando 2: !micumple -->
+            <div style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 250px;">
+                <div style="font-size: 0.75rem; color: #93c5fd; font-weight: 800; text-transform: uppercase; margin-bottom: 3px;">
+                  2. Comando para consultar la fecha de un seguidor (!micumple)
+                </div>
+                <code id="cmd-nightbot-check" style="color: #f1f5f9; font-family: monospace; font-size: 0.82rem; word-break: break-all;">
+                  !addcom !micumple $(urlfetch https://cumples.onrender.com/api/bot/check?user=$(user))
+                </code>
+              </div>
+              <button type="button" class="btn-copy btn-copy-cmd" data-target="cmd-nightbot-check" style="padding: 6px 14px; font-size: 0.78rem;">
+                📋 Copiar Comando
+              </button>
+            </div>
           </div>
 
           <!-- Info del Sistema -->
@@ -201,11 +293,18 @@
         <!-- PESTAÑA: CUMPLEAÑEROS HOY -->
         <div id="tab-today" class="dash-tab-content" style="display: none;">
           <div style="margin-bottom: 20px;">
-            <h3 style="font-family: var(--font-h); font-size: 1.3rem; font-weight: 800;">Celebrantes Activos</h3>
-            <p style="color: #94a3b8; font-size: 0.85rem;">Seguidores que cumplen años hoy o se encuentran dentro del
-              período de gracia (14 días posteriores).</p>
+            <h3 style="font-family: var(--font-h); font-size: 1.3rem; font-weight: 800;">🎂 Celebrantes Activos (Hoy y Período de Gracia)</h3>
+            <p style="color: #94a3b8; font-size: 0.85rem;">Seguidores que cumplen años hoy o se encuentran dentro del período de gracia (14 días posteriores).</p>
           </div>
           <div id="today-celebrants-list" class="today-cards-list">
+            <!-- Cargado por JS -->
+          </div>
+
+          <div style="margin-top: 36px; margin-bottom: 16px;">
+            <h3 style="font-family: var(--font-h); font-size: 1.2rem; font-weight: 800; color: #a855f7;">🎈 Próximos Cumpleaños (Siguientes 14 días)</h3>
+            <p style="color: #94a3b8; font-size: 0.85rem;">Seguidores cuyos cumpleaños están muy cerca:</p>
+          </div>
+          <div id="upcoming-celebrants-list" class="today-cards-list">
             <!-- Cargado por JS -->
           </div>
         </div>
@@ -230,6 +329,10 @@
                 <option value="11">Noviembre</option>
                 <option value="12">Diciembre</option>
               </select>
+              <button type="button" id="btn-export-csv" class="btn-copy" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5); color: #34d399; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; margin-left: auto;">
+                <span>📥</span>
+                <span>Descargar CSV (Excel)</span>
+              </button>
             </div>
             <table class="bday-table" style="min-width: 900px;">
               <thead>
@@ -440,6 +543,15 @@
             </div>
           </div>
 
+          <!-- Slider de Volumen de Audio OBS -->
+          <div class="sim-control-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label class="sim-group-label" style="margin: 0;">🔊 Volumen del Overlay en OBS:</label>
+              <span id="sim-vol-val" style="font-size: 0.85rem; font-weight: 800; color: #10b981;">85%</span>
+            </div>
+            <input type="range" id="sim-vol-slider" min="0" max="100" step="5" value="85" class="sim-slider">
+          </div>
+
           <!-- Dirección y Tipo de Animación -->
           <div class="sim-control-group">
             <label class="sim-group-label">🎬 Por Dónde y Cómo Aparece:</label>
@@ -498,9 +610,14 @@
 
           <!-- Botones de Acción -->
           <div style="display: flex; flex-direction: column; gap: 10px; margin-top: auto; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);">
-            <button type="button" id="btn-sim-test-anim" class="btn-sim-test">
-              ▶️ Probar Animación en Vivo en el Simulador
-            </button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <button type="button" id="btn-sim-test-anim" class="btn-sim-test" title="Reproduce la animación de entrada dentro de este simulador">
+                ▶️ Probar Simulador
+              </button>
+              <button type="button" id="btn-sim-test-obs" class="btn-sim-test-obs" title="Lanza una tarjeta de prueba con sonido y confeti directo a OBS Studio">
+                🚀 Lanzar a OBS
+              </button>
+            </div>
             <div style="display: flex; gap: 8px;">
               <button type="button" id="btn-sim-save" class="btn-sim-save">
                 💾 Guardar y Aplicar en OBS en Tiempo Real
