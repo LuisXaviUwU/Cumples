@@ -35,12 +35,11 @@ body {
   z-index: 10;
 }
 
-/* ─── Alert Wrapper ─────────────────────────────────────────────────────── */
+/* ─── Alert Wrapper (Multi-Posición Dinámica y Direcciones de Animación) ─── */
 .alert-wrapper {
   position: fixed;
-  bottom: 85px;
-  left: 50%;
-  transform: translateX(-50%) translateY(240px) scale(calc(var(--alert-scale, 0.85) * 0.85));
+  left: var(--pos-x, 50%);
+  top: var(--pos-y, 85%);
   opacity: 0;
   z-index: 100;
   pointer-events: none;
@@ -48,21 +47,93 @@ body {
   will-change: transform, opacity;
 }
 
+/* Animación 1: Desde Abajo hacia Arriba (Predeterminada) */
+.alert-wrapper,
+.alert-wrapper.anim-slide-up {
+  transform: translate(-50%, -50%) translateY(320px) scale(calc(var(--alert-scale, 0.85) * 0.85));
+}
+.alert-wrapper.active,
+.alert-wrapper.anim-slide-up.active {
+  transform: translate(-50%, -50%) translateY(0) scale(var(--alert-scale, 0.85));
+}
+
+/* Animación 2: Desde Arriba hacia Abajo */
+.alert-wrapper.anim-slide-down {
+  transform: translate(-50%, -50%) translateY(-320px) scale(calc(var(--alert-scale, 0.85) * 0.85));
+}
+.alert-wrapper.anim-slide-down.active {
+  transform: translate(-50%, -50%) translateY(0) scale(var(--alert-scale, 0.85));
+}
+
+/* Animación 3: Desde la Izquierda hacia la Derecha */
+.alert-wrapper.anim-slide-right {
+  transform: translate(-50%, -50%) translateX(-480px) scale(calc(var(--alert-scale, 0.85) * 0.85));
+}
+.alert-wrapper.anim-slide-right.active {
+  transform: translate(-50%, -50%) translateX(0) scale(var(--alert-scale, 0.85));
+}
+
+/* Animación 4: Desde la Derecha hacia la Izquierda */
+.alert-wrapper.anim-slide-left {
+  transform: translate(-50%, -50%) translateX(480px) scale(calc(var(--alert-scale, 0.85) * 0.85));
+}
+.alert-wrapper.anim-slide-left.active {
+  transform: translate(-50%, -50%) translateX(0) scale(var(--alert-scale, 0.85));
+}
+
+/* Animación 5: Pop / Zoom Central con Rebote */
+.alert-wrapper.anim-pop-zoom {
+  transform: translate(-50%, -50%) scale(0.08);
+}
+.alert-wrapper.anim-pop-zoom.active {
+  transform: translate(-50%, -50%) scale(var(--alert-scale, 0.85));
+}
+
+/* Animación 6: Rebote Festivo (Bounce Drop) */
+.alert-wrapper.anim-bounce-drop {
+  transform: translate(-50%, -50%) translateY(-540px) scale(calc(var(--alert-scale, 0.85) * 0.7));
+}
+.alert-wrapper.anim-bounce-drop.active {
+  transform: translate(-50%, -50%) translateY(0) scale(var(--alert-scale, 0.85));
+  transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Animación 7: Fade & Glow Suave */
+.alert-wrapper.anim-fade-glow {
+  transform: translate(-50%, -50%) scale(calc(var(--alert-scale, 0.85) * 0.94));
+}
+.alert-wrapper.anim-fade-glow.active {
+  transform: translate(-50%, -50%) scale(var(--alert-scale, 0.85));
+  filter: drop-shadow(0 0 45px var(--theme-solid));
+}
+
+/* Clases de compatibilidad para presets (pos-*) */
+.alert-wrapper.pos-bottom { left: 50%; top: 88%; }
+.alert-wrapper.pos-top { left: 50%; top: 14%; }
+.alert-wrapper.pos-center { left: 50%; top: 50%; }
+.alert-wrapper.pos-bottom-left { left: 25%; top: 88%; }
+.alert-wrapper.pos-bottom-right { left: 75%; top: 88%; }
+.alert-wrapper.pos-top-left { left: 25%; top: 14%; }
+.alert-wrapper.pos-top-right { left: 75%; top: 14%; }
+.alert-wrapper.pos-free, .alert-wrapper.pos-compact { left: 50%; top: 50%; }
+
 .alert-wrapper.active {
-  transform: translateX(-50%) translateY(0) scale(var(--alert-scale, 0.85));
   opacity: 1;
+}
+
+.alert-wrapper.active .alert-card {
   animation: bday-card-float 3.5s ease-in-out infinite alternate 0.75s;
 }
 
 @keyframes bday-card-float {
   0% {
-    transform: translateX(-50%) translateY(0) scale(var(--alert-scale, 0.85)) rotate(0deg);
+    transform: translateY(0) rotate(0deg);
   }
   50% {
-    transform: translateX(-50%) translateY(-6px) scale(calc(var(--alert-scale, 0.85) * 1.008)) rotate(0.4deg);
+    transform: translateY(-6px) rotate(0.4deg);
   }
   100% {
-    transform: translateX(-50%) translateY(4px) scale(calc(var(--alert-scale, 0.85) * 0.995)) rotate(-0.4deg);
+    transform: translateY(4px) rotate(-0.4deg);
   }
 }
 

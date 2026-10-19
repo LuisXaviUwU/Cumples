@@ -1104,3 +1104,483 @@ footer a {
 .felic-upcoming-row:last-child {
   border-bottom: none;
 }
+
+/* ==========================================================================
+   Simulador y Diseñador Visual de OBS (1920x1080)
+   ========================================================================== */
+
+.sim-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(4, 2, 10, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: simFadeIn 0.25s ease-out;
+}
+
+@keyframes simFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.sim-modal-dialog {
+  background: #0d0a1a;
+  border: 1.5px solid rgba(145, 70, 255, 0.45);
+  border-radius: 22px;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.95), 0 0 50px rgba(145, 70, 255, 0.25);
+  width: 96vw;
+  max-width: 1380px;
+  max-height: 94vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sim-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(90deg, rgba(145, 70, 255, 0.12), transparent);
+}
+
+.sim-close-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.sim-close-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #ef4444;
+  color: #fff;
+  transform: rotate(90deg);
+}
+
+.sim-modal-body {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+@media (max-width: 1024px) {
+  .sim-modal-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Columna Izquierda: El Canvas 16:9 ───────────────────────────────────── */
+.sim-canvas-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.sim-canvas-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sim-pill {
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sim-pill.coords {
+  background: rgba(145, 70, 255, 0.2);
+  color: #c4b5fd;
+  border-color: rgba(145, 70, 255, 0.4);
+}
+
+.sim-canvas-viewport {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  background: #06040d;
+  border: 2px solid rgba(145, 70, 255, 0.5);
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  background-image: radial-gradient(rgba(145, 70, 255, 0.18) 1.2px, transparent 1.2px);
+  background-size: 26px 26px;
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.9), 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* Guías centrales */
+.sim-guide-line.horizontal {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+}
+
+.sim-guide-line.vertical {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  border-left: 1px dashed rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+}
+
+/* Marco simulado de cámara web */
+.sim-webcam-mock {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 26%;
+  aspect-ratio: 16 / 9;
+  border: 2px dashed rgba(244, 63, 94, 0.65);
+  background: rgba(244, 63, 94, 0.12);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fda4af;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* ─── Tarjeta Arrastrable en el Canvas ────────────────────────────────────── */
+.sim-card-wrapper {
+  position: absolute;
+  left: 50%;
+  top: 85%;
+  transform: translate(-50%, -50%);
+  user-select: none;
+  cursor: grab;
+  touch-action: none;
+  z-index: 10;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.sim-card-wrapper.dragging {
+  cursor: grabbing !important;
+  transition: none !important;
+}
+
+.sim-drag-handle-tag {
+  background: linear-gradient(135deg, #9146ff, #7c3aed);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  margin-bottom: 5px;
+  width: fit-content;
+  margin-inline: auto;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.sim-bday-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(24, 18, 44, 0.98), rgba(12, 10, 24, 0.99));
+  border: 2px solid #9146ff;
+  border-radius: 18px;
+  padding: 8px 16px 8px 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 25px rgba(145, 70, 255, 0.55);
+  backdrop-filter: blur(10px);
+  min-width: 250px;
+  pointer-events: none;
+}
+
+.sim-avatar-box {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  padding: 2px;
+  background: conic-gradient(from 0deg, #9146ff, #f43f5e, #fbbf24, #9146ff);
+  flex-shrink: 0;
+}
+
+.sim-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.sim-card-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.sim-tagline {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #fbbf24;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sim-username {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.1;
+}
+
+.sim-quote {
+  font-size: 0.66rem;
+  color: #cbd5e1;
+  font-style: italic;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sim-balloons {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 1.3rem;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.sim-balloons.left {
+  left: -22px;
+  bottom: 4px;
+}
+
+.sim-balloons.right {
+  right: -22px;
+  bottom: 4px;
+}
+
+/* ─── Columna Derecha: Panel de Controles ─────────────────────────────────── */
+.sim-controls-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sim-control-group {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.sim-group-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* Grid de botones 3x3 de anclaje */
+.sim-grid-presets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.btn-snap {
+  padding: 7px 6px;
+  font-size: 0.74rem;
+  border-radius: 8px;
+  border: 1px solid rgba(145, 70, 255, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-snap:hover {
+  background: rgba(145, 70, 255, 0.15);
+  border-color: rgba(145, 70, 255, 0.6);
+  color: #fff;
+}
+
+.btn-snap.active {
+  background: rgba(145, 70, 255, 0.3);
+  border-color: #9146ff;
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 0 10px rgba(145, 70, 255, 0.3);
+}
+
+/* Slider de Escala */
+.sim-slider {
+  width: 100%;
+  accent-color: #9146ff;
+  cursor: pointer;
+}
+
+.btn-scale-quick {
+  flex: 1;
+  padding: 5px 8px;
+  font-size: 0.72rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-scale-quick.active,
+.btn-scale-quick:hover {
+  background: rgba(145, 70, 255, 0.25);
+  border-color: #9146ff;
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Lista de Animaciones */
+.sim-anim-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.btn-anim-choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #cbd5e1;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.btn-anim-choice:hover {
+  background: rgba(145, 70, 255, 0.12);
+  border-color: rgba(145, 70, 255, 0.4);
+}
+
+.btn-anim-choice.active {
+  background: linear-gradient(135deg, rgba(145, 70, 255, 0.3), rgba(236, 72, 153, 0.2));
+  border-color: #9146ff;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(145, 70, 255, 0.25);
+}
+
+.btn-anim-choice .anim-icon {
+  font-size: 1.25rem;
+}
+
+.btn-anim-choice .anim-info strong {
+  display: block;
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+.btn-anim-choice .anim-info small {
+  display: block;
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+/* Botones de acción */
+.btn-sim-test {
+  padding: 10px 16px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  border-radius: 10px;
+  border: 1px solid rgba(145, 70, 255, 0.5);
+  background: rgba(145, 70, 255, 0.15);
+  color: #c4b5fd;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-sim-test:hover {
+  background: rgba(145, 70, 255, 0.35);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.btn-sim-save {
+  flex: 1;
+  padding: 12px 18px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #9146ff, #ec4899);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(145, 70, 255, 0.4);
+  transition: all 0.2s;
+}
+
+.btn-sim-save:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(145, 70, 255, 0.6);
+}
+
+.btn-sim-reset {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-sim-reset:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
