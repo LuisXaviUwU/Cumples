@@ -139,7 +139,7 @@ function toggleAudio(file, btn) {
 }
 
 // Actualizar banner de estado de cumpleaños
-function updateCelebrationBanner(status, user) {
+function updateCelebrationBanner(status, user, alreadyCelebrated) {
   const box = document.getElementById('celebration-box');
   const tag = document.getElementById('status-tag');
   const title = document.getElementById('status-title');
@@ -157,6 +157,22 @@ function updateCelebrationBanner(status, user) {
   }
 
   if (status.canCelebrate) {
+    // Si ya lanzó su alerta este año, mostrar estado especial
+    if (alreadyCelebrated) {
+      box.className = 'celebration-box celebrated';
+      launchBtn.style.display = 'none';
+      if (status.isToday) {
+        tag.textContent = '🎂 ¡Ya Celebraste Hoy!';
+        title.textContent = '🥳 ¡Feliz Cumpleaños!';
+        desc.textContent = '¡Ya lanzaste tu alerta de cumpleaños en el stream! Solo puedes hacerlo una vez por año. ¡Esperamos que haya sido genial! 🎉';
+      } else {
+        tag.textContent = '🎈 Celebración Completada';
+        title.textContent = '¡Ya celebraste este año!';
+        desc.textContent = `¡Tu alerta de cumpleaños ya fue lanzada en el stream! Hasta el próximo año. Te quedan ${status.daysRemainingInGrace} días de período de gracia pero ya no puedes lanzar otra alerta.`;
+      }
+      return;
+    }
+
     box.className = 'celebration-box active';
     launchBtn.style.display = 'inline-flex';
 
@@ -491,7 +507,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       // Banner de estado
-      updateCelebrationBanner(data.status, data.user);
+      updateCelebrationBanner(data.status, data.user, data.alreadyCelebrated);
 
       // Formulario de edición
       const editMonth = document.getElementById('edit-month');
