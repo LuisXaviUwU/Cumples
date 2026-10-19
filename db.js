@@ -125,6 +125,9 @@ function initDatabase() {
     try {
         sqliteDb.exec("ALTER TABLE users ADD COLUMN created_at TEXT DEFAULT '';");
     } catch (e) {}
+    try {
+        sqliteDb.exec("ALTER TABLE users ADD COLUMN last_celebrated_year INTEGER DEFAULT 0;");
+    } catch (e) {}
 
     mode = 'sqlite';
     console.log('💾 [DB] Conectado a SQLite local (data/birthdays.db)');
@@ -167,6 +170,7 @@ const db = {
             last_changed_at: new Date().toISOString(),
             last_activated: data.last_activated || null,
             last_played_date: data.last_played_date || null,
+            last_celebrated_year: parseInt(data.last_celebrated_year, 10) || 0,
             birthday_unlocked: (data.birthday_unlocked === true || data.birthday_unlocked === 1) ? 1 : 0,
             created_at: data.created_at || data.registered_at || new Date().toISOString()
         };
@@ -184,8 +188,8 @@ const db = {
                     username, display_name, pin_hash, recovery_hash, profile_image,
                     birth_month, birth_day, custom_message, selected_sound,
                     registered_at, last_changed_at, last_activated, last_played_date,
-                    birthday_unlocked, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    last_celebrated_year, birthday_unlocked, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(username) DO UPDATE SET
                     display_name = excluded.display_name,
                     pin_hash = excluded.pin_hash,
@@ -198,6 +202,7 @@ const db = {
                     last_changed_at = excluded.last_changed_at,
                     last_activated = excluded.last_activated,
                     last_played_date = excluded.last_played_date,
+                    last_celebrated_year = excluded.last_celebrated_year,
                     birthday_unlocked = excluded.birthday_unlocked,
                     created_at = CASE WHEN excluded.created_at != '' THEN excluded.created_at ELSE users.created_at END
             `);
@@ -205,7 +210,7 @@ const db = {
                 record.username, record.display_name, record.pin_hash, record.recovery_hash, record.profile_image,
                 record.birth_month, record.birth_day, record.custom_message, record.selected_sound,
                 record.registered_at, record.last_changed_at, record.last_activated, record.last_played_date,
-                record.birthday_unlocked, record.created_at
+                record.last_celebrated_year, record.birthday_unlocked, record.created_at
             );
         }
         return record;

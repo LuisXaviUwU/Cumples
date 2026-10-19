@@ -450,6 +450,10 @@ app.get('/api/me', authenticateUser, async (req, res) => {
             ? { canCelebrate: false, isToday: false, isGracePeriod: false, daysUntilBirthday: 0 }
             : getBirthdayStatus(user.birth_month, user.birth_day);
 
+        // Determine if the user already launched their celebration this year
+        const alreadyCelebrated = status.canCelebrate
+            && (parseInt(user.last_celebrated_year, 10) || 0) >= status.celebrationYear;
+
         res.json({
             user: {
                 username: user.username,
@@ -459,9 +463,11 @@ app.get('/api/me', authenticateUser, async (req, res) => {
                 birth_day: user.birth_day,
                 custom_message: user.custom_message,
                 selected_sound: user.selected_sound,
-                is_date_locked: isLocked
+                is_date_locked: isLocked,
+                last_celebrated_year: parseInt(user.last_celebrated_year, 10) || 0
             },
             status,
+            alreadyCelebrated,
             streamer_login: STREAMER_LOGIN
         });
     } catch (err) {
@@ -564,6 +570,14 @@ app.post('/api/birthday/alert', authenticateUser, async (req, res) => {
         });
     }
 
+    // ── Restricción: solo una celebración por cumpleaños (por año) ──────────
+    const lastCelebratedYear = parseInt(user.last_celebrated_year, 10) || 0;
+    if (lastCelebratedYear >= status.celebrationYear) {
+        return res.status(400).json({
+            error: '🎂 ¡Ya lanzaste tu felicitación de cumpleaños este año! Solo puedes hacerlo una vez. ¡Hasta el próximo año!'
+        });
+    }
+
     // Cooldown check
     const lastAlert = recentAlertsCache.get(user.username) || 0;
     const now = Date.now();
@@ -585,9 +599,10 @@ app.post('/api/birthday/alert', authenticateUser, async (req, res) => {
         }
     }
 
-    // Actualizar registro
+    // Actualizar registro — marcar año de celebración para evitar duplicados
     user.last_activated = new Date().toISOString();
     user.last_played_date = new Date().toISOString().split('T')[0];
+    user.last_celebrated_year = status.celebrationYear;
     await db.saveUser(user);
 
     // Registrar en log
@@ -1193,13 +1208,23 @@ app.get('/api/bot/today', async (req, res) => {
     res.type('text/plain; charset=utf-8');
     try {
         const users = await db.getAllUsers();
-        const todayUsers = [];
+        const todayBirthdays = [];   // cumpleaños exacto hoy
+        const graceNotLaunched = []; // en gracia, aún no han lanzado su alerta
+        const graceLaunched = [];    // en gracia, ya lanzaron su alerta
 
         for (const u of users) {
             if (!u.birth_month || !u.birth_day || u.birthday_unlocked) continue;
             const status = getBirthdayStatus(u.birth_month, u.birth_day);
-            if (status.canCelebrate) {
-                todayUsers.push(u.display_name || u.username);
+            if (!status.canCelebrate) continue;
+            const lastCelebrated = parseInt(u.last_celebrated_year, 10) || 0;
+            const alreadyCelebrated = lastCelebrated >= status.celebrationYear;
+            const name = u.display_name || u.username;
+            if (status.isToday) {
+                todayBirthdays.push(name);
+            } else if (alreadyCelebrated) {
+                graceLaunched.push(name);
+            } else {
+                graceNotLaunched.push(name);
             }
         }
 
@@ -1207,9 +1232,22 @@ app.get('/api/bot/today', async (req, res) => {
         const host = req.headers.host || `localhost:${PORT}`;
         const siteUrl = `${protocol}://${host}`;
 
-        if (todayUsers.length > 0) {
-            const list = todayUsers.map(name => `@${name}`).join(', ');
-            return res.send(`🎂 ¡Hoy está(n) de cumpleaños en la comunidad: ${list}! 🎉 Festeja en directo o registra tu fecha aquí: ${siteUrl}`);
+        const parts = [];
+        if (todayBirthdays.length > 0) {
+            const list = todayBirthdays.map(n => `@${n}`).join(', ');
+            parts.push(`🎂 ¡HOY de cumpleaños: ${list}! ¡Lanza tu alerta ahora en ${siteUrl} 🎉`);
+        }
+        if (graceNotLaunched.length > 0) {
+            const list = graceNotLaunched.map(n => `@${n}`).join(', ');
+            parts.push(`🎈 ¡Aún en período de gracia: ${list}! ¡Entra y lanza tu alerta antes de que expire! 👉 ${siteUrl}`);
+        }
+        if (graceLaunched.length > 0) {
+            const list = graceLaunched.map(n => `@${n}`).join(', ');
+            parts.push(`🥳 ¡Feliz cumple tardío a ${list}! ¡Ya celebraron este año! 🎊`);
+        }
+
+        if (parts.length > 0) {
+            return res.send(parts.join(' | '));
         } else {
             return res.send(`✨ Hoy no hay cumpleaños registrados en la comunidad. ¡Registra el tuyo para que te festejemos en stream! 👉 ${siteUrl}`);
         }
@@ -1238,14 +1276,37 @@ app.get('/api/bot/check', async (req, res) => {
         const status = getBirthdayStatus(user.birth_month, user.birth_day);
         const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
         const monthText = monthNames[user.birth_month] || user.birth_month;
+        const displayName = user.display_name || user.username;
 
         if (status.canCelebrate) {
-            return res.send(`🎂 ¡HOY ES TU CUMPLEAÑOS @${user.display_name || user.username}! 🥳 Entra ya a lanzar tu alerta con sonido en directo: ${siteUrl}`);
+            const lastCelebrated = parseInt(user.last_celebrated_year, 10) || 0;
+            const alreadyCelebrated = lastCelebrated >= status.celebrationYear;
+
+            if (status.isToday) {
+                if (alreadyCelebrated) {
+                    // Cumpleaños hoy pero ya lanzó la alerta
+                    return res.send(`🥳 ¡Feliz cumpleaños @${displayName}! 🎊 ¡Ya lanzaste tu alerta de cumpleaños hoy, esperamos que hayas disfrutado tu momento especial en el stream! 🎂`);
+                } else {
+                    // Cumpleaños exacto hoy, no ha lanzado
+                    return res.send(`🎂 ¡HOY ES TU CUMPLEAÑOS @${displayName}! 🎉 ¡No te olvides de entrar y lanzar tu alerta con sonido en directo ahora! 👉 ${siteUrl}`);
+                }
+            } else {
+                // Período de gracia
+                const daysLeft = status.daysRemainingInGrace;
+                const daysLeftText = daysLeft === 1 ? 'solo 1 día' : `${daysLeft} días`;
+                if (alreadyCelebrated) {
+                    // Ya celebró en el período de gracia
+                    return res.send(`🥳 ¡Feliz cumple tardío @${displayName}! 🎊 Ya lanzaste tu alerta este año. ¡Hasta el próximo cumpleaños! 🎂`);
+                } else {
+                    // En gracia, aún no ha lanzado
+                    return res.send(`🎈 @${displayName}, tu cumpleaños fue el ${user.birth_day} de ${monthText} y ¡aún puedes lanzar tu alerta! Te quedan ${daysLeftText} de período de gracia. ¡Entra ya! 👉 ${siteUrl}`);
+                }
+            }
         }
 
         const days = status.daysUntilBirthday;
         const daysText = days === 1 ? '¡falta solo 1 día!' : `faltan ${days} días`;
-        return res.send(`🎉 @${user.display_name || user.username}, tu cumpleaños está registrado para el ${user.birth_day} de ${monthText} (${daysText}). ¡Te esperamos en stream! 🎂`);
+        return res.send(`🎉 @${displayName}, tu cumpleaños está registrado para el ${user.birth_day} de ${monthText} (${daysText}). ¡Te esperamos en stream! 🎂`);
     } catch (err) {
         res.send('⚠️ Error consultando usuario.');
     }
