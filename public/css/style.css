@@ -1545,6 +1545,31 @@ footer a {
   transform: translateY(-1px);
 }
 
+.btn-sim-test-obs {
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  border-radius: 10px;
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.btn-sim-test-obs:hover {
+  background: rgba(16, 185, 129, 0.32);
+  color: #fff;
+  border-color: #10b981;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
+}
+
 .btn-sim-save {
   flex: 1;
   padding: 12px 18px;
@@ -1582,5 +1607,26 @@ footer a {
 .btn-sim-reset:hover {
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
+}
+
+/* Chips rápidos de mensajes para felicitar */
+.btn-quick-chip {
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1px solid rgba(145, 70, 255, 0.35);
+  background: rgba(145, 70, 255, 0.12);
+  color: #c4b5fd;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-quick-chip:hover {
+  background: rgba(145, 70, 255, 0.32);
+  color: #fff;
+  border-color: #9146ff;
+  transform: translateY(-1px);
 }
 
