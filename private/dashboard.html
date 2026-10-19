@@ -153,13 +153,34 @@
               <button id="btn-copy-obs" class="btn-copy">📋 Copiar URL</button>
             </div>
 
+            <!-- Botón Destacado: Diseñador Visual de OBS -->
+            <div style="margin-top: 16px; padding: 14px 18px; background: linear-gradient(135deg, rgba(145, 70, 255, 0.18), rgba(236, 72, 153, 0.12)); border: 1.5px solid rgba(145, 70, 255, 0.45); border-radius: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <span style="font-size: 2.2rem;">🎨</span>
+                <div>
+                  <h4 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0 0 2px 0;">
+                    Diseñador y Simulador Visual de OBS (1920 × 1080p)
+                  </h4>
+                  <p style="color: #cbd5e1; font-size: 0.82rem; margin: 0;">
+                    Arrastra con el ratón la tarjeta en una pantalla simulada de 1080p, ajusta su tamaño y elige por dónde entra la animación.
+                  </p>
+                </div>
+              </div>
+              <div>
+                <button type="button" id="btn-open-sim-modal" class="btn-primary" style="background: linear-gradient(135deg, #9146ff, #ec4899); padding: 10px 20px; font-size: 0.9rem; font-weight: 800; border-radius: 10px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 16px rgba(145, 70, 255, 0.45); border: none; color: #fff; white-space: nowrap;">
+                  <span>🖱️</span>
+                  <span>Abrir Simulador Interactivo</span>
+                </button>
+              </div>
+            </div>
+
             <!-- Selector de Tamaño / Escala para OBS -->
             <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 1rem;">📏</span>
                 <span style="font-size: 0.85rem; color: #cbd5e1; font-weight: 700;">Tamaño de la Tarjeta en OBS:</span>
               </div>
-              <div style="display: flex; gap: 8px;">
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button type="button" class="btn-scale-preset" data-scale="0.65" style="padding: 6px 12px; font-size: 0.78rem; border-radius: 8px; border: 1px solid rgba(145, 70, 255, 0.3); background: rgba(255, 255, 255, 0.04); color: #cbd5e1; cursor: pointer; transition: all 0.2s;">
                   Pequeña (65%)
                 </button>
@@ -170,6 +191,46 @@
                   Grande (100%)
                 </button>
               </div>
+            </div>
+
+            <!-- Selector de Posición en OBS -->
+            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1rem;">📍</span>
+                <span style="font-size: 0.85rem; color: #cbd5e1; font-weight: 700;">Ubicación en Pantalla:</span>
+              </div>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button type="button" class="btn-pos-preset active" data-pos="bottom" style="padding: 6px 11px; font-size: 0.75rem; border-radius: 8px; border: 1px solid #9146ff; background: rgba(145, 70, 255, 0.25); color: #fff; cursor: pointer; font-weight: 700; transition: all 0.2s;">
+                  ⬇️ Abajo (Default)
+                </button>
+                <button type="button" class="btn-pos-preset" data-pos="top" style="padding: 6px 11px; font-size: 0.75rem; border-radius: 8px; border: 1px solid rgba(145, 70, 255, 0.3); background: rgba(255, 255, 255, 0.04); color: #cbd5e1; cursor: pointer; transition: all 0.2s;">
+                  ⬆️ Arriba
+                </button>
+                <button type="button" class="btn-pos-preset" data-pos="center" style="padding: 6px 11px; font-size: 0.75rem; border-radius: 8px; border: 1px solid rgba(145, 70, 255, 0.3); background: rgba(255, 255, 255, 0.04); color: #cbd5e1; cursor: pointer; transition: all 0.2s;">
+                  🎯 Centro
+                </button>
+                <button type="button" class="btn-pos-preset" data-pos="bottom-left" style="padding: 6px 11px; font-size: 0.75rem; border-radius: 8px; border: 1px solid rgba(145, 70, 255, 0.3); background: rgba(255, 255, 255, 0.04); color: #cbd5e1; cursor: pointer; transition: all 0.2s;">
+                  ↙️ Abajo Izq
+                </button>
+                <button type="button" class="btn-pos-preset" data-pos="bottom-right" style="padding: 6px 11px; font-size: 0.75rem; border-radius: 8px; border: 1px solid rgba(145, 70, 255, 0.3); background: rgba(255, 255, 255, 0.04); color: #cbd5e1; cursor: pointer; transition: all 0.2s;">
+                  ↘️ Abajo Der
+                </button>
+                <button type="button" class="btn-pos-preset" data-pos="top-left" style="padding: 6px 11px; font-size: 0.75rem; border-radius: 8px; border: 1px solid rgba(145, 70, 255, 0.3); background: rgba(255, 255, 255, 0.04); color: #cbd5e1; cursor: pointer; transition: all 0.2s;">
+                  ↖️ Arriba Izq
+                </button>
+                <button type="button" class="btn-pos-preset" data-pos="top-right" style="padding: 6px 11px; font-size: 0.75rem; border-radius: 8px; border: 1px solid rgba(145, 70, 255, 0.3); background: rgba(255, 255, 255, 0.04); color: #cbd5e1; cursor: pointer; transition: all 0.2s;">
+                  ↗️ Arriba Der
+                </button>
+                <button type="button" class="btn-pos-preset" data-pos="free" style="padding: 6px 12px; font-size: 0.75rem; border-radius: 8px; border: 1px solid #10b981; background: rgba(16, 185, 129, 0.15); color: #34d399; cursor: pointer; font-weight: 700; transition: all 0.2s;">
+                  🖱️ Modo Libre (Arrastrar con Ratón)
+                </button>
+              </div>
+            </div>
+
+            <!-- Banner Explicativo de cómo moverla libremente -->
+            <div id="obs-free-mode-tip" style="margin-top: 12px; padding: 10px 14px; background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10b981; border-radius: 6px; font-size: 0.8rem; color: #a7f3d0; line-height: 1.45; display: none;">
+              💡 <strong>¿Cómo mover la tarjeta con el ratón en OBS?</strong><br>
+              En OBS, pon las dimensiones de la fuente en <strong>Ancho: 850</strong> y <strong>Alto: 300</strong> (en lugar de 1920x1080). El recuadro rojo será únicamente el tamaño de la tarjeta, ¡permitiéndote arrastrarla a cualquier lugar de la pantalla o agrandarla con las esquinas rojas!
             </div>
           </div>
 
@@ -314,6 +375,202 @@
 
       </div>
     </main>
+  </div>
+
+  <!-- MODAL: SIMULADOR Y DISEÑADOR VISUAL DE OBS (1920x1080) -->
+  <div id="obs-sim-modal" class="sim-modal-overlay" style="display: none;">
+    <div class="sim-modal-dialog">
+      <!-- Header -->
+      <div class="sim-modal-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 1.8rem;">🎨</span>
+          <div>
+            <h2 style="font-family: var(--font-h); font-size: 1.25rem; font-weight: 800; margin: 0; color: #fff;">
+              Diseñador y Simulador Visual de OBS (1920 × 1080p)
+            </h2>
+            <p style="color: #94a3b8; font-size: 0.82rem; margin: 2px 0 0 0;">
+              Haz clic y arrastra la tarjeta con el ratón por el lienzo. Lo que configures aquí se aplicará en tu OBS en tiempo real.
+            </p>
+          </div>
+        </div>
+        <button id="btn-close-sim-modal" class="sim-close-btn" title="Cerrar simulador">✖</button>
+      </div>
+
+      <!-- Body (2 Columnas) -->
+      <div class="sim-modal-body">
+        <!-- Columna Izquierda: El Canvas 16:9 de OBS -->
+        <div class="sim-canvas-column">
+          <div class="sim-canvas-toolbar">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="sim-pill">📺 Pantalla Stream 1920×1080</span>
+              <span id="sim-coords-badge" class="sim-pill coords">X: 50% | Y: 85%</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <label style="font-size: 0.78rem; color: #94a3b8; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="sim-toggle-webcam" style="accent-color: #9146ff;">
+                <span>Simular Marco de Cámara</span>
+              </label>
+            </div>
+          </div>
+
+          <div id="sim-canvas" class="sim-canvas-viewport">
+            <!-- Guías de alineación -->
+            <div class="sim-guide-line horizontal"></div>
+            <div class="sim-guide-line vertical"></div>
+
+            <!-- Cámara simulada de referencia -->
+            <div id="sim-webcam-box" class="sim-webcam-mock" style="display: none;">
+              <span>📷 Tu Cámara Web (Referencia)</span>
+            </div>
+
+            <!-- Tarjeta Arrastrable con el Ratón -->
+            <div id="sim-card-wrapper" class="sim-card-wrapper">
+              <div class="sim-drag-handle-tag">
+                <span>✥</span>
+                <span id="sim-card-pos-text">50%, 85%</span>
+                <span style="opacity: 0.75; font-size: 0.65rem;">(Arrastra aquí)</span>
+              </div>
+
+              <!-- Globos a la izquierda -->
+              <div class="sim-balloons left">
+                <span>🎈</span>
+                <span style="font-size: 1rem;">✨</span>
+              </div>
+
+              <!-- Tarjeta de muestra -->
+              <div class="sim-bday-card">
+                <div class="sim-avatar-box">
+                  <img src="/img/yocapi.png" alt="Avatar" class="sim-avatar-img">
+                </div>
+                <div class="sim-card-details">
+                  <div class="sim-tagline">¡Hoy es su Cumpleaños! 🎉</div>
+                  <div class="sim-username">capiluisxavi</div>
+                  <div class="sim-quote">“¡Festejando en directo con la comunidad!”</div>
+                </div>
+              </div>
+
+              <!-- Globos a la derecha -->
+              <div class="sim-balloons right">
+                <span style="font-size: 1rem;">⭐</span>
+                <span>🎈</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Barra inferior del canvas con tip y sugerencia inteligente -->
+          <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; color: #64748b; flex-wrap: wrap; gap: 6px;">
+            <span>💡 <strong>Tip:</strong> Puedes arrastrar libremente la tarjeta con el ratón a cualquier punto de la pantalla.</span>
+            <span id="sim-anim-hint" style="color: #bf94ff; font-weight: 700;"></span>
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Panel de Controles -->
+        <div class="sim-controls-column">
+          <!-- Anclaje Rápido 3x3 -->
+          <div class="sim-control-group">
+            <label class="sim-group-label">📍 Anclaje Rápido en Pantalla:</label>
+            <div class="sim-grid-presets">
+              <button type="button" class="btn-snap" data-x="24" data-y="16" title="Superior Izquierda">↖️ Sup. Izq</button>
+              <button type="button" class="btn-snap" data-x="50" data-y="16" title="Superior Centro">⬆️ Superior</button>
+              <button type="button" class="btn-snap" data-x="76" data-y="16" title="Superior Derecha">↗️ Sup. Der</button>
+
+              <button type="button" class="btn-snap" data-x="24" data-y="50" title="Centro Izquierda">⬅️ Izquierda</button>
+              <button type="button" class="btn-snap" data-x="50" data-y="50" title="Centro Total">🎯 Centro</button>
+              <button type="button" class="btn-snap" data-x="76" data-y="50" title="Centro Derecha">➡️ Derecha</button>
+
+              <button type="button" class="btn-snap" data-x="24" data-y="85" title="Inferior Izquierda">↙️ Inf. Izq</button>
+              <button type="button" class="btn-snap active" data-x="50" data-y="85" title="Inferior Centro">⬇️ Inferior</button>
+              <button type="button" class="btn-snap" data-x="76" data-y="85" title="Inferior Derecha">↘️ Inf. Der</button>
+            </div>
+          </div>
+
+          <!-- Slider de Escala -->
+          <div class="sim-control-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label class="sim-group-label" style="margin: 0;">📏 Tamaño de la Tarjeta:</label>
+              <span id="sim-scale-val" style="font-size: 0.85rem; font-weight: 800; color: #a855f7;">85%</span>
+            </div>
+            <input type="range" id="sim-scale-slider" min="50" max="130" step="5" value="85" class="sim-slider">
+            <div style="display: flex; gap: 6px; margin-top: 8px;">
+              <button type="button" class="btn-scale-quick" data-scale="0.65">65% (Compacta)</button>
+              <button type="button" class="btn-scale-quick active" data-scale="0.85">85% (Equilibrada)</button>
+              <button type="button" class="btn-scale-quick" data-scale="1.0">100% (Grande)</button>
+            </div>
+          </div>
+
+          <!-- Dirección y Tipo de Animación -->
+          <div class="sim-control-group">
+            <label class="sim-group-label">🎬 Por Dónde y Cómo Aparece:</label>
+            <div class="sim-anim-list">
+              <button type="button" class="btn-anim-choice" data-anim="slide-down">
+                <span class="anim-icon">⬇️</span>
+                <div class="anim-info">
+                  <strong>Desde Arriba hacia Abajo</strong>
+                  <small>Baja suavemente desde el techo del stream</small>
+                </div>
+              </button>
+              <button type="button" class="btn-anim-choice active" data-anim="slide-up">
+                <span class="anim-icon">⬆️</span>
+                <div class="anim-info">
+                  <strong>Desde Abajo hacia Arriba</strong>
+                  <small>Sube desde el borde inferior de la pantalla</small>
+                </div>
+              </button>
+              <button type="button" class="btn-anim-choice" data-anim="slide-right">
+                <span class="anim-icon">➡️</span>
+                <div class="anim-info">
+                  <strong>Desde la Izquierda</strong>
+                  <small>Entra deslizándose por el lateral izquierdo</small>
+                </div>
+              </button>
+              <button type="button" class="btn-anim-choice" data-anim="slide-left">
+                <span class="anim-icon">⬅️</span>
+                <div class="anim-info">
+                  <strong>Desde la Derecha</strong>
+                  <small>Entra deslizándose por el lateral derecho</small>
+                </div>
+              </button>
+              <button type="button" class="btn-anim-choice" data-anim="pop-zoom">
+                <span class="anim-icon">💥</span>
+                <div class="anim-info">
+                  <strong>Zoom / Pop In Central</strong>
+                  <small>Emerge desde el centro con impacto brillante</small>
+                </div>
+              </button>
+              <button type="button" class="btn-anim-choice" data-anim="bounce-drop">
+                <span class="anim-icon">🎪</span>
+                <div class="anim-info">
+                  <strong>Rebote Festivo (Bounce Drop)</strong>
+                  <small>Cae con rebote elástico estilo fiesta</small>
+                </div>
+              </button>
+              <button type="button" class="btn-anim-choice" data-anim="fade-glow">
+                <span class="anim-icon">✨</span>
+                <div class="anim-info">
+                  <strong>Fade & Glow Suave</strong>
+                  <small>Aparece elegantemente con resplandor</small>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Botones de Acción -->
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-top: auto; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);">
+            <button type="button" id="btn-sim-test-anim" class="btn-sim-test">
+              ▶️ Probar Animación en Vivo en el Simulador
+            </button>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" id="btn-sim-save" class="btn-sim-save">
+                💾 Guardar y Aplicar en OBS en Tiempo Real
+              </button>
+              <button type="button" id="btn-sim-reset" class="btn-sim-reset" title="Restablecer posición inicial">
+                🔄
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="toast-container" id="toast-container"></div>
