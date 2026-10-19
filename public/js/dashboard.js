@@ -62,13 +62,20 @@ function switchTab(tabId) {
 
 let baseObsToken = '';
 let selectedScale = '0.8';
+let selectedPos = 'bottom';
 
 function updateObsUrlDisplay() {
   if (!baseObsToken) return;
   const scaleParam = (selectedScale && selectedScale !== '1.0') ? `&scale=${selectedScale}` : '';
-  const obsUrl = `${window.location.origin}/overlay?token=${encodeURIComponent(baseObsToken)}${scaleParam}`;
+  const posParam = (selectedPos && selectedPos !== 'bottom') ? `&pos=${selectedPos}` : '';
+  const obsUrl = `${window.location.origin}/overlay?token=${encodeURIComponent(baseObsToken)}${scaleParam}${posParam}`;
   const input = document.getElementById('obs-url-display');
   if (input) input.value = obsUrl;
+
+  const freeModeTip = document.getElementById('obs-free-mode-tip');
+  if (freeModeTip) {
+    freeModeTip.style.display = selectedPos === 'free' ? 'block' : 'none';
+  }
 }
 
 // Cargar Estadísticas y OBS URL
@@ -527,6 +534,38 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Selector de posición de OBS
+  document.querySelectorAll('.btn-pos-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.btn-pos-preset').forEach(b => {
+        b.classList.remove('active');
+        b.style.borderColor = (b.dataset.pos === 'free') ? 'rgba(16, 185, 129, 0.4)' : 'rgba(145, 70, 255, 0.3)';
+        b.style.background = 'rgba(255, 255, 255, 0.04)';
+        b.style.color = (b.dataset.pos === 'free') ? '#34d399' : '#cbd5e1';
+        b.style.fontWeight = '600';
+      });
+      btn.classList.add('active');
+      if (btn.dataset.pos === 'free') {
+        btn.style.borderColor = '#10b981';
+        btn.style.background = 'rgba(16, 185, 129, 0.25)';
+        btn.style.color = '#fff';
+      } else {
+        btn.style.borderColor = '#9146ff';
+        btn.style.background = 'rgba(145, 70, 255, 0.25)';
+        btn.style.color = '#fff';
+      }
+      btn.style.fontWeight = '700';
+
+      selectedPos = btn.dataset.pos || 'bottom';
+      updateObsUrlDisplay();
+      if (selectedPos === 'free') {
+        showToast('Modo Libre activado: Configura tu fuente de OBS a 850x300', 'success');
+      } else {
+        showToast(`Ubicación configurada: ${btn.textContent.trim()}`, 'info');
+      }
+    });
+  });
+
   // Botón refrescar
   document.getElementById('btn-refresh').addEventListener('click', () => {
     loadStats();
@@ -594,3 +633,314 @@ document.addEventListener('DOMContentLoaded', () => {
   // Cargar estado inicial
   loadStats();
 });
+
+// =============================================================================
+// SIMULADOR Y DISEÑADOR VISUAL DE OBS (1920x1080)
+// =============================================================================
+(function initSimModal() {
+  const modal       = document.getElementById('obs-sim-modal');
+  const btnOpen     = document.getElementById('btn-open-sim-modal');
+  const btnClose    = document.getElementById('btn-close-sim-modal');
+  const canvas      = document.getElementById('sim-canvas');
+  const cardWrapper = document.getElementById('sim-card-wrapper');
+  const coordsBadge = document.getElementById('sim-coords-badge');
+  const cardPosText = document.getElementById('sim-card-pos-text');
+  const scaleSlider = document.getElementById('sim-scale-slider');
+  const scaleVal    = document.getElementById('sim-scale-val');
+  const animHint    = document.getElementById('sim-anim-hint');
+  const webcamToggle= document.getElementById('sim-toggle-webcam');
+  const webcamBox   = document.getElementById('sim-webcam-box');
+
+  if (!modal || !btnOpen) return;
+
+  // State
+  let simState = { posX: 50, posY: 85, scale: 0.85, animation: 'slide-up' };
+
+  // ─── Animación Dinámica de la Tarjeta ──────────────────────────────────────
+  function updateCardScale(val) {
+    const factor = Math.round(val * 100) / 100;
+    cardWrapper.style.transform = `translate(-50%, -50%) scale(${factor})`;
+  }
+
+  function moveCardTo(pctX, pctY) {
+    simState.posX = Math.round(Math.max(5, Math.min(95, pctX)) * 10) / 10;
+    simState.posY = Math.round(Math.max(5, Math.min(95, pctY)) * 10) / 10;
+    cardWrapper.style.left = `${simState.posX}%`;
+    cardWrapper.style.top  = `${simState.posY}%`;
+    const coordText = `X: ${simState.posX}% | Y: ${simState.posY}%`;
+    if (coordsBadge) coordsBadge.textContent = coordText;
+    if (cardPosText) cardPosText.textContent  = `${simState.posX}%, ${simState.posY}%`;
+    // Actualizar botón "snap" activo
+    document.querySelectorAll('.btn-snap').forEach(b => {
+      const bx = parseFloat(b.dataset.x);
+      const by = parseFloat(b.dataset.y);
+      b.classList.toggle('active', Math.abs(bx - simState.posX) < 3 && Math.abs(by - simState.posY) < 3);
+    });
+  }
+
+  function refreshAnimHint() {
+    const hints = {
+      'slide-up':    '⬆️  La tarjeta entrará subiendo desde abajo',
+      'slide-down':  '⬇️  La tarjeta entrará bajando desde arriba',
+      'slide-right': '➡️  La tarjeta entrará desde la izquierda',
+      'slide-left':  '⬅️  La tarjeta entrará desde la derecha',
+      'pop-zoom':    '💥 La tarjeta aparecerá con zoom en el centro',
+      'bounce-drop': '🎪 La tarjeta caerá con rebote elástico festivo',
+      'fade-glow':   '✨ La tarjeta se fundirá con resplandor suave',
+    };
+    if (animHint) animHint.textContent = hints[simState.animation] || '';
+  }
+
+  // ─── Carga configuración guardada del servidor ─────────────────────────────
+  async function loadServerConfig() {
+    try {
+      const res = await authFetch('/api/dashboard/overlay-config');
+      const cfg = await res.json();
+      if (cfg && typeof cfg.posX === 'number') {
+        simState = { ...simState, ...cfg };
+        moveCardTo(simState.posX, simState.posY);
+        const sliderPct = Math.round(simState.scale * 100);
+        scaleSlider.value = sliderPct;
+        scaleVal.textContent = `${sliderPct}%`;
+        updateCardScale(simState.scale);
+        // Activar botón de animación correcta
+        document.querySelectorAll('.btn-anim-choice').forEach(b => {
+          b.classList.toggle('active', b.dataset.anim === simState.animation);
+        });
+        refreshAnimHint();
+      }
+    } catch (e) {
+      console.warn('No se pudo cargar configuración del overlay:', e);
+    }
+  }
+
+  // ─── Abrir / Cerrar Modal ──────────────────────────────────────────────────
+  btnOpen.addEventListener('click', () => {
+    modal.style.display = 'flex';
+    setTimeout(() => {
+      moveCardTo(simState.posX, simState.posY);
+      refreshAnimHint();
+    }, 80);
+    loadServerConfig();
+  });
+
+  function closeModal() {
+    modal.style.animation = 'none';
+    modal.style.opacity = '0';
+    modal.style.transition = 'opacity 0.2s ease';
+    setTimeout(() => {
+      modal.style.display = 'none';
+      modal.style.opacity = '';
+      modal.style.animation = '';
+      modal.style.transition = '';
+    }, 200);
+  }
+
+  if (btnClose) btnClose.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.style.display !== 'none') closeModal(); });
+
+  // ─── Drag & Drop de la Tarjeta en el Canvas ────────────────────────────────
+  let isDragging = false;
+  let dragStartX = 0, dragStartY = 0;
+  let dragStartPctX = 0, dragStartPctY = 0;
+
+  function getCanvasRect() { return canvas.getBoundingClientRect(); }
+
+  function onDragStart(e) {
+    e.preventDefault();
+    isDragging = true;
+    cardWrapper.classList.add('dragging');
+    const pt = e.touches ? e.touches[0] : e;
+    dragStartX = pt.clientX;
+    dragStartY = pt.clientY;
+    dragStartPctX = simState.posX;
+    dragStartPctY = simState.posY;
+  }
+
+  function onDragMove(e) {
+    if (!isDragging) return;
+    const pt = e.touches ? e.touches[0] : e;
+    const rect = getCanvasRect();
+    const dx = ((pt.clientX - dragStartX) / rect.width)  * 100;
+    const dy = ((pt.clientY - dragStartY) / rect.height) * 100;
+    moveCardTo(dragStartPctX + dx, dragStartPctY + dy);
+  }
+
+  function onDragEnd() {
+    if (!isDragging) return;
+    isDragging = false;
+    cardWrapper.classList.remove('dragging');
+  }
+
+  // Mouse
+  cardWrapper.addEventListener('mousedown', onDragStart);
+  window.addEventListener('mousemove', onDragMove);
+  window.addEventListener('mouseup', onDragEnd);
+
+  // Touch
+  cardWrapper.addEventListener('touchstart', onDragStart, { passive: false });
+  window.addEventListener('touchmove', onDragMove, { passive: false });
+  window.addEventListener('touchend', onDragEnd);
+
+  // ─── Botones de Anclaje Rápido ─────────────────────────────────────────────
+  document.querySelectorAll('.btn-snap').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const x = parseFloat(btn.dataset.x);
+      const y = parseFloat(btn.dataset.y);
+      moveCardTo(x, y);
+      // Animación de "bounce" visual en la tarjeta al hacer snap
+      cardWrapper.style.transition = 'left 0.4s cubic-bezier(0.175,0.885,0.32,1.275), top 0.4s cubic-bezier(0.175,0.885,0.32,1.275)';
+      setTimeout(() => { cardWrapper.style.transition = ''; }, 500);
+    });
+  });
+
+  // ─── Slider de Escala ──────────────────────────────────────────────────────
+  scaleSlider.addEventListener('input', () => {
+    const pct = parseInt(scaleSlider.value);
+    simState.scale = pct / 100;
+    scaleVal.textContent = `${pct}%`;
+    updateCardScale(simState.scale);
+    // Desactivar quick-buttons
+    document.querySelectorAll('#obs-sim-modal .btn-scale-quick').forEach(b => b.classList.remove('active'));
+  });
+
+  document.querySelectorAll('#obs-sim-modal .btn-scale-quick').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const val = parseFloat(btn.dataset.scale);
+      simState.scale = val;
+      const pct = Math.round(val * 100);
+      scaleSlider.value = pct;
+      scaleVal.textContent = `${pct}%`;
+      updateCardScale(val);
+      document.querySelectorAll('#obs-sim-modal .btn-scale-quick').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // ─── Selección de Animación ────────────────────────────────────────────────
+  document.querySelectorAll('.btn-anim-choice').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.btn-anim-choice').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      simState.animation = btn.dataset.anim;
+      refreshAnimHint();
+    });
+  });
+
+  // ─── Probar Animación en el Simulador ─────────────────────────────────────
+  const btnTestAnim = document.getElementById('btn-sim-test-anim');
+  if (btnTestAnim) {
+    btnTestAnim.addEventListener('click', () => {
+      // Ocultar la tarjeta momentáneamente y "reproducir" la entrada
+      cardWrapper.style.transition = 'none';
+      cardWrapper.style.opacity = '0';
+
+      const directionOffsets = {
+        'slide-up':    { x: 0, y: 60 },
+        'slide-down':  { x: 0, y: -60 },
+        'slide-right': { x: -80, y: 0 },
+        'slide-left':  { x: 80,  y: 0 },
+        'pop-zoom':    { x: 0, y: 0 },
+        'bounce-drop': { x: 0, y: -80 },
+        'fade-glow':   { x: 0, y: 0 },
+      };
+
+      const offset = directionOffsets[simState.animation] || { x: 0, y: 0 };
+      const origLeft = `${simState.posX}%`;
+      const origTop  = `${simState.posY}%`;
+
+      // Inicializar en posición fuera de pantalla
+      const rect = getCanvasRect();
+      const offX = (offset.x / rect.width)  * 100;
+      const offY = (offset.y / rect.height) * 100;
+      cardWrapper.style.left = `${simState.posX + offX}%`;
+      cardWrapper.style.top  = `${simState.posY + offY}%`;
+
+      const isZoom = simState.animation === 'pop-zoom' || simState.animation === 'fade-glow';
+      if (isZoom) {
+        const startScale = simState.animation === 'pop-zoom' ? 0.1 : simState.scale * 0.9;
+        cardWrapper.style.transform = `translate(-50%, -50%) scale(${startScale})`;
+      }
+
+      requestAnimationFrame(() => {
+        // Aplicar la transición y mostrar en posición final
+        const easing = simState.animation === 'bounce-drop'
+          ? 'cubic-bezier(0.34, 1.56, 0.64, 1)'
+          : 'cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+
+        cardWrapper.style.transition = `left 0.75s ${easing}, top 0.75s ${easing}, transform 0.75s ${easing}, opacity 0.45s ease`;
+        cardWrapper.style.opacity = '1';
+        cardWrapper.style.left = origLeft;
+        cardWrapper.style.top  = origTop;
+        cardWrapper.style.transform = `translate(-50%, -50%) scale(${simState.scale})`;
+
+        // Limpiar transition después
+        setTimeout(() => { cardWrapper.style.transition = ''; }, 850);
+      });
+    });
+  }
+
+  // ─── Toggle de Marco de Cámara ─────────────────────────────────────────────
+  if (webcamToggle && webcamBox) {
+    webcamToggle.addEventListener('change', () => {
+      webcamBox.style.display = webcamToggle.checked ? 'flex' : 'none';
+    });
+  }
+
+  // ─── Guardar y Aplicar en OBS en Tiempo Real ──────────────────────────────
+  const btnSave = document.getElementById('btn-sim-save');
+  if (btnSave) {
+    btnSave.addEventListener('click', async () => {
+      btnSave.disabled = true;
+      btnSave.textContent = '⏳ Guardando y aplicando en OBS...';
+      try {
+        const res = await authFetch('/api/dashboard/overlay-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            posX: simState.posX,
+            posY: simState.posY,
+            scale: simState.scale,
+            animation: simState.animation
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('🎯 ¡Configuración guardada y aplicada en OBS en tiempo real!', 'success');
+          // Actualizar también la URL de OBS con la escala nueva
+          selectedScale = String(simState.scale);
+          updateObsUrlDisplay();
+          setTimeout(() => closeModal(), 1200);
+        } else {
+          showToast(data.error || 'Error al guardar', 'error');
+        }
+      } catch {
+        showToast('Error conectando con el servidor', 'error');
+      } finally {
+        btnSave.disabled = false;
+        btnSave.innerHTML = '💾 Guardar y Aplicar en OBS en Tiempo Real';
+      }
+    });
+  }
+
+  // ─── Reset a posición inicial ──────────────────────────────────────────────
+  const btnReset = document.getElementById('btn-sim-reset');
+  if (btnReset) {
+    btnReset.addEventListener('click', () => {
+      simState = { posX: 50, posY: 85, scale: 0.85, animation: 'slide-up' };
+      moveCardTo(50, 85);
+      scaleSlider.value = 85;
+      scaleVal.textContent = '85%';
+      updateCardScale(0.85);
+      document.querySelectorAll('.btn-anim-choice').forEach(b => b.classList.toggle('active', b.dataset.anim === 'slide-up'));
+      document.querySelectorAll('#obs-sim-modal .btn-scale-quick').forEach(b => b.classList.toggle('active', b.dataset.scale === '0.85'));
+      refreshAnimHint();
+      showToast('Configuración restablecida a los valores por defecto', 'info');
+    });
+  }
+
+  // Inicializar escala visual al cargar
+  updateCardScale(simState.scale);
+  refreshAnimHint();
+})();

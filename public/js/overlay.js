@@ -23,6 +23,66 @@ const alertQuote = document.getElementById('alert-quote');
 const alertQueueTag = document.getElementById('alert-queue-tag');
 const debugStatus = document.getElementById('debug-status');
 
+// ─── Configuración Visual Dinámica (Posición, Escala, Animación) ───────────
+function applyOverlayConfig(cfg) {
+  if (!cfg) return;
+  if (cfg.posX !== undefined && cfg.posX !== null) {
+    document.documentElement.style.setProperty('--pos-x', `${cfg.posX}%`);
+  }
+  if (cfg.posY !== undefined && cfg.posY !== null) {
+    document.documentElement.style.setProperty('--pos-y', `${cfg.posY}%`);
+  }
+  if (cfg.scale !== undefined && cfg.scale !== null) {
+    const parsedScale = parseFloat(cfg.scale);
+    if (!isNaN(parsedScale) && parsedScale > 0) {
+      const finalScale = parsedScale > 2 ? parsedScale / 100 : parsedScale;
+      document.documentElement.style.setProperty('--alert-scale', finalScale);
+    }
+  }
+  if (cfg.animation) {
+    const animName = cfg.animation.replace(/^anim-/, '');
+    const validAnims = ['slide-up', 'slide-down', 'slide-left', 'slide-right', 'pop-zoom', 'bounce-drop', 'fade-glow'];
+    if (validAnims.includes(animName)) {
+      alertWrapper.className = alertWrapper.className
+        .split(' ')
+        .filter(c => !c.startsWith('anim-'))
+        .join(' ');
+      alertWrapper.classList.add(`anim-${animName}`);
+    }
+  }
+}
+
+// 1. Aplicar parámetros de URL (si existen)
+const urlPosX = params.get('x');
+const urlPosY = params.get('y');
+const urlScale = params.get('scale');
+const urlAnim = params.get('anim');
+const urlPosPreset = params.get('pos');
+
+if (urlPosX || urlPosY || urlScale || urlAnim) {
+  applyOverlayConfig({
+    posX: urlPosX ? parseFloat(urlPosX) : undefined,
+    posY: urlPosY ? parseFloat(urlPosY) : undefined,
+    scale: urlScale ? parseFloat(urlScale) : undefined,
+    animation: urlAnim || undefined
+  });
+} else if (urlPosPreset) {
+  const validPositions = ['bottom', 'top', 'center', 'bottom-left', 'bottom-right', 'top-left', 'top-right', 'free', 'compact'];
+  if (validPositions.includes(urlPosPreset.toLowerCase())) {
+    const cleanPos = (urlPosPreset.toLowerCase() === 'compact') ? 'free' : urlPosPreset.toLowerCase();
+    alertWrapper.classList.add(`pos-${cleanPos}`);
+    if (cleanPos === 'free') document.body.classList.add('pos-free');
+  }
+} else {
+  // Cargar configuración guardada por la streamer desde el servidor
+  fetch('/api/overlay/config')
+    .then(res => res.json())
+    .then(cfg => applyOverlayConfig(cfg))
+    .catch(() => {
+      alertWrapper.classList.add('anim-slide-up');
+    });
+}
+
 // Fallback de imagen en caso de error 404 o fallo de red
 alertAvatar.onerror = function () {
   this.onerror = null;
@@ -234,6 +294,17 @@ function connectSSE() {
       const data = JSON.parse(event.data);
       if (data.type === 'ping') {
         // Heartbeat recibido
+        return;
+      }
+      if (data.type === 'connected') {
+        if (data.config && !urlPosX && !urlPosY && !urlPosPreset) {
+          applyOverlayConfig(data.config);
+        }
+        return;
+      }
+      if (data.type === 'overlay_config' && data.config) {
+        console.log('[OBS Overlay] Configuración actualizada en vivo desde el Dashboard:', data.config);
+        applyOverlayConfig(data.config);
         return;
       }
       if (data.type === 'alert') {
