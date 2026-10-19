@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendario de Cumpleaños Comunitario — yocapi_pr</title>
+  <meta name="description"
+    content="Calendario interactivo de cumpleaños de la comunidad de yocapi_pr en Twitch. Encuentra las fechas especiales de los viewers y festeja en vivo.">
+
+  <!-- Favicon & Fuentes -->
+  <link rel="icon" type="image/png" href="img/yocapi.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="css/calendario.css">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+</head>
+
+<body>
+  <!-- Fondo Cósmico Dinámico -->
+  <div class="cosmic-bg">
+    <div class="aurora-glow glow-1"></div>
+    <div class="aurora-glow glow-2"></div>
+    <div class="aurora-glow glow-3"></div>
+  </div>
+
+  <div class="cal-container">
+    <!-- Encabezado de Navegación -->
+    <header class="cal-header">
+      <a href="https://twitch.tv/yocapi_pr" target="_blank" rel="noopener noreferrer" class="cal-brand">
+        <img src="img/yocapi.png" alt="yocapi_pr" class="cal-logo">
+        <div class="cal-brand-info">
+          <h1>
+            yocapi_pr
+            <span class="tag-live">🔴 LIVE</span>
+          </h1>
+          <p>Comunidad de Cumpleaños en Directo</p>
+        </div>
+      </a>
+
+      <div class="cal-header-actions">
+        <a href="/" class="btn-ghost" id="btn-back-portal">
+          <span>←</span> Mi Portal &amp; Registro
+        </a>
+        <a href="https://twitch.tv/yocapi_pr" target="_blank" rel="noopener noreferrer" class="btn-primary-pill">
+          <span>🟣</span> Ver Canal de Twitch
+        </a>
+      </div>
+    </header>
+
+    <!-- Hero del Calendario -->
+    <section class="cal-hero">
+      <div class="cal-badge">🎉 Celebraciones de la Comunidad</div>
+      <h2 class="cal-title">Calendario de Cumpleaños</h2>
+      <p class="cal-subtitle">
+        Descubre en qué día cumple años cada miembro de la comunidad, busca a tus amigos del chat y prepárate para
+        festejar con alertas sonoras en vivo.
+      </p>
+    </section>
+
+    <!-- Barra de Estadísticas Rápidas -->
+    <div class="cal-stats-bar">
+      <div class="stat-chip" id="chip-total">
+        <div class="stat-chip-icon">👥</div>
+        <div class="stat-chip-info">
+          <h4>Total Registrados</h4>
+          <p id="stat-total">0</p>
+        </div>
+      </div>
+
+      <div class="stat-chip" id="chip-today" onclick="document.getElementById('btn-jump-today').click()">
+        <div class="stat-chip-icon">🎂</div>
+        <div class="stat-chip-info">
+          <h4>Cumpleaños de Hoy</h4>
+          <p id="stat-today">0 hoy</p>
+        </div>
+      </div>
+
+      <div class="stat-chip" id="chip-top-month">
+        <div class="stat-chip-icon">🏆</div>
+        <div class="stat-chip-info">
+          <h4>Mes con más fiestas</h4>
+          <p id="stat-top-month">—</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra de Controles y Navegación de Mes -->
+    <section class="cal-controls">
+      <div class="cal-nav-group">
+        <button type="button" class="cal-nav-btn" id="btn-prev-month" title="Mes Anterior" aria-label="Mes Anterior">‹</button>
+
+        <div class="month-dropdown-wrap">
+          <select id="month-select" class="month-select" aria-label="Seleccionar Mes">
+            <option value="1">❄️ Enero</option>
+            <option value="2">💘 Febrero</option>
+            <option value="3">🍀 Marzo</option>
+            <option value="4">🌸 Abril</option>
+            <option value="5">💐 Mayo</option>
+            <option value="6">☀️ Junio</option>
+            <option value="7">🏖️ Julio</option>
+            <option value="8">🍉 Agosto</option>
+            <option value="9">🍂 Septiembre</option>
+            <option value="10">🎃 Octubre</option>
+            <option value="11">🍁 Noviembre</option>
+            <option value="12">🎄 Diciembre</option>
+          </select>
+          <span class="month-select-arrow">▼</span>
+        </div>
+
+        <button type="button" class="cal-nav-btn" id="btn-next-month" title="Mes Siguiente" aria-label="Mes Siguiente">›</button>
+
+        <button type="button" class="btn-today-pill" id="btn-jump-today">
+          📍 Ir a Hoy
+        </button>
+      </div>
+
+      <!-- Buscador en tiempo real -->
+      <div class="cal-search-group">
+        <div class="cal-search-input-wrap">
+          <span class="cal-search-icon">🔍</span>
+          <input type="text" id="cal-search" class="cal-search-input"
+            placeholder="Buscar por nombre o usuario de Twitch..." autocomplete="off">
+        </div>
+
+        <div class="view-toggle">
+          <button type="button" class="view-toggle-btn active" id="btn-view-grid" title="Vista Cuadrícula">⊞</button>
+          <button type="button" class="view-toggle-btn" id="btn-view-list" title="Vista Lista">☰</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feedback dinámico de búsqueda -->
+    <div id="search-feedback"></div>
+
+    <!-- Contenedor Principal del Calendario -->
+    <main class="cal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 id="display-month-name" style="font-family: var(--font-heading); font-size: 1.35rem; font-weight: 800; color: #fff;">
+          Cargando mes...
+        </h3>
+        <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: 600;">Haz clic en cualquier día para ver detalles</span>
+      </div>
+
+      <!-- Spinner de Carga -->
+      <div id="cal-loading" style="text-align: center; padding: 50px 20px;">
+        <div style="font-size: 2.5rem; margin-bottom: 10px; animation: bounce-highlight 1s infinite alternate;">🎂</div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">Cargando calendario comunitario...</p>
+      </div>
+
+      <!-- Encabezados de Días de la Semana -->
+      <div class="cal-weekdays" id="cal-weekdays-view">
+        <div class="cal-weekday">Lun</div>
+        <div class="cal-weekday">Mar</div>
+        <div class="cal-weekday">Mié</div>
+        <div class="cal-weekday">Jue</div>
+        <div class="cal-weekday">Vie</div>
+        <div class="cal-weekday weekend">Sáb</div>
+        <div class="cal-weekday weekend">Dom</div>
+      </div>
+
+      <!-- Cuadrícula 7x5 de Días -->
+      <div class="cal-grid" id="cal-grid-view"></div>
+
+      <!-- Vista Alternativa en Lista / Agenda -->
+      <div class="cal-list-view" id="cal-list-view"></div>
+    </main>
+
+    <!-- Sección de Destacados: Hoy en Stream y Próximos 14 días -->
+    <section class="cal-highlights-grid">
+      <!-- Cumpleañeros de HOY -->
+      <div class="highlight-box" style="border-color: rgba(251, 191, 36, 0.35);">
+        <div class="highlight-header">
+          <span style="font-size: 1.5rem;">🎂</span>
+          <div>
+            <h3 style="color: #fff;">Cumpleaños de Hoy</h3>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">Festejando en el directo de yocapi_pr</p>
+          </div>
+        </div>
+        <div id="highlight-today-list"></div>
+      </div>
+
+      <!-- Próximos 14 días -->
+      <div class="highlight-box" style="border-color: rgba(145, 70, 255, 0.35);">
+        <div class="highlight-header">
+          <span style="font-size: 1.5rem;">🎈</span>
+          <div>
+            <h3 style="color: #fff;">Próximos en los siguientes 14 días</h3>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">Cumpleaños que vienen pronto</p>
+          </div>
+        </div>
+        <div id="highlight-upcoming-list"></div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer style="text-align: center; margin-top: 40px; color: var(--text-dim); font-size: 0.8rem; font-weight: 500;">
+      <p>YoCapi Birthday System • Hecho con cariño para la comunidad de <strong>yocapi_pr</strong></p>
+    </footer>
+  </div>
+
+  <!-- Modal Interactivo de Detalle del Día -->
+  <div class="cal-modal" id="day-modal" role="dialog" aria-modal="true" aria-labelledby="modal-day-title">
+    <div class="cal-modal-box">
+      <button type="button" class="cal-modal-close" id="btn-modal-close" aria-label="Cerrar modal">✕</button>
+
+      <div class="modal-day-header">
+        <span class="modal-day-badge" id="modal-day-badge">Cumpleañeros</span>
+        <h3 class="modal-day-title" id="modal-day-title">24 de Octubre</h3>
+      </div>
+
+      <div class="modal-celebrants-list" id="modal-celebrants-list">
+        <!-- Renderizado dinámico de tarjetas -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenedor de Notificaciones Toast -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="js/calendario.js"></script>
+</body>
+
+</html>

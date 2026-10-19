@@ -46,15 +46,15 @@
       </p>
     </div>
 
-    <!-- Selector Superior: Portal Personal vs Muro Comunitario -->
-    <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 22px; flex-wrap: wrap;">
-      <button type="button" id="btn-show-account" class="user-subnav-btn active" style="min-width: 170px;">
-        <span>🎂</span> Mi Portal &amp; Registro
+    <!-- Selector Superior: Portal Personal vs Calendario Comunitario -->
+    <nav class="portal-top-nav" aria-label="Navegación Principal">
+      <button type="button" id="btn-show-account" class="portal-nav-item active">
+        <span>🎂</span> Mi Portal
       </button>
-      <button type="button" id="btn-show-community-wall" class="user-subnav-btn" style="min-width: 170px;">
-        <span>🎉</span> Muro Comunitario
-      </button>
-    </div>
+      <a href="/calendario.html" target="_blank" rel="noopener noreferrer" id="btn-show-community-wall" class="portal-nav-item">
+        <span>📅</span> Calendario <span>↗️</span>
+      </a>
+    </nav>
 
     <!-- SECCIÓN PÚBLICA: MURO COMUNITARIO DE CUMPLEAÑOS -->
     <div id="state-community-wall" style="display: none;">
@@ -100,8 +100,8 @@
               <span>Crea tu Contraseña</span>
               <span style="font-size: 0.7rem; color: var(--text-dim);">6 a 15 caracteres</span>
             </label>
-            <input type="password" id="reg-pin" class="custom-input" placeholder="Mínimo 6 caracteres"
-              minlength="6" maxlength="15" required>
+            <input type="password" id="reg-pin" class="custom-input" placeholder="Mínimo 6 caracteres" minlength="6"
+              maxlength="15" required>
           </div>
 
           <div class="form-row-grid">
@@ -155,8 +155,8 @@
 
           <div class="input-group">
             <label class="input-label" for="login-pin">Tu Contraseña</label>
-            <input type="password" id="login-pin" class="custom-input" placeholder="Tu contraseña"
-              minlength="6" maxlength="15" required>
+            <input type="password" id="login-pin" class="custom-input" placeholder="Tu contraseña" minlength="6"
+              maxlength="15" required>
           </div>
 
           <button type="submit" id="btn-submit-login" class="btn-primary">
@@ -189,8 +189,8 @@
 
           <div class="input-group">
             <label class="input-label" for="reset-new-pin">Crea tu Nueva Contraseña (6 a 15 caracteres)</label>
-            <input type="password" id="reset-new-pin" class="custom-input" placeholder="Nueva contraseña (6-15 caracteres)"
-              minlength="6" maxlength="15" required>
+            <input type="password" id="reset-new-pin" class="custom-input"
+              placeholder="Nueva contraseña (6-15 caracteres)" minlength="6" maxlength="15" required>
           </div>
 
           <button type="submit" id="btn-submit-reset" class="btn-primary">
@@ -236,13 +236,13 @@
       <!-- Barra Superior de Navegación del Usuario (Sidebar Superior) -->
       <div class="user-subnav-bar">
         <button type="button" class="user-subnav-btn active" id="btn-tab-celebration" data-tab="tab-celebration">
-          <span>🎂</span> Mi Cumpleaños &amp; Alerta
+          <span>🎂</span> <span class="tab-label-full">Mi Cumpleaños</span><span class="tab-label-short">Alerta</span>
         </button>
         <button type="button" class="user-subnav-btn" id="btn-tab-community" data-tab="tab-community">
-          <span>🎊</span> Felicitar
+          <span>🎊</span> <span>Felicitar</span>
         </button>
         <button type="button" class="user-subnav-btn" id="btn-tab-security" data-tab="tab-security">
-          <span>🔐</span> Seguridad &amp; Claves
+          <span>🔐</span> <span class="tab-label-full">Seguridad</span><span class="tab-label-short">Claves</span>
         </button>
       </div>
 
@@ -255,7 +255,8 @@
       <div id="tab-celebration" class="user-tab-pane">
         <div class="glass-card">
           <div style="margin-bottom: 16px;">
-            <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700;">Configurar Mi Alerta</h3>
+            <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700;">Configurar Mi Alerta
+            </h3>
           </div>
 
           <form id="form-edit-celebration">
@@ -266,7 +267,8 @@
                 <span class="locked-date-label">Fecha de Cumpleaños Confirmada</span>
                 <h4 id="locked-date-display">17 de Octubre</h4>
                 <p class="locked-date-hint">
-                  <span>🔒</span> Fecha fijada por 1 año. Si necesitas corregirla, contacta a la streamer para desbloquearla.
+                  <span>🔒</span> Fecha fijada por 1 año. Si necesitas corregirla, contacta a la streamer para
+                  desbloquearla.
                 </p>
               </div>
             </div>
@@ -322,7 +324,9 @@
               <button type="submit" id="btn-save-celebration" class="btn-primary" style="flex: 1; min-width: 180px;">
                 💾 Guardar Configuración
               </button>
-              <button type="button" id="btn-preview-alert" class="btn-secondary" style="flex: 1; min-width: 180px; background: rgba(145, 70, 255, 0.2); border: 1.5px solid #9146ff; color: #fff; font-weight: 800; cursor: pointer; border-radius: 12px; padding: 12px 18px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;" title="Mira exactamente cómo saldrás en directo antes de tu cumpleaños">
+              <button type="button" id="btn-preview-alert" class="btn-secondary"
+                style="flex: 1; min-width: 180px; background: rgba(145, 70, 255, 0.2); border: 1.5px solid #9146ff; color: #fff; font-weight: 800; cursor: pointer; border-radius: 12px; padding: 12px 18px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;"
+                title="Mira exactamente cómo saldrás en directo antes de tu cumpleaños">
                 <span>👀</span>
                 <span>Previsualizar Mi Alerta</span>
               </button>
@@ -343,19 +347,23 @@
             <div class="security-point">
               <span class="security-point-icon">🔑</span>
               <div>
-                <strong>Tu Contraseña (6 a 15 caracteres):</strong> Te permite iniciar sesión para modificar tu mensaje, escuchar tus sonidos y activar tu alerta en tu día especial.
+                <strong>Tu Contraseña (6 a 15 caracteres):</strong> Te permite iniciar sesión para modificar tu mensaje,
+                escuchar tus sonidos y activar tu alerta en tu día especial.
               </div>
             </div>
             <div class="security-point">
               <span class="security-point-icon">🛟</span>
               <div>
-                <strong>Tu Palabra Secreta:</strong> Es tu llave de rescate. Si alguna vez olvidas tu contraseña, vas a <em>"¿Olvidaste tu contraseña?"</em> en el inicio, introduces tu usuario y esta palabra, y podrás crear una nueva contraseña tú mismo al instante sin necesidad de pedir ayuda al streamer.
+                <strong>Tu Palabra Secreta:</strong> Es tu llave de rescate. Si alguna vez olvidas tu contraseña, vas a
+                <em>"¿Olvidaste tu contraseña?"</em> en el inicio, introduces tu usuario y esta palabra, y podrás crear
+                una nueva contraseña tú mismo al instante sin necesidad de pedir ayuda al streamer.
               </div>
             </div>
             <div class="security-point">
               <span class="security-point-icon">🔒</span>
               <div>
-                <strong>Privacidad y Cifrado:</strong> Toda tu información está resguardada con cifrado hash criptográfico seguro (SHA-256 con salt) en Firestore.
+                <strong>Privacidad y Cifrado:</strong> Toda tu información está resguardada con cifrado hash
+                criptográfico seguro (SHA-256 con salt) en Firestore.
               </div>
             </div>
           </div>
@@ -407,7 +415,8 @@
       <div class="modal-alert-box">
         <span class="modal-alert-icon">🔒</span>
         <p>
-          <strong>Aviso importante:</strong> Verifica que la fecha sea la correcta, porque <strong>no podrás volver a cambiarla dentro de 1 año</strong>. Esto evita que se lancen alertas repetidas en el directo.
+          <strong>Aviso importante:</strong> Verifica que la fecha sea la correcta, porque <strong>no podrás volver a
+            cambiarla dentro de 1 año</strong>. Esto evita que se lancen alertas repetidas en el directo.
         </p>
       </div>
 
@@ -425,21 +434,27 @@
   <!-- Modal de Previsualización de Alerta para el Usuario -->
   <div id="modal-preview-alert" class="custom-modal-backdrop" style="display: none;">
     <div class="custom-modal-card" style="max-width: 540px; text-align: center;">
-      <div style="font-size: 0.82rem; color: #a855f7; font-weight: 800; text-transform: uppercase; margin-bottom: 14px; letter-spacing: 0.05em;">
+      <div
+        style="font-size: 0.82rem; color: #a855f7; font-weight: 800; text-transform: uppercase; margin-bottom: 14px; letter-spacing: 0.05em;">
         👀 Así se verá tu tarjeta en el directo de OBS
       </div>
-      
+
       <!-- Simulación de la Tarjeta de Cumpleaños -->
-      <div style="background: linear-gradient(135deg, rgba(20, 10, 40, 0.95), rgba(45, 15, 65, 0.9)); border: 2px solid #a855f7; border-radius: 20px; padding: 22px; box-shadow: 0 0 35px rgba(168, 85, 247, 0.4); margin-bottom: 20px; display: flex; align-items: center; gap: 18px; text-align: left;">
-        <img id="preview-card-avatar" src="img/yocapi.png" alt="" style="width: 74px; height: 74px; border-radius: 50%; border: 3px solid #f43f5e; object-fit: cover; box-shadow: 0 0 15px rgba(244, 63, 94, 0.6); flex-shrink: 0;">
+      <div
+        style="background: linear-gradient(135deg, rgba(20, 10, 40, 0.95), rgba(45, 15, 65, 0.9)); border: 2px solid #a855f7; border-radius: 20px; padding: 22px; box-shadow: 0 0 35px rgba(168, 85, 247, 0.4); margin-bottom: 20px; display: flex; align-items: center; gap: 18px; text-align: left;">
+        <img id="preview-card-avatar" src="img/yocapi.png" alt=""
+          style="width: 74px; height: 74px; border-radius: 50%; border: 3px solid #f43f5e; object-fit: cover; box-shadow: 0 0 15px rgba(244, 63, 94, 0.6); flex-shrink: 0;">
         <div style="flex: 1; min-width: 0;">
-          <span style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; background: linear-gradient(135deg, #f43f5e, #fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+          <span
+            style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; background: linear-gradient(135deg, #f43f5e, #fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
             🎂 ¡Hoy es su Cumpleaños! 🎉
           </span>
-          <h3 id="preview-card-name" style="font-size: 1.25rem; font-weight: 900; color: #fff; margin: 2px 0 6px 0; word-break: break-word;">
+          <h3 id="preview-card-name"
+            style="font-size: 1.25rem; font-weight: 900; color: #fff; margin: 2px 0 6px 0; word-break: break-word;">
             Usuario
           </h3>
-          <p id="preview-card-msg" style="font-size: 0.88rem; color: #fde047; margin: 0; font-style: italic; word-break: break-word;">
+          <p id="preview-card-msg"
+            style="font-size: 0.88rem; color: #fde047; margin: 0; font-style: italic; word-break: break-word;">
             “¡Un año más en el stream! 🥳”
           </p>
         </div>
@@ -450,10 +465,12 @@
       </div>
 
       <div style="display: flex; gap: 10px; justify-content: center;">
-        <button type="button" id="btn-replay-preview" class="btn-modal-secondary" style="padding: 10px 18px; font-size: 0.85rem; border-radius: 10px; cursor: pointer;">
+        <button type="button" id="btn-replay-preview" class="btn-modal-secondary"
+          style="padding: 10px 18px; font-size: 0.85rem; border-radius: 10px; cursor: pointer;">
           🔄 Repetir Alerta
         </button>
-        <button type="button" id="btn-close-preview" class="btn-modal-primary" style="padding: 10px 22px; font-size: 0.85rem; border-radius: 10px; cursor: pointer;">
+        <button type="button" id="btn-close-preview" class="btn-modal-primary"
+          style="padding: 10px 22px; font-size: 0.85rem; border-radius: 10px; cursor: pointer;">
           ✅ ¡Quedó Perfecto!
         </button>
       </div>
