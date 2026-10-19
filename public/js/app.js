@@ -5,6 +5,7 @@
 let currentAudio = null;
 let currentPlayingFile = null;
 let avatarFetchTimeout = null;
+let currentUser = null;
 
 
 
@@ -455,6 +456,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       stateLoading.style.display = 'none';
 
       if (!res.ok) {
+        currentUser = null;
         stateGuest.style.display = 'block';
         stateUser.style.display = 'none';
         return;
@@ -462,11 +464,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const data = await res.json();
       if (!data || !data.user) {
+        currentUser = null;
         stateGuest.style.display = 'block';
         stateUser.style.display = 'none';
         return;
       }
 
+      currentUser = data.user;
       stateGuest.style.display = 'none';
       stateUser.style.display = 'block';
 
@@ -534,6 +538,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     } catch (err) {
       console.error('Error comprobando sesión:', err);
+      currentUser = null;
       stateLoading.style.display = 'none';
       stateGuest.style.display = 'block';
     }
@@ -591,7 +596,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       const MONTH_NAMES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-      let html = '';
+      let html = `
+        <div class="glass-card" style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; background: linear-gradient(135deg, rgba(145,70,255,0.18), rgba(244,63,94,0.08)); border-color: rgba(145,70,255,0.35);">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span style="font-size:1.8rem;">📅</span>
+            <div>
+              <h4 style="font-family:var(--font-heading); font-size:1rem; font-weight:800; margin:0; color:#fff;">Calendario Interactivo de la Comunidad</h4>
+              <p style="color:var(--text-dim); font-size:0.78rem; margin:2px 0 0 0;">Explora todos los meses y días de cumpleaños con fotos y sonidos</p>
+            </div>
+          </div>
+          <a href="/calendario.html" target="_blank" rel="noopener noreferrer" class="btn-primary-pill" style="padding:8px 16px; font-size:0.82rem; font-weight:700; text-decoration:none;">
+            Abrir Calendario ↗️
+          </a>
+        </div>
+      `;
 
       // Cumpleañeros de HOY
       if (data.today && data.today.length > 0) {
@@ -903,6 +921,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Cerrar Sesión
   document.getElementById('btn-logout').addEventListener('click', async () => {
     localStorage.removeItem('yocapi_token');
+    currentUser = null;
     await fetch('/api/auth/logout', { method: 'POST', headers: getAuthHeaders() });
     showToast('Sesión cerrada', 'info');
     checkUserSession();
@@ -1025,7 +1044,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const res = await fetch('/api/birthday/public-today');
       const data = await res.json();
-      let html = '';
+      let html = `
+        <div class="glass-card" style="margin-bottom: 20px; border-color: rgba(145,70,255,0.45); background: linear-gradient(135deg, rgba(145,70,255,0.18), rgba(244,63,94,0.1)); text-align: center; padding: 24px 20px;">
+          <div style="font-size: 2.2rem; margin-bottom: 8px;">📅</div>
+          <h3 style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800; margin: 0 0 6px 0; color: #fff;">
+            ¡Nuevo Calendario Interactivo de la Comunidad!
+          </h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; max-width: 480px; margin: 0 auto 16px auto;">
+            Explora todos los meses del año, busca amigos del chat y mira quién cumple años en cada día con sonido y tarjetas interactivas.
+          </p>
+          <a href="/calendario.html" target="_blank" rel="noopener noreferrer" class="btn-primary" 
+             style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; width: auto; padding: 12px 26px; margin: 0 auto; box-shadow: 0 8px 24px rgba(145,70,255,0.5);">
+            <span>🚀</span> Abrir Calendario en Nueva Ventana <span>↗️</span>
+          </a>
+        </div>
+      `;
 
       if (data.today && data.today.length > 0) {
         html += `
@@ -1101,8 +1134,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       btnShowWall.classList.remove('active');
       if (stateWall) stateWall.style.display = 'none';
       if (currentUser) {
+        if (stateGuest) stateGuest.style.display = 'none';
         if (stateUser) stateUser.style.display = 'block';
       } else {
+        if (stateUser) stateUser.style.display = 'none';
         if (stateGuest) stateGuest.style.display = 'block';
       }
     });
