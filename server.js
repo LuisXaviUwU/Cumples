@@ -29,10 +29,26 @@ const ALERT_COOLDOWN_MS = 30_000; // 30 segundos entre alertas del mismo usuario
 
 // Configuración persistente (Felicitaciones en directo activadas por la streamer, etc.)
 const settingsFile = path.join(__dirname, 'data', 'settings.json');
-let appSettings = { felicitations_enabled: false };
+const DEFAULT_OVERLAY_CONFIG = {
+    posX: 50,
+    posY: 85,
+    scale: 0.85,
+    animation: 'slide-up'
+};
+
+let appSettings = { 
+    felicitations_enabled: false,
+    overlay_config: { ...DEFAULT_OVERLAY_CONFIG }
+};
+
 try {
     if (fs.existsSync(settingsFile)) {
-        appSettings = { ...appSettings, ...JSON.parse(fs.readFileSync(settingsFile, 'utf8')) };
+        const loaded = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
+        appSettings = { 
+            ...appSettings, 
+            ...loaded,
+            overlay_config: { ...DEFAULT_OVERLAY_CONFIG, ...(loaded.overlay_config || {}) }
+        };
     }
 } catch (e) {
     console.error('Error cargando settings.json:', e);
@@ -759,12 +775,21 @@ app.get('/api/overlay/stream', (req, res) => {
         'Access-Control-Allow-Origin': '*'
     });
 
-    res.write(`data: ${JSON.stringify({ type: 'connected', time: Date.now() })}\n\n`);
+    res.write(`data: ${JSON.stringify({ 
+        type: 'connected', 
+        time: Date.now(),
+        config: appSettings.overlay_config || DEFAULT_OVERLAY_CONFIG
+    })}\n\n`);
     sseClients.add(res);
 
     req.on('close', () => {
         sseClients.delete(res);
     });
+});
+
+// Obtener configuración visual del overlay
+app.get('/api/overlay/config', (req, res) => {
+    res.json(appSettings.overlay_config || DEFAULT_OVERLAY_CONFIG);
 });
 
 setInterval(() => {
@@ -965,6 +990,48 @@ app.post('/api/dashboard/trigger-alert', authenticateDashboard, async (req, res)
 app.get('/api/dashboard/logs', authenticateDashboard, async (req, res) => {
     const logs = await db.getAlertLogs(30);
     res.json(logs);
+});
+
+// Obtener configuración del Overlay (Dashboard)
+app.get('/api/dashboard/overlay-config', authenticateDashboard, (req, res) => {
+    res.json(appSettings.overlay_config || DEFAULT_OVERLAY_CONFIG);
+});
+
+// Guardar y Aplicar en tiempo real la configuración del Overlay (Dashboard)
+app.post('/api/dashboard/overlay-config', authenticateDashboard, (req, res) => {
+    try {
+        const { posX, posY, scale, animation } = req.body;
+        const cleanX = Math.max(5, Math.min(95, parseFloat(posX) || 50));
+        const cleanY = Math.max(5, Math.min(95, parseFloat(posY) || 85));
+        const cleanScale = Math.max(0.4, Math.min(1.5, parseFloat(scale) || 0.85));
+        const validAnims = ['slide-up', 'slide-down', 'slide-left', 'slide-right', 'pop-zoom', 'bounce-drop', 'fade-glow'];
+        const cleanAnim = validAnims.includes(animation) ? animation : 'slide-up';
+
+        appSettings.overlay_config = {
+            posX: Math.round(cleanX * 10) / 10,
+            posY: Math.round(cleanY * 10) / 10,
+            scale: Math.round(cleanScale * 100) / 100,
+            animation: cleanAnim,
+            updatedAt: Date.now()
+        };
+
+        saveAppSettings();
+
+        // Broadcast instantáneo a todas las conexiones de OBS activas
+        broadcastToOverlay({
+            type: 'overlay_config',
+            config: appSettings.overlay_config
+        });
+
+        res.json({
+            success: true,
+            message: '¡Configuración guardada y transmitida a OBS Studio en tiempo real!',
+            config: appSettings.overlay_config
+        });
+    } catch (err) {
+        console.error('Error guardando overlay-config:', err);
+        res.status(500).json({ error: 'Error del servidor al guardar configuración' });
+    }
 });
 
 // ─── Rutas Frontend ─────────────────────────────────────────────────────────
