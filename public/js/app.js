@@ -1016,8 +1016,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnShowAccount = document.getElementById('btn-show-account');
   const btnShowWall = document.getElementById('btn-show-community-wall');
   const stateWall = document.getElementById('state-community-wall');
-  const stateGuest = document.getElementById('state-guest');
-  const stateUser = document.getElementById('state-user');
 
   async function loadPublicWall() {
     const wallContent = document.getElementById('public-wall-content');
