@@ -685,33 +685,92 @@ footer a {
   text-decoration: none;
 }
 
+/* ─── Selector Superior del Portal (2 Opciones Limpias) ────────────────── */
+.portal-top-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  max-width: 440px;
+  margin: 0 auto 22px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 5px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-subtle);
+}
+
+.portal-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.portal-nav-item:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.portal-nav-item.active {
+  background: var(--twitch-purple);
+  color: #fff;
+  box-shadow: 0 4px 14px var(--twitch-glow);
+}
+
+@media (max-width: 480px) {
+  .portal-top-nav {
+    max-width: 100%;
+    padding: 4px;
+    gap: 4px;
+  }
+  .portal-nav-item {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    gap: 5px;
+  }
+}
+
 /* ─── Subnavegación Superior de Usuario (Pestañas) ─────────────────────── */
 .user-subnav-bar {
-  display: flex;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
   margin-bottom: 20px;
   background: rgba(255, 255, 255, 0.04);
-  padding: 6px;
+  padding: 5px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
 }
 
 .user-subnav-btn {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 14px;
+  gap: 6px;
+  padding: 10px 10px;
   border-radius: var(--radius-sm);
   background: transparent;
   border: 1px solid transparent;
   color: var(--text-dim);
   font-family: var(--font-heading);
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   font-weight: 700;
   cursor: pointer;
   transition: var(--transition);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-subnav-btn:hover {
@@ -724,6 +783,28 @@ footer a {
   color: #ffffff;
   border-color: rgba(145, 70, 255, 0.5);
   box-shadow: 0 4px 15px rgba(145, 70, 255, 0.25);
+}
+
+.tab-label-short {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .user-subnav-bar {
+    gap: 4px;
+    padding: 4px;
+  }
+  .user-subnav-btn {
+    padding: 8px 4px;
+    font-size: 0.76rem;
+    gap: 4px;
+  }
+  .tab-label-full {
+    display: none;
+  }
+  .tab-label-short {
+    display: inline;
+  }
 }
 
 /* ─── Caja Explicativa de Seguridad ─────────────────────────────────────── */
