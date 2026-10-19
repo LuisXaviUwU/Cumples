@@ -690,6 +690,44 @@ app.get('/api/birthday/public-today', async (req, res) => {
     }
 });
 
+// ─── API PÚBLICA: Calendario Completo de la Comunidad ──────────────────────
+app.get('/api/birthday/calendar', async (req, res) => {
+    try {
+        const allUsers = await db.getAllUsers();
+        const users = [];
+
+        for (const u of allUsers) {
+            if (!u.birth_month || !u.birth_day || u.birthday_unlocked === true || u.birthday_unlocked === 1) continue;
+            const status = getBirthdayStatus(u.birth_month, u.birth_day);
+            users.push({
+                username: u.username,
+                display_name: u.display_name,
+                profile_image: u.profile_image || '/img/yocapi.png',
+                birth_month: parseInt(u.birth_month, 10),
+                birth_day: parseInt(u.birth_day, 10),
+                custom_message: u.custom_message || '',
+                selected_sound: u.selected_sound || 'HBSilbato.mp3',
+                isToday: status.isToday,
+                isGrace: status.isGracePeriod,
+                canCelebrate: status.canCelebrate,
+                daysUntilBirthday: status.daysUntilBirthday
+            });
+        }
+
+        users.sort((a, b) => a.birth_month - b.birth_month || a.birth_day - b.birth_day);
+
+        res.json({
+            success: true,
+            total: users.length,
+            felicitations_enabled: !!appSettings.felicitations_enabled,
+            users
+        });
+    } catch (err) {
+        console.error('Error en /api/birthday/calendar:', err);
+        res.status(500).json({ error: 'Error del servidor al obtener el calendario' });
+    }
+});
+
 // Cooldown de felicitaciones: username -> timestamp último envío
 const felicitationCooldown = new Map();
 const FELICITATION_COOLDOWN_MS = 5_000; // 5 segundos entre felicitaciones del mismo usuario
