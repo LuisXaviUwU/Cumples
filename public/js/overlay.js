@@ -5,16 +5,6 @@
 const params = new URLSearchParams(window.location.search);
 const token = params.get('token');
 
-// Escala personalizada para OBS (?scale=0.8 o ?scale=80)
-const rawScale = params.get('scale');
-if (rawScale) {
-  const parsed = parseFloat(rawScale);
-  if (!isNaN(parsed) && parsed > 0) {
-    const finalScale = parsed > 2 ? parsed / 100 : parsed;
-    document.documentElement.style.setProperty('--alert-scale', finalScale);
-  }
-}
-
 const alertWrapper = document.getElementById('alert-wrapper');
 const alertAvatar = document.getElementById('alert-avatar');
 const alertUsername = document.getElementById('alert-username');
@@ -24,8 +14,12 @@ const alertQueueTag = document.getElementById('alert-queue-tag');
 const debugStatus = document.getElementById('debug-status');
 
 // ─── Configuración Visual Dinámica (Posición, Escala, Animación) ───────────
+// La configuración viene SIEMPRE del servidor (guardada por el Simulador Visual).
+// No se leen parámetros de URL para escala/posición — la URL solo lleva ?token=
+
 function applyOverlayConfig(cfg) {
   if (!cfg) return;
+
   if (cfg.posX !== undefined && cfg.posX !== null) {
     document.documentElement.style.setProperty('--pos-x', `${cfg.posX}%`);
   }
@@ -43,45 +37,24 @@ function applyOverlayConfig(cfg) {
     const animName = cfg.animation.replace(/^anim-/, '');
     const validAnims = ['slide-up', 'slide-down', 'slide-left', 'slide-right', 'pop-zoom', 'bounce-drop', 'fade-glow'];
     if (validAnims.includes(animName)) {
+      // Limpiar clases de animación anteriores
       alertWrapper.className = alertWrapper.className
         .split(' ')
-        .filter(c => !c.startsWith('anim-'))
+        .filter(c => !c.startsWith('anim-') && !c.startsWith('pos-'))
         .join(' ');
       alertWrapper.classList.add(`anim-${animName}`);
     }
   }
 }
 
-// 1. Aplicar parámetros de URL (si existen)
-const urlPosX = params.get('x');
-const urlPosY = params.get('y');
-const urlScale = params.get('scale');
-const urlAnim = params.get('anim');
-const urlPosPreset = params.get('pos');
-
-if (urlPosX || urlPosY || urlScale || urlAnim) {
-  applyOverlayConfig({
-    posX: urlPosX ? parseFloat(urlPosX) : undefined,
-    posY: urlPosY ? parseFloat(urlPosY) : undefined,
-    scale: urlScale ? parseFloat(urlScale) : undefined,
-    animation: urlAnim || undefined
+// Cargar configuración del servidor al iniciar (REST fallback)
+fetch('/api/overlay/config')
+  .then(res => res.json())
+  .then(cfg => applyOverlayConfig(cfg))
+  .catch(() => {
+    // Si falla, usar animación por defecto
+    alertWrapper.classList.add('anim-slide-up');
   });
-} else if (urlPosPreset) {
-  const validPositions = ['bottom', 'top', 'center', 'bottom-left', 'bottom-right', 'top-left', 'top-right', 'free', 'compact'];
-  if (validPositions.includes(urlPosPreset.toLowerCase())) {
-    const cleanPos = (urlPosPreset.toLowerCase() === 'compact') ? 'free' : urlPosPreset.toLowerCase();
-    alertWrapper.classList.add(`pos-${cleanPos}`);
-    if (cleanPos === 'free') document.body.classList.add('pos-free');
-  }
-} else {
-  // Cargar configuración guardada por la streamer desde el servidor
-  fetch('/api/overlay/config')
-    .then(res => res.json())
-    .then(cfg => applyOverlayConfig(cfg))
-    .catch(() => {
-      alertWrapper.classList.add('anim-slide-up');
-    });
-}
 
 // Fallback de imagen en caso de error 404 o fallo de red
 alertAvatar.onerror = function () {
@@ -297,9 +270,8 @@ function connectSSE() {
         return;
       }
       if (data.type === 'connected') {
-        if (data.config && !urlPosX && !urlPosY && !urlPosPreset) {
-          applyOverlayConfig(data.config);
-        }
+        // Aplicar configuración enviada en el momento de conexión (puede sobreescribir el REST inicial)
+        if (data.config) applyOverlayConfig(data.config);
         return;
       }
       if (data.type === 'overlay_config' && data.config) {

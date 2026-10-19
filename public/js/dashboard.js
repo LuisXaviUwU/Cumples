@@ -61,21 +61,14 @@ function switchTab(tabId) {
 }
 
 let baseObsToken = '';
-let selectedScale = '0.8';
-let selectedPos = 'bottom';
 
+// La URL de OBS solo lleva el token — tamaño, posición y animación
+// se configuran desde el Simulador Visual y se aplican via SSE en tiempo real.
 function updateObsUrlDisplay() {
   if (!baseObsToken) return;
-  const scaleParam = (selectedScale && selectedScale !== '1.0') ? `&scale=${selectedScale}` : '';
-  const posParam = (selectedPos && selectedPos !== 'bottom') ? `&pos=${selectedPos}` : '';
-  const obsUrl = `${window.location.origin}/overlay?token=${encodeURIComponent(baseObsToken)}${scaleParam}${posParam}`;
+  const obsUrl = `${window.location.origin}/overlay?token=${encodeURIComponent(baseObsToken)}`;
   const input = document.getElementById('obs-url-display');
   if (input) input.value = obsUrl;
-
-  const freeModeTip = document.getElementById('obs-free-mode-tip');
-  if (freeModeTip) {
-    freeModeTip.style.display = selectedPos === 'free' ? 'block' : 'none';
-  }
 }
 
 // Cargar Estadísticas y OBS URL
@@ -104,7 +97,7 @@ async function loadStats() {
       obsText.style.color = '#94a3b8';
     }
 
-    // URL OBS con escala
+    // URL OBS (solo token, sin parámetros de posición/escala)
     baseObsToken = data.overlayToken;
     updateObsUrlDisplay();
 
