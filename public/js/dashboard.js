@@ -54,6 +54,10 @@ function switchTab(tabId) {
     loadBirthdays();
   }
   if (tabId === 'overlay-test') titleEl.innerHTML = '<span>🚀</span> Lanzador y Pruebas de Overlay';
+  if (tabId === 'nightbot') {
+    titleEl.innerHTML = '<span>🤖</span> Comandos y Automatización de Nightbot';
+    updateNightbotHost();
+  }
   if (tabId === 'logs') {
     titleEl.innerHTML = '<span>📜</span> Historial de Alertas en Stream';
     loadLogs();
@@ -782,20 +786,163 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ─── Copiar Comandos de Nightbot ──────────────────────────────────────────
+  // ─── Pestaña y Funcionalidades de Nightbot ─────────────────────────────────
+  const btnGotoNightbot = document.getElementById('btn-goto-nightbot');
+  if (btnGotoNightbot) {
+    btnGotoNightbot.addEventListener('click', () => switchTab('nightbot'));
+  }
+
+  function updateNightbotHost() {
+    const origin = window.location.origin;
+    document.querySelectorAll('.nb-host-url').forEach(el => {
+      el.textContent = origin;
+    });
+    const label = document.getElementById('nightbot-host-label');
+    if (label) label.textContent = origin;
+  }
+  updateNightbotHost();
+
+  // Copiar Comandos de Nightbot (botón individual)
   document.querySelectorAll('.btn-copy-cmd').forEach(btn => {
     btn.addEventListener('click', () => {
       const targetId = btn.dataset.target;
       const codeEl = document.getElementById(targetId);
       if (codeEl) {
-        navigator.clipboard.writeText(codeEl.textContent.trim()).then(() => {
-          showToast('📋 ¡Comando de Nightbot copiado al portapapeles!', 'success');
+        const text = codeEl.textContent.replace(/\s+/g, ' ').trim();
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('📋 ¡Comando copiado! Pégalo en tu chat de Twitch', 'success');
         }).catch(() => {
           showToast('Selecciona y copia el comando manualmente', 'info');
         });
       }
     });
   });
+
+  // Copiar URL directa del API
+  document.querySelectorAll('.btn-copy-url').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const endpoint = btn.dataset.url || '';
+      const fullUrl = `${window.location.origin}${endpoint}`;
+      navigator.clipboard.writeText(fullUrl).then(() => {
+        showToast('🔗 ¡URL del API copiada al portapapeles!', 'success');
+      }).catch(() => {
+        showToast('No se pudo copiar la URL', 'error');
+      });
+    });
+  });
+
+  // Probar Respuesta en Vivo del API
+  document.querySelectorAll('.btn-test-nb').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const endpoint = btn.dataset.endpoint;
+      const previewId = btn.dataset.preview;
+      const previewEl = document.getElementById(previewId);
+      if (!previewEl || !endpoint) return;
+
+      const originalBtnText = btn.innerHTML;
+      btn.innerHTML = '⏳ Consultando...';
+      btn.disabled = true;
+      previewEl.textContent = 'Consultando al servidor en vivo...';
+
+      try {
+        const res = await fetch(endpoint);
+        const text = await res.text();
+        previewEl.textContent = text;
+        showToast('✅ Respuesta obtenida en vivo', 'success');
+      } catch (err) {
+        previewEl.textContent = '❌ Error al consultar endpoint: ' + err.message;
+        showToast('Error al probar endpoint', 'error');
+      } finally {
+        btn.innerHTML = originalBtnText;
+        btn.disabled = false;
+      }
+    });
+  });
+
+  // Probar usuario personalizado para !micumple
+  const btnTestCustom = document.getElementById('btn-test-check-custom');
+  const inputTestUser = document.getElementById('input-test-user');
+  const previewCheck = document.getElementById('preview-check');
+
+  async function testCustomUserCheck() {
+    const rawNick = (inputTestUser?.value || '').trim();
+    if (!rawNick) {
+      showToast('Escribe un usuario para probar', 'info');
+      if (inputTestUser) inputTestUser.focus();
+      return;
+    }
+
+    if (previewCheck) previewCheck.textContent = `Consultando cumpleaños de @${rawNick}...`;
+    if (btnTestCustom) {
+      btnTestCustom.disabled = true;
+      btnTestCustom.textContent = '⏳ Probando...';
+    }
+
+    try {
+      const res = await fetch(`/api/bot/check?user=${encodeURIComponent(rawNick)}`);
+      const text = await res.text();
+      if (previewCheck) previewCheck.textContent = text;
+    } catch (err) {
+      if (previewCheck) previewCheck.textContent = '❌ Error: ' + err.message;
+    } finally {
+      if (btnTestCustom) {
+        btnTestCustom.disabled = false;
+        btnTestCustom.textContent = '▶️ Probar Nick';
+      }
+    }
+  }
+
+  if (btnTestCustom) {
+    btnTestCustom.addEventListener('click', testCustomUserCheck);
+  }
+  if (inputTestUser) {
+    inputTestUser.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        testCustomUserCheck();
+      }
+    });
+  }
+
+  // Copiar Pack Completo de Comandos (Texto multi-línea)
+  const btnCopyAll = document.getElementById('btn-copy-all-commands');
+  if (btnCopyAll) {
+    btnCopyAll.addEventListener('click', () => {
+      const origin = window.location.origin;
+      const allText = [
+        `# ==============================================================`,
+        `# COMANDOS DE CUMPLEAÑOS PARA NIGHTBOT — ${origin}`,
+        `# ==============================================================`,
+        ``,
+        `# 1. Cumpleaños de Hoy y Gracia (14 Días):`,
+        `!addcom !cumple $(urlfetch ${origin}/api/bot/today)`,
+        ``,
+        `# 2. Consultar fecha de un seguidor:`,
+        `!addcom !micumple $(urlfetch ${origin}/api/bot/check?user=$(query)&sender=$(user))`,
+        ``,
+        `# 3. Próximos cumpleaños en 15 días:`,
+        `!addcom !proximos $(urlfetch ${origin}/api/bot/next)`,
+        ``,
+        `# 4. Cumpleaños de todo el mes actual:`,
+        `!addcom !cumplemes $(urlfetch ${origin}/api/bot/month)`,
+        ``,
+        `# 5. Enlace para registrarse en la plataforma:`,
+        `!addcom !regcumple ¡Registra tu cumpleaños para que te festejemos con alerta en directo en tu día especial! 🎂 Entra gratis aquí 👉 ${origin} 🎈`,
+        ``,
+        `# 6. Felicitar en pantalla con sonido y confeti:`,
+        `!addcom !felicitar 🎊 ¡Mándale una felicitación en directo al cumpleañero con música y tarjetas en pantalla entrando a: ${origin} 🎉`,
+        ``,
+        `# 7. Resumen de comandos de ayuda:`,
+        `!addcom !cumpleinfo 🎂 Comandos: !cumple (hoy) · !micumple (tu fecha) · !proximos (en 15 días) · !cumplemes (este mes) · !regcumple (registrarte) · !felicitar (en vivo)`
+      ].join('\n');
+
+      navigator.clipboard.writeText(allText).then(() => {
+        showToast('📋 ¡Pack de comandos copiado! Puedes guardarlo o pegarlo en Discord', 'success');
+      }).catch(() => {
+        showToast('No se pudo copiar el pack completo', 'error');
+      });
+    });
+  }
 
   // Cargar estado inicial
   loadStats();
