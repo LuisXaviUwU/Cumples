@@ -5,6 +5,18 @@
 let dashboardKey = '';
 let currentTab = 'overview';
 
+// Constantes globales accesibles en todo el script
+const MONTH_NAMES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+function updateNightbotHost() {
+  const origin = window.location.origin;
+  document.querySelectorAll('.nb-host-url').forEach(el => {
+    el.textContent = origin;
+  });
+  const label = document.getElementById('nightbot-host-label');
+  if (label) label.textContent = origin;
+}
+
 function showToast(message, type = 'info') {
   const container = document.getElementById('toast-container');
   if (!container) return;
@@ -147,130 +159,154 @@ function updateFelicitationUI(enabled) {
   }
 }
 
-// Cargar Cumpleañeros de Hoy
+// Cargar Cumpleañeros de Hoy & Próximos
 async function loadTodayCelebrants() {
   const container = document.getElementById('today-celebrants-list');
-  container.innerHTML = '<p style="color:#94a3b8;">Cargando cumpleañeros...</p>';
+  const upContainer = document.getElementById('upcoming-celebrants-list');
+  if (container) container.innerHTML = '<p style="color:#94a3b8; padding: 12px 0;">Cargando cumpleañeros...</p>';
+  if (upContainer) upContainer.innerHTML = '<p style="color:#94a3b8; padding: 12px 0;">Cargando próximos cumpleaños...</p>';
 
+  // 1. Celebrantes Activos (Hoy y Período de Gracia)
   try {
     const res = await authFetch('/api/dashboard/today');
     const list = await res.json();
 
     if (!list || list.length === 0) {
-      container.innerHTML = `
-        <div class="glass-card" style="text-align:center; padding: 36px;">
-          <div style="font-size:2rem; margin-bottom:8px;">☕</div>
-          <h4 style="font-size:1.1rem; font-weight:700;">No hay cumpleaños para hoy</h4>
-          <p style="color:#94a3b8; font-size:0.85rem; margin-top:4px;">Ningún seguidor cumple años hoy ni está dentro del período de gracia de 14 días.</p>
-        </div>
-      `;
-      return;
-    }
-
-    container.innerHTML = '';
-    list.forEach(c => {
-      const card = document.createElement('div');
-      card.className = 'today-item-card';
-
-      const tagText = c.status.isToday ? '🎂 ¡CUMPLEAÑOS HOY!' : `🎈 Período de Gracia (${c.status.daysRemainingInGrace} días rest.)`;
-      const tagColor = c.status.isToday ? 'var(--c-pink)' : 'var(--c-gold)';
-
-      card.innerHTML = `
-        <div class="today-item-left">
-          <img src="${c.profile_image || '/img/yocapi.png'}" onerror="this.src='/img/yocapi.png'" alt="${c.display_name}" class="today-avatar">
-          <div class="today-info">
-            <h4>${c.display_name} <span style="font-size:0.75rem; font-weight:700; color:${tagColor}; margin-left:8px;">${tagText}</span></h4>
-            <p>${c.custom_message ? `"${c.custom_message}"` : 'Sin mensaje personalizado'} &bull; Sonido registrado: <strong>${c.selected_sound}</strong></p>
+      if (container) {
+        container.innerHTML = `
+          <div class="glass-card" style="text-align:center; padding: 32px 20px;">
+            <div style="font-size:2rem; margin-bottom:8px;">☕</div>
+            <h4 style="font-size:1.1rem; font-weight:700;">No hay cumpleaños para hoy</h4>
+            <p style="color:#94a3b8; font-size:0.85rem; margin-top:4px;">Ningún seguidor cumple años hoy ni está dentro del período de gracia de 14 días.</p>
           </div>
-        </div>
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <select class="today-sound-select" style="background:#1e1537;border:1px solid rgba(145,70,255,0.3);color:#e2e8f0;border-radius:8px;padding:6px 10px;font-size:0.8rem;cursor:pointer;">
-            <option value="HBSilbato.mp3" ${c.selected_sound === 'HBSilbato.mp3' ? 'selected' : ''}>🎺 Silbato Festivo</option>
-            <option value="HBVoz.mp3" ${c.selected_sound === 'HBVoz.mp3' ? 'selected' : ''}>🎤 Felicitación de Voz</option>
-            <option value="MBMusica.mp3" ${c.selected_sound === 'MBMusica.mp3' ? 'selected' : ''}>🎵 Música de Fiesta</option>
-          </select>
-          <button class="btn-alert-direct" data-user="${c.display_name}" data-avatar="${c.profile_image}" data-sound="${c.selected_sound}" data-msg="${c.custom_message || ''}">
-            🎉 Lanzar a OBS
-          </button>
-        </div>
-      `;
+        `;
+      }
+    } else {
+      if (container) {
+        container.innerHTML = '';
+        list.forEach(c => {
+          const card = document.createElement('div');
+          card.className = 'today-item-card';
 
-      const soundSel = card.querySelector('.today-sound-select');
+          const tagText = c.status.isToday ? '🎂 ¡CUMPLEAÑOS HOY!' : `🎈 Período de Gracia (${c.status.daysRemainingInGrace} días rest.)`;
+          const tagColor = c.status.isToday ? 'var(--c-pink)' : 'var(--c-gold)';
 
-      card.querySelector('.btn-alert-direct').addEventListener('click', async (e) => {
-        const btn = e.currentTarget;
-        const selectedSound = soundSel.value;
-        btn.disabled = true;
-        btn.textContent = 'Enviando...';
-
-        try {
-          const postRes = await authFetch('/api/dashboard/trigger-alert', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              user: btn.dataset.user,
-              avatar: btn.dataset.avatar,
-              sound: selectedSound,
-              message: btn.dataset.msg
-            })
-          });
-          const resData = await postRes.json();
-          if (resData.success) {
-            showToast(`¡Alerta de ${btn.dataset.user} enviada a OBS!`, 'success');
-          } else {
-            showToast(resData.error || 'Error al enviar', 'error');
-          }
-        } catch {
-          showToast('Error conectando con el servidor', 'error');
-        } finally {
-          btn.disabled = false;
-          btn.innerHTML = '🎉 Lanzar a OBS';
-        }
-      });
-
-      container.appendChild(card);
-    });
-
-    // Cargar también lista de próximos celebrantes (siguientes 14 días)
-    const upContainer = document.getElementById('upcoming-celebrants-list');
-    if (upContainer) {
-      try {
-        const pubRes = await fetch('/api/birthday/public-today');
-        const pubData = await pubRes.json();
-        if (!pubData.upcoming || pubData.upcoming.length === 0) {
-          upContainer.innerHTML = '<p style="color:#94a3b8; padding: 12px 0;">No hay cumpleaños registrados en los próximos 14 días.</p>';
-        } else {
-          upContainer.innerHTML = '';
-          const monthShortNames = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-          pubData.upcoming.forEach(u => {
-            const card = document.createElement('div');
-            card.className = 'today-item-card';
-            const daysBadge = u.daysUntil === 1 ? '¡Mañana!' : `En ${u.daysUntil} días`;
-            card.innerHTML = `
-              <div class="today-item-left">
-                <img src="${u.profile_image || '/img/yocapi.png'}" onerror="this.src='/img/yocapi.png'" alt="${u.display_name}" class="today-avatar">
-                <div class="today-info">
-                  <h4>${u.display_name} <span style="font-size:0.75rem; font-weight:800; background:rgba(168, 85, 247, 0.2); color:#c084fc; padding:2px 8px; border-radius:10px; margin-left:8px;">${daysBadge} (${u.birth_day} de ${monthShortNames[u.birth_month]})</span></h4>
-                  <p>Sonido registrado: <strong>${u.selected_sound || 'HBSilbato.mp3'}</strong></p>
-                </div>
+          card.innerHTML = `
+            <div class="today-item-left">
+              <img src="${c.profile_image || '/img/yocapi.png'}" onerror="this.src='/img/yocapi.png'" alt="${c.display_name}" class="today-avatar">
+              <div class="today-info">
+                <h4>${c.display_name} <span style="font-size:0.75rem; font-weight:700; color:${tagColor}; margin-left:8px;">${tagText}</span></h4>
+                <p>${c.custom_message ? `"${c.custom_message}"` : 'Sin mensaje personalizado'} &bull; Sonido: <strong>${c.selected_sound || 'HBSilbato.mp3'}</strong></p>
               </div>
-            `;
-            upContainer.appendChild(card);
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <select class="today-sound-select" style="background:#1e1537;border:1px solid rgba(145,70,255,0.3);color:#e2e8f0;border-radius:8px;padding:6px 10px;font-size:0.8rem;cursor:pointer;">
+                <option value="HBSilbato.mp3" ${c.selected_sound === 'HBSilbato.mp3' ? 'selected' : ''}>🎺 Silbato Festivo</option>
+                <option value="HBVoz.mp3" ${c.selected_sound === 'HBVoz.mp3' ? 'selected' : ''}>🎤 Felicitación de Voz</option>
+                <option value="MBMusica.mp3" ${c.selected_sound === 'MBMusica.mp3' ? 'selected' : ''}>🎵 Música de Fiesta</option>
+              </select>
+              <button class="btn-alert-direct" data-user="${c.display_name}" data-avatar="${c.profile_image}" data-sound="${c.selected_sound}" data-msg="${c.custom_message || ''}">
+                🎉 Lanzar a OBS
+              </button>
+            </div>
+          `;
+
+          const soundSel = card.querySelector('.today-sound-select');
+
+          card.querySelector('.btn-alert-direct').addEventListener('click', async (e) => {
+            const btn = e.currentTarget;
+            const selectedSound = soundSel.value;
+            btn.disabled = true;
+            btn.textContent = 'Enviando...';
+
+            try {
+              const postRes = await authFetch('/api/dashboard/trigger-alert', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  user: btn.dataset.user,
+                  avatar: btn.dataset.avatar,
+                  sound: selectedSound,
+                  message: btn.dataset.msg
+                })
+              });
+              const resData = await postRes.json();
+              if (resData.success) {
+                showToast(`¡Alerta de ${btn.dataset.user} enviada a OBS!`, 'success');
+              } else {
+                showToast(resData.error || 'Error al enviar', 'error');
+              }
+            } catch {
+              showToast('Error conectando con el servidor', 'error');
+            } finally {
+              btn.disabled = false;
+              btn.innerHTML = '🎉 Lanzar a OBS';
+            }
           });
-        }
-      } catch {
-        upContainer.innerHTML = '<p style="color:#94a3b8;">No se pudieron cargar próximos cumpleaños.</p>';
+
+          container.appendChild(card);
+        });
       }
     }
-
   } catch (err) {
-    container.innerHTML = '<p style="color:var(--c-pink);">Error al obtener celebrantes.</p>';
+    if (container) container.innerHTML = '<p style="color:var(--c-pink);">Error al obtener celebrantes.</p>';
+  }
+
+  // 2. Próximos Celebrantes (siguientes 14 días) — Carga SIEMPRE
+  if (upContainer) {
+    try {
+      const pubRes = await fetch('/api/birthday/public-today');
+      const pubData = await pubRes.json();
+      if (!pubData.upcoming || pubData.upcoming.length === 0) {
+        upContainer.innerHTML = `
+          <div class="glass-card" style="text-align:center; padding: 24px;">
+            <p style="color:#94a3b8; font-size:0.85rem; margin: 0;">🎈 No hay cumpleaños registrados en los próximos 14 días.</p>
+          </div>
+        `;
+      } else {
+        upContainer.innerHTML = '';
+        const monthShortNames = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        pubData.upcoming.forEach(u => {
+          const card = document.createElement('div');
+          card.className = 'today-item-card';
+          const daysBadge = u.daysUntil === 1 ? '¡Mañana!' : `En ${u.daysUntil} días`;
+          card.innerHTML = `
+            <div class="today-item-left">
+              <img src="${u.profile_image || '/img/yocapi.png'}" onerror="this.src='/img/yocapi.png'" alt="${u.display_name}" class="today-avatar">
+              <div class="today-info">
+                <h4>
+                  ${u.display_name} 
+                  <span style="font-size:0.75rem; font-weight:800; background:rgba(168, 85, 247, 0.25); color:#c084fc; border:1px solid rgba(168, 85, 247, 0.45); padding:3px 10px; border-radius:12px; margin-left:8px;">
+                    ${daysBadge} (${u.birth_day} de ${monthShortNames[u.birth_month]})
+                  </span>
+                </h4>
+                <p style="color:#94a3b8; font-size:0.82rem; margin-top:2px;">
+                  Fecha: <strong>${u.birth_day} de ${MONTH_NAMES[u.birth_month]}</strong> &bull; Sonido: <strong>${u.selected_sound || 'HBSilbato.mp3'}</strong>
+                </p>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button type="button" class="btn-copy btn-launch-upcoming" style="background:rgba(145,70,255,0.2); border-color:rgba(145,70,255,0.4); color:#bf94ff; font-size:0.8rem; padding:8px 14px; font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+                <span>🚀</span>
+                <span>Lanzar a OBS</span>
+              </button>
+            </div>
+          `;
+
+          card.querySelector('.btn-launch-upcoming')?.addEventListener('click', () => {
+            showLaunchAlertModal(u.username, u.display_name, u.profile_image, `¡Festejando por adelantado con @${u.display_name}! 🎂🎉`, u.selected_sound || 'HBSilbato.mp3');
+          });
+
+          upContainer.appendChild(card);
+        });
+      }
+    } catch {
+      upContainer.innerHTML = '<p style="color:#94a3b8;">No se pudieron cargar próximos cumpleaños.</p>';
+    }
   }
 }
 
 // Cargar Base de Datos de Cumpleaños
-const MONTH_NAMES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-
 async function loadBirthdays() {
   const tbody = document.getElementById('bday-table-body');
   const search = document.getElementById('filter-search').value;
@@ -298,25 +334,37 @@ async function loadBirthdays() {
       const isLocked = b.birthday_unlocked !== true && b.birth_month && b.birth_day;
 
       tr.innerHTML = `
-        <td style="display:flex;align-items:center;gap:10px;">
-          <img src="${b.profile_image || '/img/yocapi.png'}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
-          <div>
-            <strong>${b.display_name}</strong>
-            <div style="font-size:0.75rem;color:#64748b;">@${b.username}</div>
+        <td class="col-user">
+          <div class="user-cell">
+            <img src="${b.profile_image || '/img/yocapi.png'}" alt="${b.display_name}" class="user-avatar-sm" onerror="this.src='/img/yocapi.png'">
+            <div class="user-meta">
+              <strong>${b.display_name}</strong>
+              <small>@${b.username}</small>
+            </div>
           </div>
         </td>
-        <td>
+        <td class="col-bday">
           <strong>${b.birth_day} de ${MONTH_NAMES[b.birth_month]}</strong>
-          ${isLocked ? '<span title="Fecha bloqueada 1 año" style="margin-left:6px;font-size:0.7rem;color:#94a3b8;">🔒</span>' : '<span title="Fecha desbloquada" style="margin-left:6px;font-size:0.7rem;color:#10b981;">🔓</span>'}
+          ${isLocked ? '<span title="Fecha bloqueada por 1 año" class="lock-indicator locked">🔒</span>' : '<span title="Fecha libre para editar" class="lock-indicator unlocked">🔓</span>'}
         </td>
-        <td style="color:#cbd5e1;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.custom_message || '-'}</td>
-        <td><span style="font-size:0.75rem;background:rgba(255,255,255,0.06);padding:3px 8px;border-radius:6px;">${b.selected_sound || 'HBSilbato.mp3'}</span></td>
-        <td style="color:#64748b;font-size:0.8rem;">${regDate}</td>
-        <td style="text-align:right;white-space:nowrap;">
-          <button class="btn-copy" style="padding:5px 8px;font-size:0.72rem;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#10b981;margin-right:4px;display:inline-flex;" data-unlock="${b.username}">${isLocked ? '🔓 Desbloquear' : '✅ Desbloqueado'}</button>
-          <button class="btn-copy" style="padding:5px 8px;font-size:0.72rem;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);color:#fbbf24;margin-right:4px;display:inline-flex;" data-change-date="${b.username}">📅 Cambiar Fecha</button>
-          <button class="btn-copy" style="padding:5px 8px;font-size:0.72rem;background:rgba(145,70,255,0.2);border:1px solid rgba(145,70,255,0.4);color:#bf94ff;margin-right:4px;display:inline-flex;" data-launch-alert="${b.username}" data-avatar="${b.profile_image}" data-msg="${b.custom_message || ''}">🚀 Lanzar Alerta</button>
-          <button class="btn-del" data-id="${b.username}">Eliminar</button>
+        <td class="col-msg" title="${b.custom_message || ''}">${b.custom_message || '—'}</td>
+        <td class="col-sound"><span class="sound-badge">${b.selected_sound || 'HBSilbato.mp3'}</span></td>
+        <td class="col-reg">${regDate}</td>
+        <td class="col-actions">
+          <div class="actions-group">
+            <button class="btn-act btn-act-launch" title="Lanzar alerta en directo a OBS" data-launch-alert="${b.username}">
+              🚀 Lanzar
+            </button>
+            <button class="btn-act ${isLocked ? 'btn-act-unlock' : 'btn-act-free'}" title="${isLocked ? 'Desbloquear fecha de este usuario' : 'Fecha ya desbloqueada'}" data-unlock="${b.username}">
+              ${isLocked ? '🔓 Abrir' : '✅ Libre'}
+            </button>
+            <button class="btn-act btn-act-date" title="Modificar fecha de cumpleaños" data-change-date="${b.username}">
+              📅 Fecha
+            </button>
+            <button class="btn-act btn-act-del" title="Eliminar registro" data-id="${b.username}">
+              🗑️
+            </button>
+          </div>
         </td>
       `;
 
@@ -792,14 +840,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnGotoNightbot.addEventListener('click', () => switchTab('nightbot'));
   }
 
-  function updateNightbotHost() {
-    const origin = window.location.origin;
-    document.querySelectorAll('.nb-host-url').forEach(el => {
-      el.textContent = origin;
-    });
-    const label = document.getElementById('nightbot-host-label');
-    if (label) label.textContent = origin;
-  }
+  // Inicializar host de Nightbot
   updateNightbotHost();
 
   // Copiar Comandos de Nightbot (botón individual)
@@ -943,6 +984,35 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   }
+
+  // ─── Control del Menú Lateral Móvil (Drawer) ──────────────────────────────
+  const mobileToggle = document.getElementById('btn-mobile-sidebar-toggle');
+  const sidebar = document.querySelector('.dash-sidebar');
+  const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+  const btnCloseSidebar = document.getElementById('btn-close-sidebar-mobile');
+
+  function openMobileSidebar() {
+    if (sidebar) sidebar.classList.add('open');
+    if (sidebarBackdrop) sidebarBackdrop.classList.add('active');
+    document.body.classList.add('mobile-nav-open');
+  }
+
+  function closeMobileSidebar() {
+    if (sidebar) sidebar.classList.remove('open');
+    if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+    document.body.classList.remove('mobile-nav-open');
+  }
+
+  if (mobileToggle) mobileToggle.addEventListener('click', openMobileSidebar);
+  if (btnCloseSidebar) btnCloseSidebar.addEventListener('click', closeMobileSidebar);
+  if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+
+  // Cerrar el drawer en móvil al seleccionar cualquier pestaña
+  document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
+    item.addEventListener('click', () => {
+      if (window.innerWidth <= 900) closeMobileSidebar();
+    });
+  });
 
   // Cargar estado inicial
   loadStats();
