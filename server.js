@@ -79,6 +79,34 @@ app.use(express.static(path.join(__dirname, 'public')));
 const sseClients = new Set();
 const recentAlertsCache = new Map(); // username -> timestamp
 
+// ─── Mutex de Música: solo una canción de cumpleaños a la vez ─────────────────
+let musicLock = null; // { lockedAt: Date, expiresAt: Date, lockedBy: string }
+const MUSIC_LOCK_DURATION_MS = 90_000; // 90 segundos (duración aprox. de la canción)
+
+function getMusicLockStatus() {
+    if (!musicLock) return { locked: false };
+    if (Date.now() >= musicLock.expiresAt) {
+        musicLock = null;
+        return { locked: false };
+    }
+    return {
+        locked: true,
+        lockedBy: musicLock.lockedBy,
+        remainingMs: musicLock.expiresAt - Date.now()
+    };
+}
+
+function acquireMusicLock(username) {
+    const status = getMusicLockStatus();
+    if (status.locked) return false;
+    musicLock = {
+        lockedAt: Date.now(),
+        expiresAt: Date.now() + MUSIC_LOCK_DURATION_MS,
+        lockedBy: username
+    };
+    return true;
+}
+
 // ─── Cache y Helper Multi-Fuente para Avatar de Twitch ────────────────────────
 const twitchAvatarCache = new Map(); // username -> { url, expires }
 const AVATAR_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hora de caché
@@ -655,7 +683,13 @@ app.post('/api/birthday/alert', authenticateUser, async (req, res) => {
     });
 });
 
+// ─── API PÚBLICA: Estado del mutex de música (polling para el frontend) ────────
+app.get('/api/birthday/music-status', (req, res) => {
+    res.json(getMusicLockStatus());
+});
+
 // ─── API PÚBLICA: Cumpleañeros actuales + próximos 14 días ──────────────────
+// Acepta ?exclude=username para excluir al propio cumpleañero de la lista "Felicitar"
 app.get('/api/birthday/public-today', async (req, res) => {
     try {
         const allUsers = await db.getAllUsers();
@@ -667,6 +701,9 @@ app.get('/api/birthday/public-today', async (req, res) => {
             today: [],
             upcoming: []
         };
+
+        // ?exclude=username — excluir al propio cumpleañero (para que no se autofelicite)
+        const excludeUser = (req.query.exclude || '').toLowerCase().trim();
 
         for (const u of allUsers) {
             if (!u.birth_month || !u.birth_day || u.birthday_unlocked === true || u.birthday_unlocked === 1) continue;
@@ -682,7 +719,10 @@ app.get('/api/birthday/public-today', async (req, res) => {
             };
 
             if (status.canCelebrate) {
-                result.today.push({ ...entry, status });
+                // No incluir al propio cumpleañero en la lista de "a felicitar"
+                if (u.username !== excludeUser) {
+                    result.today.push({ ...entry, status });
+                }
             } else {
                 // Calcular días hasta cumpleaños en los próximos 14 días
                 const days = status.daysUntilBirthday;
@@ -697,7 +737,8 @@ app.get('/api/birthday/public-today', async (req, res) => {
 
         res.json({
             ...result,
-            felicitations_enabled: !!appSettings.felicitations_enabled
+            felicitations_enabled: !!appSettings.felicitations_enabled,
+            music_lock: getMusicLockStatus()
         });
     } catch (err) {
         console.error('Error en /api/birthday/public-today:', err);
@@ -775,12 +816,30 @@ app.post('/api/birthday/send-felicitation', authenticateUser, async (req, res) =
             return res.status(400).json({ error: 'Este usuario no está de cumpleaños hoy' });
         }
 
+        // ── Bloquear auto-felicitación ──────────────────────────────────────────
+        if (req.user.username === target_username) {
+            return res.status(400).json({ error: 'No puedes felicitarte a ti mismo.' });
+        }
+
+        // ── Mutex de música (MBMusica.mp3): solo una a la vez ────────────────────
+        if (sound === 'MBMusica.mp3') {
+            if (!acquireMusicLock(req.user.username)) {
+                const lockInfo = getMusicLockStatus();
+                const secsLeft = Math.ceil(lockInfo.remainingMs / 1000);
+                return res.status(429).json({
+                    error: `🎵 La canción de cumpleaños ya está sonando (${secsLeft}s restantes). ¡Espera que termine!`
+                });
+            }
+        }
+
         // Cooldown por usuario que felicita
         const senderKey = `${req.user.username}_${target_username}`;
         const lastFelic = felicitationCooldown.get(senderKey) || 0;
         const now = Date.now();
         if (now - lastFelic < FELICITATION_COOLDOWN_MS) {
             const remaining = Math.ceil((FELICITATION_COOLDOWN_MS - (now - lastFelic)) / 1000);
+            // Si adquirimos el lock y va a fallar el cooldown, liberamos el lock
+            if (sound === 'MBMusica.mp3') musicLock = null;
             return res.status(429).json({ error: `Espera ${remaining}s antes de volver a felicitar` });
         }
         felicitationCooldown.set(senderKey, now);
@@ -803,7 +862,16 @@ app.post('/api/birthday/send-felicitation', authenticateUser, async (req, res) =
             timestamp: Date.now()
         });
 
-        res.json({ success: true, message: `¡Felicitación enviada a ${target.display_name}!` });
+        // Si es música, broadcast del estado del lock a todos los clientes del portal
+        if (sound === 'MBMusica.mp3') {
+            broadcastToOverlay({ type: 'music_lock_update', music_lock: getMusicLockStatus() });
+        }
+
+        res.json({
+            success: true,
+            message: `¡Felicitación enviada a ${target.display_name}!`,
+            music_lock: getMusicLockStatus()
+        });
     } catch (err) {
         console.error('Error en send-felicitation:', err);
         res.status(500).json({ error: 'Error del servidor' });
@@ -1309,6 +1377,41 @@ app.get('/api/bot/check', async (req, res) => {
         return res.send(`🎉 @${displayName}, tu cumpleaños está registrado para el ${user.birth_day} de ${monthText} (${daysText}). ¡Te esperamos en stream! 🎂`);
     } catch (err) {
         res.send('⚠️ Error consultando usuario.');
+    }
+});
+
+// ─── API NIGHTBOT: Próximos cumpleaños en 15 días ───────────────────────────
+app.get('/api/bot/next', async (req, res) => {
+    res.type('text/plain; charset=utf-8');
+    try {
+        const users = await db.getAllUsers();
+        const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const protocol = req.headers['x-forwarded-proto'] || 'http';
+        const host = req.headers.host || `localhost:${PORT}`;
+        const siteUrl = `${protocol}://${host}`;
+
+        const upcoming = [];
+        for (const u of users) {
+            if (!u.birth_month || !u.birth_day || u.birthday_unlocked) continue;
+            const status = getBirthdayStatus(u.birth_month, u.birth_day);
+            if (!status.canCelebrate && status.daysUntilBirthday > 0 && status.daysUntilBirthday <= 15) {
+                upcoming.push({ name: u.display_name || u.username, day: u.birth_day, month: u.birth_month, days: status.daysUntilBirthday });
+            }
+        }
+        upcoming.sort((a, b) => a.days - b.days);
+
+        if (upcoming.length === 0) {
+            return res.send(`📅 No hay cumpleaños registrados en los próximos 15 días en la comunidad. ¡Registra el tuyo aquí! 👉 ${siteUrl}`);
+        }
+
+        const list = upcoming.map(u => {
+            const daysText = u.days === 1 ? '¡mañana!' : `en ${u.days} días`;
+            return `@${u.name} (${u.day} de ${monthNames[u.month]}, ${daysText})`;
+        }).join(' · ');
+        return res.send(`📅 Próximos cumpleaños (15 días): ${list} 🎂 ¡Regístrate en ${siteUrl}!`);
+    } catch (err) {
+        res.send('⚠️ Error consultando próximos cumpleaños.');
     }
 });
 
