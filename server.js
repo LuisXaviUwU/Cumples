@@ -1327,13 +1327,18 @@ app.get('/api/bot/today', async (req, res) => {
 app.get('/api/bot/check', async (req, res) => {
     res.type('text/plain; charset=utf-8');
     try {
-        const queryUser = (req.query.user || '').trim().replace(/^@/, '').toLowerCase();
+        let rawUser = req.query.user || req.query.sender || req.query.q || '';
+        // Si Nightbot pasó "$(query)" como texto literal porque no hubo argumentos, usar fallback
+        if (rawUser.includes('$(query)')) {
+            rawUser = req.query.sender || '';
+        }
+        const queryUser = rawUser.trim().replace(/^@/, '').toLowerCase();
         const protocol = req.headers['x-forwarded-proto'] || 'http';
         const host = req.headers.host || `localhost:${PORT}`;
         const siteUrl = `${protocol}://${host}`;
 
         if (!queryUser) {
-            return res.send(`ℹ️ Usa: !micumple <tu_usuario> | Para registrarte: ${siteUrl}`);
+            return res.send(`ℹ️ Usa: !micumple [usuario] | Para registrarte: ${siteUrl}`);
         }
 
         const user = await db.getUser(queryUser);
@@ -1412,6 +1417,40 @@ app.get('/api/bot/next', async (req, res) => {
         return res.send(`📅 Próximos cumpleaños (15 días): ${list} 🎂 ¡Regístrate en ${siteUrl}!`);
     } catch (err) {
         res.send('⚠️ Error consultando próximos cumpleaños.');
+    }
+});
+
+// ─── API NIGHTBOT: Cumpleaños de todo el mes en curso ───────────────────────
+app.get('/api/bot/month', async (req, res) => {
+    res.type('text/plain; charset=utf-8');
+    try {
+        const users = await db.getAllUsers();
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1;
+        const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const monthTitle = monthNames[currentMonth];
+        const protocol = req.headers['x-forwarded-proto'] || 'http';
+        const host = req.headers.host || `localhost:${PORT}`;
+        const siteUrl = `${protocol}://${host}`;
+
+        const inMonth = [];
+        for (const u of users) {
+            if (!u.birth_month || !u.birth_day || u.birthday_unlocked) continue;
+            if (parseInt(u.birth_month, 10) === currentMonth) {
+                inMonth.push({ name: u.display_name || u.username, day: parseInt(u.birth_day, 10) });
+            }
+        }
+        inMonth.sort((a, b) => a.day - b.day);
+
+        if (inMonth.length === 0) {
+            return res.send(`🗓️ No hay cumpleaños registrados en ${monthTitle}. ¡Registra el tuyo en ${siteUrl}! 🎈`);
+        }
+
+        const list = inMonth.map(u => `@${u.name} (día ${u.day})`).join(', ');
+        return res.send(`🗓️ Cumpleaños de ${monthTitle} (${inMonth.length}): ${list} 🎂 ¡Festejemos en stream!`);
+    } catch (err) {
+        res.send('⚠️ Error consultando cumpleaños del mes.');
     }
 });
 
