@@ -361,7 +361,7 @@ async function loadBirthdays() {
             <button class="btn-act btn-act-date" title="Modificar fecha de cumpleaños" data-change-date="${b.username}">
               📅 Fecha
             </button>
-            <button class="btn-act btn-act-del" title="Eliminar registro" data-id="${b.username}">
+            <button class="btn-act btn-act-del btn-del" title="Eliminar registro" data-id="${b.username}">
               🗑️
             </button>
           </div>
@@ -369,7 +369,7 @@ async function loadBirthdays() {
       `;
 
       // Desbloquear fecha
-      tr.querySelector('[data-unlock]').addEventListener('click', async () => {
+      tr.querySelector('[data-unlock]')?.addEventListener('click', async () => {
         try {
           const res = await authFetch(`/api/dashboard/users/${b.username}/unlock-date`, { method: 'POST' });
           const data = await res.json();
@@ -385,20 +385,17 @@ async function loadBirthdays() {
       });
 
       // Cambiar Fecha directamente
-      tr.querySelector('[data-change-date]').addEventListener('click', () => {
+      tr.querySelector('[data-change-date]')?.addEventListener('click', () => {
         showChangeDateModal(b.username, b.display_name, b.birth_month, b.birth_day);
       });
 
       // Lanzar alerta con selección de audio
-      tr.querySelector('[data-launch-alert]').addEventListener('click', () => {
+      tr.querySelector('[data-launch-alert]')?.addEventListener('click', () => {
         showLaunchAlertModal(b.username, b.display_name, b.profile_image, b.custom_message, b.selected_sound);
       });
 
-      // Reset PIN desde modal custom (sin usar prompt nativo)
-      // Nota: El botón Reset Clave fue eliminado del HTML de la tabla; el acceso
-      // al reset de clave ahora se hace desde la sección de Seguridad del usuario.
-
-      tr.querySelector('.btn-del').addEventListener('click', async () => {
+      // Eliminar seguidor
+      tr.querySelector('.btn-act-del, .btn-del, [data-id]')?.addEventListener('click', async () => {
         if (!confirm(`¿Eliminar el registro de ${b.display_name}?`)) return;
         try {
           const delRes = await authFetch(`/api/dashboard/birthdays/${b.username}`, { method: 'DELETE' });
@@ -416,7 +413,8 @@ async function loadBirthdays() {
     });
 
   } catch (err) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--c-pink);padding:24px;">Error al cargar datos.</td></tr>';
+    console.error('Error al cargar base de datos de cumpleaños:', err);
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--c-pink);padding:24px;">⚠️ Error al cargar datos: ${err.message || 'Revisa la conexión'}</td></tr>`;
   }
 }
 
