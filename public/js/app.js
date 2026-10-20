@@ -600,14 +600,62 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Cargar sección de comunidad (cumpleañeros de hoy + próximos 14 días)
+  let musicLockPoller = null; // intervalo de polling del mutex de música
+
+  function applyMusicLockUI(musicLock) {
+    const allMusicBtns = document.querySelectorAll('.btn-felic-sound[data-sound="MBMusica.mp3"]');
+    if (musicLock && musicLock.locked) {
+      const secsLeft = Math.ceil(musicLock.remainingMs / 1000);
+      allMusicBtns.forEach(b => {
+        if (!b.disabled) { // no pisar cooldown ya activo
+          b.disabled = true;
+          b.classList.add('felic-cooldown');
+          b.title = `🎵 Sonando (${secsLeft}s)`;
+          b.textContent = `🎵⏳`;
+        }
+      });
+    } else {
+      allMusicBtns.forEach(b => {
+        // Solo re-habilitar si no tiene otro cooldown propio activo
+        if (b.dataset.cooldown !== 'personal') {
+          b.disabled = false;
+          b.classList.remove('felic-cooldown');
+          b.title = 'Música de Fiesta';
+          b.textContent = '🎵';
+        }
+      });
+    }
+  }
+
+  function startMusicLockPolling() {
+    if (musicLockPoller) clearInterval(musicLockPoller);
+    musicLockPoller = setInterval(async () => {
+      try {
+        const r = await fetch('/api/birthday/music-status');
+        const lock = await r.json();
+        applyMusicLockUI(lock);
+        if (!lock.locked && musicLockPoller) {
+          // Cuando se libera, seguir sondeando pero a ritmo más lento (5s)
+        }
+      } catch {}
+    }, 3000);
+  }
+
   async function loadCommunitySection() {
     const container = document.getElementById('community-section');
     if (!container) return;
     container.innerHTML = '<p style="color:var(--text-dim);padding:16px;">Cargando...</p>';
 
     try {
-      const res = await fetch('/api/birthday/public-today');
+      // Excluir al propio cumpleañero de la lista de "a felicitar" si está logueado
+      const excludeParam = currentUser ? `?exclude=${encodeURIComponent(currentUser.username)}` : '';
+      const res = await fetch(`/api/birthday/public-today${excludeParam}`);
       const data = await res.json();
+
+      // Aplicar estado inicial del mutex de música
+      if (data.music_lock) applyMusicLockUI(data.music_lock);
+      // Iniciar polling en vivo del mutex de música cuando hay cumpleañeros
+      if (data.today && data.today.length > 0) startMusicLockPolling();
 
       const MONTH_NAMES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -745,6 +793,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           allBtns.forEach(b => {
             b.disabled = true;
             b.classList.add('felic-cooldown');
+            b.dataset.cooldown = 'personal'; // marca para que el poller no pise
           });
           if (cdBadge) {
             cdBadge.style.display = 'inline-flex';
@@ -764,19 +813,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             const result = await res.json();
             if (result.success) {
               showToast(result.message, 'success');
-              // Cooldown visual de 5 segundos en los 3 botones
+
+              // Si se activó el mutex de música, aplicar inmediatamente a toda la sección
+              if (result.music_lock && result.music_lock.locked) {
+                applyMusicLockUI(result.music_lock);
+                // Asegurar que los botones del cooldown personal sigan bloqueados
+                allBtns.forEach(b => { b.dataset.cooldown = 'personal'; });
+              }
+
+              // Cooldown visual de 5 segundos en los 3 botones de ESTA tarjeta
               let secs = 5;
               if (cdBadge) cdBadge.textContent = `⏳ ${secs}s`;
-              allBtns.forEach(b => {
-                b.textContent = `${secs}s`;
-              });
+              allBtns.forEach(b => { b.textContent = `${secs}s`; });
 
               const countdown = setInterval(() => {
                 secs--;
                 if (cdBadge) cdBadge.textContent = `⏳ ${secs}s`;
-                allBtns.forEach(b => {
-                  b.textContent = `${secs}s`;
-                });
+                allBtns.forEach(b => { b.textContent = `${secs}s`; });
 
                 if (secs <= 0) {
                   clearInterval(countdown);
@@ -784,9 +837,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                   const icons = { 'HBSilbato.mp3': '🎺', 'HBVoz.mp3': '🎤', 'MBMusica.mp3': '🎵' };
                   allBtns.forEach(b => {
                     b.textContent = icons[b.dataset.sound] || '🎵';
-                    b.disabled = false;
-                    b.classList.remove('felic-cooldown');
+                    delete b.dataset.cooldown; // liberar marca personal
+                    // El poller de música decidirá si re-habilitar el botón 🎵
+                    if (b.dataset.sound !== 'MBMusica.mp3') {
+                      b.disabled = false;
+                      b.classList.remove('felic-cooldown');
+                    }
                   });
+                  // Forzar una comprobación inmediata del estado de música
+                  fetch('/api/birthday/music-status').then(r => r.json()).then(lock => applyMusicLockUI(lock)).catch(() => {});
                 }
               }, 1000);
             } else {
@@ -797,6 +856,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 b.textContent = icons[b.dataset.sound] || '🎵';
                 b.disabled = false;
                 b.classList.remove('felic-cooldown');
+                delete b.dataset.cooldown;
               });
             }
           } catch {
@@ -807,12 +867,14 @@ document.addEventListener('DOMContentLoaded', async () => {
               b.textContent = icons[b.dataset.sound] || '🎵';
               b.disabled = false;
               b.classList.remove('felic-cooldown');
+              delete b.dataset.cooldown;
             });
           }
         });
       });
     } catch (err) {
       container.innerHTML = '<p style="color:var(--accent-pink);padding:16px;">Error al cargar.</p>';
+      if (musicLockPoller) { clearInterval(musicLockPoller); musicLockPoller = null; }
     }
   }
 
