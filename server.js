@@ -1000,22 +1000,27 @@ app.get('/api/dashboard/today', authenticateDashboard, async (req, res) => {
 });
 
 app.get('/api/dashboard/birthdays', authenticateDashboard, async (req, res) => {
-    const month = req.query.month ? parseInt(req.query.month, 10) : null;
-    const search = (req.query.search || '').toLowerCase().trim();
+    try {
+        const month = req.query.month ? parseInt(req.query.month, 10) : null;
+        const search = (req.query.search || '').toLowerCase().trim();
 
-    let all = await db.getAllUsers();
+        let all = await db.getAllUsers();
 
-    if (month && !isNaN(month)) {
-        all = all.filter(u => u.birth_month === month);
+        if (month && !isNaN(month)) {
+            all = all.filter(u => u.birth_month === month);
+        }
+        if (search) {
+            all = all.filter(u =>
+                (u.display_name && u.display_name.toLowerCase().includes(search)) ||
+                (u.username && u.username.toLowerCase().includes(search))
+            );
+        }
+
+        res.json(all);
+    } catch (err) {
+        console.error('Error en /api/dashboard/birthdays:', err);
+        res.status(500).json({ error: 'Error al consultar cumpleaños' });
     }
-    if (search) {
-        all = all.filter(u =>
-            (u.display_name && u.display_name.toLowerCase().includes(search)) ||
-            (u.username && u.username.toLowerCase().includes(search))
-        );
-    }
-
-    res.json(all);
 });
 
 app.delete('/api/dashboard/birthdays/:username', authenticateDashboard, async (req, res) => {
