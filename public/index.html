@@ -220,43 +220,108 @@
         <button type="button" id="btn-logout" class="btn-logout">Salir</button>
       </div>
 
-      <!-- Tarjeta de Estado de Celebración -->
-      <div id="celebration-box" class="celebration-box">
-        <div class="bday-tag" id="status-tag">🗓️ Estado de Cumpleaños</div>
-        <h3 class="celebration-title" id="status-title">Preparado</h3>
-        <p class="celebration-desc" id="status-desc">Cargando...</p>
-
-        <button id="btn-launch-alert" class="btn-launch-alert" style="display: none;">
-          <span>🎉</span> ¡LANZAR ALERTA EN DIRECTO! <span>🚀</span>
-        </button>
-        <div id="alert-cooldown-text"
-          style="font-size: 0.78rem; color: var(--accent-gold); margin-top: 10px; display: none;"></div>
-      </div>
-
       <!-- Barra Superior de Navegación del Usuario (Sidebar Superior) -->
-      <div class="user-subnav-bar">
-        <button type="button" class="user-subnav-btn active" id="btn-tab-celebration" data-tab="tab-celebration">
-          <span>🎂</span> <span class="tab-label-full">Mi Cumpleaños</span><span class="tab-label-short">Alerta</span>
+      <nav class="user-subnav-bar" aria-label="Secciones de Usuario">
+        <button type="button" class="user-subnav-btn active" id="btn-tab-launch" data-tab="tab-launch">
+          <span class="subnav-icon">🚀</span>
+          <span class="subnav-text">
+            <span class="tab-label-full">Lanzar Alerta</span>
+            <span class="tab-label-short">Lanzar</span>
+          </span>
+        </button>
+        <button type="button" class="user-subnav-btn" id="btn-tab-config" data-tab="tab-config">
+          <span class="subnav-icon">⚙️</span>
+          <span class="subnav-text">
+            <span class="tab-label-full">Configurar Alerta</span>
+            <span class="tab-label-short">Configurar</span>
+          </span>
         </button>
         <button type="button" class="user-subnav-btn" id="btn-tab-community" data-tab="tab-community">
-          <span>🎊</span> <span>Felicitar</span>
+          <span class="subnav-icon">🎊</span>
+          <span class="subnav-text">
+            <span class="tab-label-full">Felicitar</span>
+            <span class="tab-label-short">Felicitar</span>
+          </span>
         </button>
         <button type="button" class="user-subnav-btn" id="btn-tab-security" data-tab="tab-security">
-          <span>🔐</span> <span class="tab-label-full">Seguridad</span><span class="tab-label-short">Claves</span>
+          <span class="subnav-icon">🛡️</span>
+          <span class="subnav-text">
+            <span class="tab-label-full">Seguridad & Perfil</span>
+            <span class="tab-label-short">Seguridad</span>
+          </span>
         </button>
+      </nav>
+
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- PESTAÑA 1: LANZAR ALERTA EN DIRECTO (ESTADO & CUENTA REGRESIVA) -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div id="tab-launch" class="user-tab-pane">
+        <div class="launch-dashboard-grid">
+          <!-- Tarjeta de Estado de Celebración -->
+          <div id="celebration-box" class="celebration-box">
+            <div class="bday-tag" id="status-tag">🗓️ Estado de Cumpleaños</div>
+            <h3 class="celebration-title" id="status-title">Preparado</h3>
+            <p class="celebration-desc" id="status-desc">Cargando...</p>
+
+            <button id="btn-launch-alert" class="btn-launch-alert" style="display: none;">
+              <span>🎉</span> ¡LANZAR ALERTA EN DIRECTO! <span>🚀</span>
+            </button>
+            <div id="alert-cooldown-text"
+              style="font-size: 0.78rem; color: var(--accent-gold); margin-top: 10px; display: none;"></div>
+          </div>
+
+          <!-- Tarjeta de Vista Previa Rápida de la Alerta -->
+          <div class="glass-card launch-preview-monitor-card" style="text-align: left;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.4rem;">📺</span>
+                <div>
+                  <h4 style="font-family: var(--font-heading); font-size: 1.05rem; font-weight: 700; margin: 0; color: #fff;">
+                    Así Saldrás en el Directo de OBS
+                  </h4>
+                  <p style="color: var(--text-muted); font-size: 0.78rem; margin: 2px 0 0 0;">
+                    Esta es la tarjeta que aparecerá en la pantalla de yocapi_pr cuando lances tu festejo.
+                  </p>
+                </div>
+              </div>
+              <button type="button" id="btn-preview-alert-quick" class="btn-preview-pill" title="Escuchar y ver animación">
+                <span>👀</span> Probar Efecto en Pantalla
+              </button>
+            </div>
+
+            <!-- Maqueta de Alerta OBS -->
+            <div class="launch-preview-card">
+              <div class="launch-preview-avatar-wrap">
+                <img src="img/yocapi.png" id="launch-card-avatar" alt="Avatar" class="launch-preview-avatar">
+              </div>
+              <div class="launch-preview-info">
+                <div class="launch-preview-tag">🎂 ¡Alerta de Cumpleaños! 🎉</div>
+                <h3 id="launch-card-name" class="launch-preview-name">Usuario</h3>
+                <p id="launch-card-msg" class="launch-preview-msg">“¡Un año más en el stream! 🥳”</p>
+                <div class="launch-preview-sound-meta">
+                  <span>🎵 Sonido seleccionado: <strong id="launch-card-sound" style="color: #38bdf8;">HBSilbato.mp3</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- SECCIÓN COMUNIDAD: FELICITACIONES -->
-      <div id="tab-community" class="user-tab-pane" style="display:none;">
-        <div id="community-section"><!-- cargado por JS --></div>
-      </div>
-
-      <!-- SECCIÓN 1: MI CUMPLEAÑOS & ALERTA -->
-      <div id="tab-celebration" class="user-tab-pane">
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- PESTAÑA 2: CONFIGURAR MI ALERTA (FECHA, MENSAJE, SONIDO) -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div id="tab-config" class="user-tab-pane" style="display: none;">
         <div class="glass-card">
-          <div style="margin-bottom: 16px;">
-            <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700;">Configurar Mi Alerta
-            </h3>
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px;">
+            <span style="font-size: 1.5rem;">⚙️</span>
+            <div>
+              <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700; margin: 0;">
+                Configurar Mi Alerta
+              </h3>
+              <p style="color: var(--text-muted); font-size: 0.8rem; margin: 2px 0 0 0;">
+                Personaliza tu mensaje, elige tu efecto sonoro favorito y revisa tu fecha registrada.
+              </p>
+            </div>
           </div>
 
           <form id="form-edit-celebration">
@@ -267,13 +332,12 @@
                 <span class="locked-date-label">Fecha de Cumpleaños Confirmada</span>
                 <h4 id="locked-date-display">17 de Octubre</h4>
                 <p class="locked-date-hint">
-                  <span>🔒</span> Fecha fijada por 1 año. Si necesitas corregirla, contacta a la streamer para
-                  desbloquearla.
+                  <span>🔒</span> Fecha fijada por 1 año. Si necesitas corregirla, contacta a la streamer para desbloquearla.
                 </p>
               </div>
             </div>
 
-            <!-- Selectores de Fecha (Solo visibles si la streamer la desbloqueó o expiró el año) -->
+            <!-- Selectores de Fecha (Solo si está desbloqueada) -->
             <div id="box-date-editable" style="display: none;">
               <div class="form-row-grid">
                 <div class="input-group" style="margin-bottom: 0;">
@@ -320,12 +384,12 @@
               <div class="sound-cards-grid" id="edit-sound-container"></div>
             </div>
 
-            <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap;">
               <button type="submit" id="btn-save-celebration" class="btn-primary" style="flex: 1; min-width: 180px;">
                 💾 Guardar Configuración
               </button>
               <button type="button" id="btn-preview-alert" class="btn-secondary"
-                style="flex: 1; min-width: 180px; background: rgba(145, 70, 255, 0.2); border: 1.5px solid #9146ff; color: #fff; font-weight: 800; cursor: pointer; border-radius: 12px; padding: 12px 18px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;"
+                style="flex: 1; min-width: 180px; background: rgba(145, 70, 255, 0.15); border: 1.5px solid #9146ff; color: #fff; font-weight: 800; cursor: pointer; border-radius: 12px; padding: 12px 18px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;"
                 title="Mira exactamente cómo saldrás en directo antes de tu cumpleaños">
                 <span>👀</span>
                 <span>Previsualizar Mi Alerta</span>
@@ -335,62 +399,115 @@
         </div>
       </div>
 
-      <!-- SECCIÓN 2: SEGURIDAD & RECUPERACIÓN (SECCIÓN APARTE) -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- PESTAÑA 3: SECCIÓN COMUNIDAD: FELICITACIONES -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div id="tab-community" class="user-tab-pane" style="display: none;">
+        <div id="community-section"><!-- cargado por JS --></div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- PESTAÑA 4: SEGURIDAD & PERFIL (CAMBIAR NOMBRE, CLAVES, GUÍA) -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
       <div id="tab-security" class="user-tab-pane" style="display: none;">
-        <!-- Caja explicativa de cómo funciona el sistema -->
-        <div class="security-explainer-card">
-          <div class="security-explainer-header">
-            <span style="font-size: 1.4rem;">🛡️</span>
-            <h4>¿Cómo funciona la seguridad de tu cuenta?</h4>
+        <div class="security-dashboard-grid">
+          <div class="security-forms-column">
+            <!-- 1. CAMBIAR NOMBRE EN LA APLICACIÓN -->
+            <div class="glass-card" style="margin-bottom: 20px;">
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+                <span style="font-size: 1.6rem;">✏️</span>
+                <div>
+                  <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700; margin: 0; color: #fff;">
+                    Nombre en la Aplicación
+                  </h3>
+                  <p style="color: var(--text-muted); font-size: 0.82rem; margin: 2px 0 0 0;">
+                    Personaliza cómo se mostrará tu nombre en la pantalla del directo y en el portal.
+                  </p>
+                </div>
+              </div>
+
+              <form id="form-edit-name">
+                <div class="input-group">
+                  <label class="input-label" for="edit-display-name">
+                    <span>Tu Nombre Visible</span>
+                    <span style="font-size: 0.72rem; color: var(--text-dim);">Máx. 30 caracteres</span>
+                  </label>
+                  <input type="text" id="edit-display-name" class="custom-input" maxlength="30"
+                    placeholder="Ej: TuApodo o Nick con mayúsculas" required>
+                </div>
+
+                <button type="submit" id="btn-save-name" class="btn-primary" style="background: linear-gradient(135deg, #06b6d4, #9146ff); margin-top: 4px;">
+                  💾 Guardar Mi Nombre
+                </button>
+              </form>
+            </div>
+
+            <!-- 2. CAMBIAR CONTRASEÑA O PALABRA SECRETA -->
+            <div class="glass-card">
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+                <span style="font-size: 1.6rem;">🔑</span>
+                <div>
+                  <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700; margin: 0; color: #fff;">
+                    Cambiar Contraseña o Palabra Secreta
+                  </h3>
+                  <p style="color: var(--text-muted); font-size: 0.82rem; margin: 2px 0 0 0;">
+                    Modifica tu clave de acceso o la palabra que utilizas para recuperar tu cuenta.
+                  </p>
+                </div>
+              </div>
+
+              <form id="form-edit-security">
+                <div class="input-group">
+                  <label class="input-label" for="edit-pin">Nueva Contraseña (Opcional, 6 a 15 caracteres)</label>
+                  <input type="password" id="edit-pin" class="custom-input" placeholder="Escribe tu nueva contraseña"
+                    minlength="6" maxlength="15">
+                </div>
+
+                <div class="input-group">
+                  <label class="input-label" for="edit-secret">Nueva Palabra Secreta de Recuperación (Opcional)</label>
+                  <input type="text" id="edit-secret" class="custom-input" placeholder="Escribe tu nueva palabra secreta">
+                </div>
+
+                <button type="submit" id="btn-save-security" class="btn-primary" style="margin-top: 4px;">
+                  💾 Actualizar Claves de Seguridad
+                </button>
+              </form>
+            </div>
           </div>
-          <div class="security-points-list">
-            <div class="security-point">
-              <span class="security-point-icon">🔑</span>
-              <div>
-                <strong>Tu Contraseña (6 a 15 caracteres):</strong> Te permite iniciar sesión para modificar tu mensaje,
-                escuchar tus sonidos y activar tu alerta en tu día especial.
+
+          <div class="security-info-column">
+            <!-- 3. CAJA EXPLICATIVA DE SEGURIDAD -->
+            <div class="security-explainer-card">
+              <div class="security-explainer-header">
+                <span style="font-size: 1.4rem;">🛡️</span>
+                <h4>¿Cómo funciona la seguridad de tu cuenta?</h4>
               </div>
-            </div>
-            <div class="security-point">
-              <span class="security-point-icon">🛟</span>
-              <div>
-                <strong>Tu Palabra Secreta:</strong> Es tu llave de rescate. Si alguna vez olvidas tu contraseña, vas a
-                <em>"¿Olvidaste tu contraseña?"</em> en el inicio, introduces tu usuario y esta palabra, y podrás crear
-                una nueva contraseña tú mismo al instante sin necesidad de pedir ayuda al streamer.
-              </div>
-            </div>
-            <div class="security-point">
-              <span class="security-point-icon">🔒</span>
-              <div>
-                <strong>Privacidad y Cifrado:</strong> Toda tu información está resguardada con cifrado hash
-                criptográfico seguro (SHA-256 con salt) en Firestore.
+              <div class="security-points-list">
+                <div class="security-point">
+                  <span class="security-point-icon">🔑</span>
+                  <div>
+                    <strong>Tu Contraseña (6 a 15 caracteres):</strong> Te permite iniciar sesión para modificar tu nombre, mensaje,
+                    escuchar tus sonidos y activar tu alerta en tu día especial.
+                  </div>
+                </div>
+                <div class="security-point">
+                  <span class="security-point-icon">🛟</span>
+                  <div>
+                    <strong>Tu Palabra Secreta:</strong> Es tu llave de rescate. Si alguna vez olvidas tu contraseña, vas a
+                    <em>"¿Olvidaste tu contraseña?"</em> en el inicio, introduces tu usuario y esta palabra, y podrás crear
+                    una nueva contraseña tú mismo al instante sin necesidad de pedir ayuda al streamer.
+                  </div>
+                </div>
+                <div class="security-point">
+                  <span class="security-point-icon">🔒</span>
+                  <div>
+                    <strong>Privacidad y Cifrado:</strong> Toda tu información está resguardada con cifrado hash
+                    criptográfico seguro (SHA-256 con salt) en Firestore.
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- Formulario de cambio de contraseña y palabra secreta -->
-        <div class="glass-card">
-          <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700; margin-bottom: 16px;">
-            Cambiar Contraseña o Palabra Secreta
-          </h3>
-
-          <form id="form-edit-security">
-            <div class="input-group">
-              <label class="input-label" for="edit-pin">Nueva Contraseña (Opcional, 6 a 15 caracteres)</label>
-              <input type="password" id="edit-pin" class="custom-input" placeholder="Escribe tu nueva contraseña"
-                minlength="6" maxlength="15">
-            </div>
-
-            <div class="input-group">
-              <label class="input-label" for="edit-secret">Nueva Palabra Secreta de Recuperación (Opcional)</label>
-              <input type="text" id="edit-secret" class="custom-input" placeholder="Escribe tu nueva palabra secreta">
-            </div>
-
-            <button type="submit" id="btn-save-security" class="btn-primary">
-              💾 Actualizar Seguridad
-            </button>
-          </form>
         </div>
       </div>
     </div>
