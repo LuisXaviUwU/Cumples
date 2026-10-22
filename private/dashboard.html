@@ -40,7 +40,7 @@
         <span>🚀</span> OBS & Test Alert
       </div>
       <div class="nav-item" data-tab="nightbot">
-        <span>🤖</span> Comandos Nightbot
+        <span>🤖</span> Nightbot &amp; StreamElements
       </div>
       <div class="nav-item" data-tab="logs">
         <span>📜</span> Historial
@@ -60,7 +60,7 @@
     <main class="dash-main">
       <header class="dash-topbar">
         <div class="topbar-left-wrap">
-          <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="topbar-title-group">
             <button type="button" id="btn-mobile-sidebar-toggle" class="btn-hamburger" aria-label="Abrir Menú">
               <span></span>
               <span></span>
@@ -333,7 +333,7 @@
                     <th>Mensaje en Pantalla</th>
                     <th>Sonido</th>
                     <th>Registrado el</th>
-                    <th style="text-align: right; width: 260px; min-width: 250px;">Acciones</th>
+                    <th style="text-align: right; width: 340px; min-width: 330px;">Acciones</th>
                   </tr>
                 </thead>
                 <tbody id="bday-table-body">
@@ -410,26 +410,26 @@
           </div>
         </div>
 
-        <!-- PESTAÑA: COMANDOS NIGHTBOT -->
+        <!-- PESTAÑA: COMANDOS NIGHTBOT & STREAMELEMENTS -->
         <div id="tab-nightbot" class="dash-tab-content" style="display: none;">
           <!-- Banner Superior Informativo -->
           <div class="nightbot-header-banner">
             <div>
-              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap;">
                 <span style="font-size: 2rem;">🤖</span>
                 <h3 style="font-family: var(--font-h); font-size: 1.3rem; font-weight: 800; margin: 0; color: #fff;">
-                  Comandos de Twitch para Nightbot
+                  Comandos de Twitch: Nightbot &amp; StreamElements
                 </h3>
                 <span class="nightbot-badge dynamic">● Respuestas en Vivo</span>
               </div>
               <p style="color: #cbd5e1; font-size: 0.86rem; margin: 0; max-width: 780px; line-height: 1.5;">
-                Configura estos comandos en el chat de tu stream para que tu comunidad consulte los cumpleaños en directo, verifique sus fechas y reciba recordatorios automáticos. Los textos se generan en tiempo real desde tu base de datos.
+                Comandos dinámicos para tu chat: el comando <strong>!cumple</strong> permite al espectador consultar su fecha o la de cualquier seguidor (<code>!cumple @amigo</code>). También puedes programar <strong>Timers automáticos</strong> para que el bot avise en chat cuando sea el cumpleaños de alguien hoy o en los próximos días.
               </p>
             </div>
             <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
               <button type="button" id="btn-copy-all-commands" class="btn-primary" style="background: linear-gradient(135deg, #10b981, #06b6d4); padding: 10px 18px; font-size: 0.85rem; font-weight: 800; border-radius: 10px; border: none; cursor: pointer; color: #fff; display: inline-flex; align-items: center; gap: 8px;">
                 <span>📋</span>
-                <span>Copiar Pack de Comandos (Texto)</span>
+                <span id="btn-copy-all-label">Copiar Pack de Comandos (Nightbot)</span>
               </button>
               <span style="font-size: 0.75rem; color: #94a3b8;">
                 Servidor detectado: <strong id="nightbot-host-label" style="color: #38bdf8;">cargando...</strong>
@@ -437,15 +437,23 @@
             </div>
           </div>
 
-          <!-- Guía Rápida de 3 Pasos -->
-          <div class="glass-card" style="padding: 16px 20px; margin-bottom: 24px; border-left: 4px solid #9146ff; background: rgba(145, 70, 255, 0.06);">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <span style="font-size: 1.5rem;">⚡</span>
-                <div style="font-size: 0.84rem; color: #e2e8f0; line-height: 1.4;">
-                  <strong>Instalación en 1 minuto:</strong> 
-                  <span style="color: #cbd5e1;">(1) Asegúrate que Nightbot sea moderador en tu chat escribiendo <code>/mod nightbot</code> en Twitch. (2) Copia cualquiera de los comandos <code>!addcom</code> de abajo. (3) Pégalo directamente en tu chat de Twitch. ¡Listo!</span>
-                </div>
+          <!-- Selector de Plataforma: Nightbot vs StreamElements -->
+          <div class="bot-platform-tabs">
+            <button type="button" class="btn-bot-platform active" data-platform="nightbot">
+              <span>🟣</span> Nightbot
+            </button>
+            <button type="button" class="btn-bot-platform" data-platform="streamelements">
+              <span>🔴</span> StreamElements
+            </button>
+          </div>
+
+          <!-- Guía Rápida de Instalación -->
+          <div class="glass-card" style="padding: 16px 20px; margin-bottom: 24px; border-left: 4px solid #9146ff; background: rgba(145, 70, 255, 0.06);" id="bot-guide-banner">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 1.5rem;" id="bot-guide-icon">⚡</span>
+              <div style="font-size: 0.84rem; color: #e2e8f0; line-height: 1.4;" id="bot-guide-text">
+                <strong>Instalación con Nightbot:</strong> 
+                <span style="color: #cbd5e1;">(1) Asegúrate que Nightbot sea moderador en tu chat escribiendo <code>/mod nightbot</code> en Twitch. (2) Copia cualquiera de los comandos <code>!addcom</code> de abajo. (3) Pégalo en tu chat de Twitch. ¡Listo!</span>
               </div>
             </div>
           </div>
@@ -453,74 +461,30 @@
           <!-- Grid de Comandos -->
           <div class="nightbot-grid">
 
-            <!-- 1. !cumple -->
-            <div class="nightbot-card">
+            <!-- 1. !cumple [usuario] (COMANDO ESTRELLA DINÁMICO) -->
+            <div class="nightbot-card" style="border-color: rgba(145, 70, 255, 0.45); background: linear-gradient(145deg, rgba(22, 16, 42, 0.85), rgba(12, 9, 24, 0.85));">
               <div class="nightbot-card-top">
                 <div>
                   <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                     <span style="font-size: 1.3rem;">🎂</span>
-                    <h4 style="font-family: var(--font-h); font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">!cumple</h4>
-                    <span class="nightbot-badge dynamic">Dinámico</span>
+                    <h4 style="font-family: var(--font-h); font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">!cumple [usuario]</h4>
+                    <span class="nightbot-badge dynamic">🌟 Estrella Dinámico</span>
                   </div>
                   <p style="color: #94a3b8; font-size: 0.82rem; margin: 0;">
-                    Anuncia quién está de cumpleaños hoy y quién está aún en su período de gracia de 14 días.
+                    <strong>El comando todo-en-uno:</strong> Si escriben <code>!cumple</code> consulta el propio cumpleaños del viewer. Si escriben <code>!cumple @amigo</code> consulta el de su amigo. Si hoy es el cumpleaños de alguien o está en gracia, invita al chat a festejarlo.
                   </p>
                 </div>
               </div>
 
               <div class="nightbot-code-wrap">
-                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;">COMANDO DE TWITCH CHAT:</span>
-                <code class="nightbot-code-line" id="cmd-code-today">
-                  !addcom !cumple $(urlfetch <span class="nb-host-url">https://cumples.onrender.com</span>/api/bot/today)
-                </code>
-              </div>
-
-              <div class="nightbot-actions">
-                <button type="button" class="btn-copy btn-copy-cmd" data-target="cmd-code-today" style="padding: 7px 14px; font-size: 0.8rem; background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5); color: #93c5fd;">
-                  📋 Copiar Comando
-                </button>
-                <button type="button" class="btn-copy btn-copy-url" data-url="/api/bot/today" style="padding: 7px 12px; font-size: 0.8rem;">
-                  🔗 Copiar URL
-                </button>
-                <button type="button" class="btn-copy btn-test-nb" data-endpoint="/api/bot/today" data-preview="preview-today" style="padding: 7px 14px; font-size: 0.8rem; background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #34d399; margin-left: auto;">
-                  ▶️ Probar Respuesta
-                </button>
-              </div>
-
-              <!-- Vista previa en vivo -->
-              <div class="nightbot-preview">
-                <div class="nightbot-preview-title">
-                  <span>💬 Respuesta Actual del Bot en Vivo:</span>
-                  <span style="font-size: 0.7rem; color: #64748b;">(Chat de Twitch)</span>
-                </div>
-                <div class="nightbot-preview-text" id="preview-today">Haz clic en "Probar Respuesta" para consultar...</div>
-              </div>
-            </div>
-
-            <!-- 2. !micumple -->
-            <div class="nightbot-card">
-              <div class="nightbot-card-top">
-                <div>
-                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                    <span style="font-size: 1.3rem;">🔍</span>
-                    <h4 style="font-family: var(--font-h); font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">!micumple [usuario]</h4>
-                    <span class="nightbot-badge dynamic">Dinámico</span>
-                  </div>
-                  <p style="color: #94a3b8; font-size: 0.82rem; margin: 0;">
-                    El espectador consulta su fecha y cuenta regresiva. Si menciona a otro seguidor (ej: <code>!micumple @amigo</code>), consulta el de su amigo.
-                  </p>
-                </div>
-              </div>
-
-              <div class="nightbot-code-wrap">
-                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;">COMANDO DE TWITCH CHAT:</span>
-                <code class="nightbot-code-line" id="cmd-code-check">
-                  !addcom !micumple $(urlfetch <span class="nb-host-url">https://cumples.onrender.com</span>/api/bot/check?user=$(query)&sender=$(user))
+                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;" id="label-code-check">COMANDO DE TWITCH (NIGHTBOT):</span>
+                <code class="nightbot-code-line" id="cmd-code-check" data-nb="!addcom !cumple $(urlfetch {HOST}/api/bot/check?user=$(query)&sender=$(user))" data-se="!cmd add !cumple ${customapi {HOST}/api/bot/check?user=${query}&sender=${user.name}}">
+                  !addcom !cumple $(urlfetch <span class="nb-host-url">https://cumples.onrender.com</span>/api/bot/check?user=$(query)&sender=$(user))
                 </code>
               </div>
 
               <div class="nightbot-test-input-row">
-                <input type="text" id="input-test-user" class="nightbot-test-input" placeholder="Escribe un usuario para probar (ej: yocapi_pr)...">
+                <input type="text" id="input-test-user" class="nightbot-test-input" placeholder="Escribe un nick para probar (o déjalo vacío para simular !cumple propio)...">
                 <button type="button" id="btn-test-check-custom" class="btn-copy" style="padding: 7px 14px; font-size: 0.8rem; background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #34d399;">
                   ▶️ Probar Nick
                 </button>
@@ -538,10 +502,53 @@
               <!-- Vista previa en vivo -->
               <div class="nightbot-preview">
                 <div class="nightbot-preview-title">
-                  <span>💬 Respuesta para el usuario:</span>
-                  <span style="font-size: 0.7rem; color: #64748b;">(Chat de Twitch)</span>
+                  <span>💬 Respuesta del Bot en el Chat:</span>
+                  <span style="font-size: 0.7rem; color: #64748b;">(En vivo)</span>
                 </div>
-                <div class="nightbot-preview-text" id="preview-check">Escribe un usuario arriba y presiona "Probar Nick"</div>
+                <div class="nightbot-preview-text" id="preview-check">Escribe un usuario arriba o presiona "Probar Nick" para ver la respuesta que mandará el bot.</div>
+              </div>
+            </div>
+
+            <!-- 2. ANUNCIO AUTOMÁTICO EN CHAT (TIMERS / TEMPORIZADORES) -->
+            <div class="nightbot-card" style="border-color: rgba(245, 158, 11, 0.45); background: linear-gradient(145deg, rgba(30, 20, 10, 0.75), rgba(16, 12, 8, 0.85));">
+              <div class="nightbot-card-top">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <span style="font-size: 1.3rem;">⏰</span>
+                    <h4 style="font-family: var(--font-h); font-size: 1.15rem; font-weight: 800; color: #fde047; margin: 0;">Anuncios Automáticos (Timers)</h4>
+                    <span class="nightbot-badge" style="background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4);">⏰ Modo Automático</span>
+                  </div>
+                  <p style="color: #cbd5e1; font-size: 0.82rem; margin: 0;">
+                    <strong>Avisa automáticamente en tu stream:</strong> Programa un Timer en Nightbot o StreamElements (ej: cada 15 min). El bot anunciará en el chat si hoy es el cumpleaños de alguien, si alguien está en período de gracia, o si faltan 1 a 3 días para un cumpleaños cercano.
+                  </p>
+                </div>
+              </div>
+
+              <div class="nightbot-code-wrap">
+                <span style="font-size: 0.72rem; color: #fde047; font-weight: 800;" id="label-code-timer">TEXTO PARA EL TIMER (NIGHTBOT):</span>
+                <code class="nightbot-code-line" id="cmd-code-timer" data-nb="$(urlfetch {HOST}/api/bot/timer)" data-se="${customapi {HOST}/api/bot/timer}">
+                  $(urlfetch <span class="nb-host-url">https://cumples.onrender.com</span>/api/bot/timer)
+                </code>
+              </div>
+
+              <div class="nightbot-actions">
+                <button type="button" class="btn-copy btn-copy-cmd" data-target="cmd-code-timer" style="padding: 7px 14px; font-size: 0.8rem; background: rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.5); color: #fde047;">
+                  📋 Copiar Texto del Timer
+                </button>
+                <button type="button" class="btn-copy btn-copy-url" data-url="/api/bot/timer" style="padding: 7px 12px; font-size: 0.8rem;">
+                  🔗 Copiar URL
+                </button>
+                <button type="button" class="btn-copy btn-test-nb" data-endpoint="/api/bot/timer" data-preview="preview-timer" style="padding: 7px 14px; font-size: 0.8rem; background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #34d399; margin-left: auto;">
+                  ▶️ Probar Respuesta
+                </button>
+              </div>
+
+              <!-- Vista previa en vivo -->
+              <div class="nightbot-preview">
+                <div class="nightbot-preview-title">
+                  <span>💬 Lo que dirá el Bot en este momento:</span>
+                </div>
+                <div class="nightbot-preview-text" id="preview-timer">Haz clic en "Probar Respuesta" para consultar qué anunciaría el bot en vivo...</div>
               </div>
             </div>
 
@@ -561,8 +568,8 @@
               </div>
 
               <div class="nightbot-code-wrap">
-                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;">COMANDO DE TWITCH CHAT:</span>
-                <code class="nightbot-code-line" id="cmd-code-next">
+                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;" id="label-code-next">COMANDO DE TWITCH (NIGHTBOT):</span>
+                <code class="nightbot-code-line" id="cmd-code-next" data-nb="!addcom !proximos $(urlfetch {HOST}/api/bot/next)" data-se="!cmd add !proximos ${customapi {HOST}/api/bot/next}">
                   !addcom !proximos $(urlfetch <span class="nb-host-url">https://cumples.onrender.com</span>/api/bot/next)
                 </code>
               </div>
@@ -604,8 +611,8 @@
               </div>
 
               <div class="nightbot-code-wrap">
-                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;">COMANDO DE TWITCH CHAT:</span>
-                <code class="nightbot-code-line" id="cmd-code-month">
+                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;" id="label-code-month">COMANDO DE TWITCH (NIGHTBOT):</span>
+                <code class="nightbot-code-line" id="cmd-code-month" data-nb="!addcom !cumplemes $(urlfetch {HOST}/api/bot/month)" data-se="!cmd add !cumplemes ${customapi {HOST}/api/bot/month}">
                   !addcom !cumplemes $(urlfetch <span class="nb-host-url">https://cumples.onrender.com</span>/api/bot/month)
                 </code>
               </div>
@@ -641,14 +648,14 @@
                     <span class="nightbot-badge static">Informativo</span>
                   </div>
                   <p style="color: #94a3b8; font-size: 0.82rem; margin: 0;">
-                    Enlace directo para que los espectadores registren su cumpleaños gratis con su Nick de Twitch y PIN.
+                    Enlace directo para que los espectadores registren su cumpleaños gratis con su Nick de Twitch y contraseña.
                   </p>
                 </div>
               </div>
 
               <div class="nightbot-code-wrap">
-                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;">COMANDO DE TWITCH CHAT:</span>
-                <code class="nightbot-code-line" id="cmd-code-reg">
+                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;" id="label-code-reg">COMANDO DE TWITCH (NIGHTBOT):</span>
+                <code class="nightbot-code-line" id="cmd-code-reg" data-nb="!addcom !regcumple ¡Registra tu cumpleaños para que te festejemos con alerta en directo en tu día especial! 🎂 Entra gratis aquí 👉 {HOST} 🎈" data-se="!cmd add !regcumple ¡Registra tu cumpleaños para que te festejemos con alerta en directo en tu día especial! 🎂 Entra gratis aquí 👉 {HOST} 🎈">
                   !addcom !regcumple ¡Registra tu cumpleaños para que te festejemos con alerta en directo en tu día especial! 🎂 Entra gratis aquí 👉 <span class="nb-host-url">https://cumples.onrender.com</span> 🎈
                 </code>
               </div>
@@ -676,8 +683,8 @@
               </div>
 
               <div class="nightbot-code-wrap">
-                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;">COMANDO DE TWITCH CHAT:</span>
-                <code class="nightbot-code-line" id="cmd-code-felic">
+                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;" id="label-code-felic">COMANDO DE TWITCH (NIGHTBOT):</span>
+                <code class="nightbot-code-line" id="cmd-code-felic" data-nb="!addcom !felicitar 🎊 ¡Mándale una felicitación en directo al cumpleañero con música y confeti en pantalla entrando a: {HOST} 🎉" data-se="!cmd add !felicitar 🎊 ¡Mándale una felicitación en directo al cumpleañero con música y confeti en pantalla entrando a: {HOST} 🎉">
                   !addcom !felicitar 🎊 ¡Mándale una felicitación en directo al cumpleañero con música y confeti en pantalla entrando a: <span class="nb-host-url">https://cumples.onrender.com</span> 🎉
                 </code>
               </div>
@@ -705,9 +712,9 @@
               </div>
 
               <div class="nightbot-code-wrap">
-                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;">COMANDO DE TWITCH CHAT:</span>
-                <code class="nightbot-code-line" id="cmd-code-info">
-                  !addcom !cumpleinfo 🎂 Comandos de Cumpleaños: !cumple (cumpleañeros de hoy) · !micumple (tu fecha registrada) · !proximos (en 15 días) · !cumplemes (este mes) · !regcumple (regístrate gratis) · !felicitar (mandar felicitación en vivo) 🎉
+                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;" id="label-code-info">COMANDO DE TWITCH (NIGHTBOT):</span>
+                <code class="nightbot-code-line" id="cmd-code-info" data-nb="!addcom !cumpleinfo 🎂 Comandos de Cumpleaños: !cumple [usuario] · !proximos (en 15 días) · !cumplemes (este mes) · !regcumple (regístrate gratis) · !felicitar (mandar felicitación en vivo) 🎉" data-se="!cmd add !cumpleinfo 🎂 Comandos de Cumpleaños: !cumple [usuario] · !proximos (en 15 días) · !cumplemes (este mes) · !regcumple (regístrate gratis) · !felicitar (mandar felicitación en vivo) 🎉">
+                  !addcom !cumpleinfo 🎂 Comandos de Cumpleaños: !cumple [usuario] · !proximos (en 15 días) · !cumplemes (este mes) · !regcumple (regístrate gratis) · !felicitar (mandar felicitación en vivo) 🎉
                 </code>
               </div>
 
@@ -720,26 +727,24 @@
 
           </div>
 
-          <!-- Consejos Pro y Aliases de Nightbot -->
+          <!-- Consejos Pro y Guía de Timers Automáticos -->
           <div class="glass-card" style="padding: 24px; margin-bottom: 28px; border: 1px solid rgba(255,255,255,0.08);">
             <h4 style="font-family: var(--font-h); font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0 0 14px 0; display: flex; align-items: center; gap: 10px;">
               <span>💡</span>
-              <span>Consejos Profesionales para Nightbot en Twitch</span>
+              <span id="bot-tips-title">Guía de Configuración &amp; Timers Automáticos</span>
             </h4>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; font-size: 0.83rem; color: #cbd5e1; line-height: 1.5;">
               <div style="background: rgba(0,0,0,0.25); padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.04);">
-                <strong style="color: #38bdf8; display: block; margin-bottom: 4px;">⏱️ Evitar Spam (Cooldown):</strong>
-                Puedes añadir un cooldown de 5 segundos a los comandos para que no saturen el chat ejecutando:
-                <code style="color: #f1f5f9; display: block; margin-top: 4px; font-family: monospace;">!editcom !cumple -cd=5</code>
+                <strong style="color: #fbbf24; display: block; margin-bottom: 4px;">⏰ ¿Cómo programar el Timer Automático?</strong>
+                En el panel web de tu bot ve a la sección <strong>Timers / Temporizadores</strong>, crea uno nuevo (ej: nombre "Cumples", cada 15 min y 3 líneas de chat) y en el mensaje pon el código copiado arriba. ¡El bot avisará solo cuando haya cumpleañeros!
               </div>
               <div style="background: rgba(0,0,0,0.25); padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.04);">
-                <strong style="color: #a78bfa; display: block; margin-bottom: 4px;">🔀 Crear Alias Alternativos:</strong>
-                Para que funcione también escribiendo <code>!cumpleaños</code> o <code>!cumpleañero</code>:
-                <code style="color: #f1f5f9; display: block; margin-top: 4px; font-family: monospace;">!addcom !cumpleanos -a=!cumple</code>
+                <strong style="color: #38bdf8; display: block; margin-bottom: 4px;">⏱️ Evitar Spam en el Chat (Cooldown):</strong>
+                Puedes añadir un cooldown de 5 segundos al comando <code>!cumple</code> para evitar que saturen el chat. En Nightbot: <code>!editcom !cumple -cd=5</code>. En StreamElements se configura desde el panel web de comandos.
               </div>
               <div style="background: rgba(0,0,0,0.25); padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.04);">
-                <strong style="color: #34d399; display: block; margin-bottom: 4px;">🌐 ¿Dominio Personalizado?</strong>
-                Los comandos detectan automáticamente el dominio donde esté alojado tu sistema (sea en localhost o en Render en la nube).
+                <strong style="color: #a78bfa; display: block; margin-bottom: 4px;">🔀 Alias como !micumple:</strong>
+                Si tus viewers escriben <code>!micumple</code> o <code>!cumpleaños</code>, puedes redirigirlos al comando principal. En Nightbot: <code>!addcom !micumple -a=!cumple</code>. En StreamElements puedes agregarlo como alias en la configuración del comando.
               </div>
             </div>
           </div>
