@@ -67,8 +67,9 @@ function switchTab(tabId) {
   }
   if (tabId === 'overlay-test') titleEl.innerHTML = '<span>🚀</span> Lanzador y Pruebas de Overlay';
   if (tabId === 'nightbot') {
-    titleEl.innerHTML = '<span>🤖</span> Comandos y Automatización de Nightbot';
+    titleEl.innerHTML = '<span>🤖</span> Bots de Twitch & Automatización';
     updateNightbotHost();
+    loadTwitchBotStatus();
   }
   if (tabId === 'logs') {
     titleEl.innerHTML = '<span>📜</span> Historial de Alertas en Stream';
@@ -336,7 +337,10 @@ async function loadBirthdays() {
       tr.innerHTML = `
         <td class="col-user">
           <div class="user-cell">
-            <img src="${b.profile_image || '/img/yocapi.png'}" alt="${b.display_name}" class="user-avatar-sm" onerror="this.src='/img/yocapi.png'">
+            <div style="position:relative;display:inline-block;">
+              <img src="${b.profile_image || '/img/yocapi.png'}" alt="${b.display_name}" class="user-avatar-sm" onerror="this.src='/img/yocapi.png'">
+              <button type="button" class="btn-quick-refresh-avatar" data-username="${b.username}" title="Actualizar foto desde Twitch" style="position:absolute;bottom:-3px;right:-3px;background:#9146ff;border:none;border-radius:50%;width:18px;height:18px;color:#fff;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;box-shadow:0 2px 6px rgba(0,0,0,0.5);">🔄</button>
+            </div>
             <div class="user-meta">
               <strong>${b.display_name}</strong>
               <small>@${b.username}</small>
@@ -358,7 +362,7 @@ async function loadBirthdays() {
             <button class="btn-act ${isLocked ? 'btn-act-unlock' : 'btn-act-free'}" title="${isLocked ? 'Desbloquear fecha de este usuario' : 'Fecha ya desbloqueada'}" data-unlock="${b.username}">
               ${isLocked ? '🔓 Abrir' : '✅ Libre'}
             </button>
-            <button class="btn-act btn-act-name" title="Modificar nombre en la aplicación" data-change-name="${b.username}">
+            <button class="btn-act btn-act-name" title="Modificar nombre y foto de perfil" data-change-name="${b.username}">
               ✏️ Nombre
             </button>
             <button class="btn-act btn-act-date" title="Modificar fecha de cumpleaños" data-change-date="${b.username}">
@@ -370,6 +374,29 @@ async function loadBirthdays() {
           </div>
         </td>
       `;
+
+      // Refrescar Avatar individual desde Twitch
+      tr.querySelector('.btn-quick-refresh-avatar')?.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        btn.textContent = '⏳';
+        try {
+          const res = await authFetch(`/api/dashboard/users/${b.username}/refresh-avatar`, { method: 'POST' });
+          const data = await res.json();
+          if (data.success) {
+            showToast(data.message, 'success');
+            loadBirthdays();
+          } else {
+            showToast(data.message || 'No se pudo actualizar foto', 'info');
+          }
+        } catch {
+          showToast('Error conectando con el servidor', 'error');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '🔄';
+        }
+      });
 
       // Desbloquear fecha
       tr.querySelector('[data-unlock]')?.addEventListener('click', async () => {
@@ -392,9 +419,9 @@ async function loadBirthdays() {
         showChangeDateModal(b.username, b.display_name, b.birth_month, b.birth_day);
       });
 
-      // Cambiar Nombre del seguidor
+      // Cambiar Nombre y Foto del seguidor
       tr.querySelector('[data-change-name]')?.addEventListener('click', () => {
-        showChangeNameModal(b.username, b.display_name);
+        showChangeNameModal(b.username, b.display_name, b.profile_image);
       });
 
       // Lanzar alerta con selección de audio
@@ -523,40 +550,134 @@ function showChangeDateModal(username, displayName, currentMonth, currentDay) {
   };
 }
 
-function showChangeNameModal(username, currentDisplayName) {
+function showChangeNameModal(username, currentDisplayName, currentAvatar) {
+  let pendingAvatar = currentAvatar || '/img/yocapi.png';
+
   const { backdrop, box } = createDashboardModal(`
     <h3 style="font-size:1.2rem;font-weight:800;margin-bottom:8px;display:flex;align-items:center;gap:8px;">
-      <span>✏️</span> <span>Cambiar Nombre de @${username}</span>
+      <span>✏️</span> <span>Editar Usuario y Foto: @${username}</span>
     </h3>
     <p style="color:#94a3b8;font-size:0.85rem;margin-bottom:18px;">
-      Modifica el nombre para mostrar de este usuario en las alertas de OBS y en la plataforma.
+      Corrige faltas de ortografía en el Nick de Twitch, ajusta su nombre visible o actualiza su foto de perfil.
     </p>
-    <div style="margin-bottom:18px;">
-      <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:6px;font-weight:700;">NUEVO NOMBRE VISIBLE</label>
-      <input type="text" id="modal-change-name-input" maxlength="30" value="${currentDisplayName || username}" style="width:100%;background:#120e1e;border:1px solid rgba(145,70,255,0.4);color:#e2e8f0;border-radius:10px;padding:12px 14px;font-size:0.95rem;box-sizing:border-box;">
+
+    <!-- Vista previa de Foto / Avatar -->
+    <div style="display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 16px;margin-bottom:16px;">
+      <img id="modal-edit-avatar-preview" src="${pendingAvatar}" onerror="this.src='/img/yocapi.png'" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid #9146ff;box-shadow:0 0 12px rgba(145,70,255,0.4);">
+      <div style="flex:1;">
+        <div style="font-size:0.8rem;font-weight:700;color:#e2e8f0;margin-bottom:4px;">Foto de Perfil</div>
+        <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:8px;" id="modal-edit-avatar-status">Sincronizada con Twitch</div>
+        <button type="button" id="modal-btn-fetch-twitch-avatar" style="padding:6px 12px;font-size:0.75rem;font-weight:700;background:rgba(145,70,255,0.2);border:1px solid rgba(145,70,255,0.5);color:#c084fc;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          <span>🔄</span> <span>Obtener Foto de Twitch</span>
+        </button>
+      </div>
     </div>
+
+    <!-- Campo: Nick de Twitch -->
+    <div style="margin-bottom:14px;">
+      <label style="display:flex;align-items:center;justify-content:space-between;font-size:0.75rem;color:#94a3b8;margin-bottom:6px;font-weight:700;">
+        <span>NICK DE TWITCH (CUENTA)</span>
+        <span style="font-size:0.7rem;color:#64748b;">(Modifícalo si el usuario escribió mal su nick)</span>
+      </label>
+      <input type="text" id="modal-change-username-input" maxlength="25" value="${username}" style="width:100%;background:#120e1e;border:1px solid rgba(145,70,255,0.4);color:#e2e8f0;border-radius:10px;padding:10px 14px;font-size:0.92rem;box-sizing:border-box;">
+    </div>
+
+    <!-- Campo: Nombre Visible -->
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:6px;font-weight:700;">NOMBRE PARA MOSTRAR EN STREAM</label>
+      <input type="text" id="modal-change-name-input" maxlength="30" value="${currentDisplayName || username}" style="width:100%;background:#120e1e;border:1px solid rgba(145,70,255,0.4);color:#e2e8f0;border-radius:10px;padding:10px 14px;font-size:0.92rem;box-sizing:border-box;">
+    </div>
+
+    <!-- Campo: URL Personalizada (Opcional) -->
+    <div style="margin-bottom:20px;">
+      <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:6px;font-weight:700;">URL DE FOTO PERSONALIZADA (OPCIONAL)</label>
+      <input type="url" id="modal-change-avatar-input" placeholder="https://ejemplo.com/foto.jpg (o déjalo vacío para usar Twitch)" value="${pendingAvatar.startsWith('http') && !pendingAvatar.includes('static-cdn.jtvnw.net') ? pendingAvatar : ''}" style="width:100%;background:#120e1e;border:1px solid rgba(255,255,255,0.1);color:#e2e8f0;border-radius:10px;padding:9px 12px;font-size:0.82rem;box-sizing:border-box;">
+    </div>
+
     <div style="display:flex;gap:10px;">
       <button id="modal-name-cancel" style="flex:1;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;border-radius:12px;cursor:pointer;font-weight:600;">Cancelar</button>
-      <button id="modal-name-confirm" style="flex:2;padding:12px;background:linear-gradient(135deg,#06b6d4,#9146ff);border:none;color:white;border-radius:12px;cursor:pointer;font-weight:700;">💾 Guardar Nombre</button>
+      <button id="modal-name-confirm" style="flex:2;padding:12px;background:linear-gradient(135deg,#06b6d4,#9146ff);border:none;color:white;border-radius:12px;cursor:pointer;font-weight:700;">💾 Guardar Cambios</button>
     </div>
   `);
 
+  const previewImg = box.querySelector('#modal-edit-avatar-preview');
+  const avatarStatus = box.querySelector('#modal-edit-avatar-status');
+  const usernameInput = box.querySelector('#modal-change-username-input');
+  const nameInput = box.querySelector('#modal-change-name-input');
+  const customAvatarInput = box.querySelector('#modal-change-avatar-input');
+  const btnFetchAvatar = box.querySelector('#modal-btn-fetch-twitch-avatar');
+
+  // Preview de URL personalizada
+  customAvatarInput.addEventListener('input', () => {
+    const val = customAvatarInput.value.trim();
+    if (val && val.startsWith('http')) {
+      previewImg.src = val;
+      pendingAvatar = val;
+      avatarStatus.textContent = 'Usando URL personalizada';
+    }
+  });
+
+  // Botón para consultar foto de Twitch al instante
+  btnFetchAvatar.addEventListener('click', async () => {
+    const targetNick = (usernameInput.value || '').trim().replace(/^@/, '');
+    if (!targetNick) {
+      showToast('Escribe un Nick de Twitch primero', 'info');
+      return;
+    }
+    btnFetchAvatar.disabled = true;
+    btnFetchAvatar.innerHTML = '<span>⏳</span> <span>Buscando...</span>';
+    avatarStatus.textContent = `Consultando Twitch para @${targetNick}...`;
+
+    try {
+      const res = await fetch(`/api/avatar/${encodeURIComponent(targetNick)}`);
+      const data = await res.json();
+      if (data.avatar && data.avatar.startsWith('http')) {
+        previewImg.src = data.avatar;
+        pendingAvatar = data.avatar;
+        customAvatarInput.value = '';
+        avatarStatus.textContent = '✅ Foto encontrada en Twitch';
+        showToast('Foto de Twitch obtenida', 'success');
+      } else {
+        avatarStatus.textContent = '⚠️ Twitch no tiene foto personalizada para este nick';
+        showToast('No se encontró foto personalizada en Twitch', 'info');
+      }
+    } catch {
+      avatarStatus.textContent = '❌ Error de red';
+    } finally {
+      btnFetchAvatar.disabled = false;
+      btnFetchAvatar.innerHTML = '<span>🔄</span> <span>Obtener Foto de Twitch</span>';
+    }
+  });
+
   box.querySelector('#modal-name-cancel').onclick = () => backdrop.remove();
   box.querySelector('#modal-name-confirm').onclick = async () => {
-    const newName = box.querySelector('#modal-change-name-input').value.trim();
+    const newUsername = usernameInput.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+    const newName = nameInput.value.trim();
+    const customAvatar = customAvatarInput.value.trim();
+
+    if (!newUsername || newUsername.length < 2) {
+      showToast('El Nick de Twitch debe tener al menos 2 caracteres', 'error');
+      return;
+    }
     if (!newName || newName.length < 2) {
-      showToast('El nombre debe tener al menos 2 caracteres', 'error');
+      showToast('El nombre visible debe tener al menos 2 caracteres', 'error');
       return;
     }
-    if (newName.length > 30) {
-      showToast('El nombre no puede tener más de 30 caracteres', 'error');
-      return;
-    }
+
+    const confirmBtn = box.querySelector('#modal-name-confirm');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Guardando...';
+
     try {
       const res = await authFetch(`/api/dashboard/users/${username}/change-name`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ display_name: newName })
+        body: JSON.stringify({
+          new_username: newUsername,
+          display_name: newName,
+          avatar_url: customAvatar || (pendingAvatar.startsWith('http') ? pendingAvatar : ''),
+          refresh_avatar: true
+        })
       });
       const data = await res.json();
       if (data.success) {
@@ -564,10 +685,14 @@ function showChangeNameModal(username, currentDisplayName) {
         backdrop.remove();
         loadBirthdays();
       } else {
-        showToast(data.error || 'Error al cambiar nombre', 'error');
+        showToast(data.error || 'Error al guardar cambios', 'error');
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '💾 Guardar Cambios';
       }
     } catch {
       showToast('Error de conexión', 'error');
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = '💾 Guardar Cambios';
     }
   };
 }
@@ -1156,6 +1281,215 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ─── Control del Bot Oficial de Twitch (Conexión Directa IRC) ──────────────
+  const badgeBotStatus = document.getElementById('twitch-bot-status-badge');
+  const btnToggleBotConnect = document.getElementById('btn-bot-toggle-connect');
+  const btnBotToggleLabel = document.getElementById('btn-bot-toggle-label');
+  const btnBotTestMsg = document.getElementById('btn-bot-test-msg');
+  const btnBotTriggerTimer = document.getElementById('btn-bot-trigger-timer');
+  const btnSaveBotConfig = document.getElementById('btn-save-bot-config');
+  const btnToggleTokenVis = document.getElementById('btn-toggle-token-vis');
+
+  const inputBotUser = document.getElementById('bot-input-username');
+  const inputBotToken = document.getElementById('bot-input-token');
+  const inputBotChannel = document.getElementById('bot-input-channel');
+  const selectBotInterval = document.getElementById('bot-select-interval');
+  const checkBotTimer = document.getElementById('bot-check-timer-enabled');
+
+  let twitchBotIsConnected = false;
+
+  async function loadTwitchBotStatus() {
+    if (!badgeBotStatus) return;
+    try {
+      const res = await authFetch('/api/dashboard/bot/status');
+      const data = await res.json();
+      twitchBotIsConnected = !!data.connected;
+
+      if (data.connected) {
+        badgeBotStatus.textContent = `🟢 Conectado (#${data.config.channel || 'yocapi_pr'})`;
+        badgeBotStatus.style.background = 'rgba(16, 185, 129, 0.2)';
+        badgeBotStatus.style.color = '#34d399';
+        badgeBotStatus.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+        if (btnBotToggleLabel) btnBotToggleLabel.textContent = 'Desconectar Bot';
+        if (btnToggleBotConnect) btnToggleBotConnect.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+      } else if (data.status === 'connecting') {
+        badgeBotStatus.textContent = '🟡 Conectando...';
+        badgeBotStatus.style.background = 'rgba(245, 158, 11, 0.2)';
+        badgeBotStatus.style.color = '#fcd34d';
+        badgeBotStatus.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+        if (btnBotToggleLabel) btnBotToggleLabel.textContent = 'Conectando...';
+      } else if (data.status === 'error') {
+        badgeBotStatus.textContent = `⚠️ Error: ${data.last_error || 'Error de conexión'}`;
+        badgeBotStatus.style.background = 'rgba(239, 68, 68, 0.2)';
+        badgeBotStatus.style.color = '#f87171';
+        badgeBotStatus.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+        if (btnBotToggleLabel) btnBotToggleLabel.textContent = 'Reintentar Conexión';
+        if (btnToggleBotConnect) btnToggleBotConnect.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+      } else {
+        badgeBotStatus.textContent = '🔴 Desconectado';
+        badgeBotStatus.style.background = 'rgba(239, 68, 68, 0.2)';
+        badgeBotStatus.style.color = '#f87171';
+        badgeBotStatus.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+        if (btnBotToggleLabel) btnBotToggleLabel.textContent = 'Conectar Bot';
+        if (btnToggleBotConnect) btnToggleBotConnect.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+      }
+
+      if (data.config) {
+        if (inputBotUser && !inputBotUser.value) inputBotUser.value = data.config.bot_username || '';
+        if (inputBotChannel && !inputBotChannel.value) inputBotChannel.value = data.config.channel || 'yocapi_pr';
+        if (selectBotInterval) selectBotInterval.value = String(data.config.timer_minutes || 20);
+        if (checkBotTimer) checkBotTimer.checked = !!data.config.timer_enabled;
+        if (data.config.has_token && inputBotToken && !inputBotToken.value) {
+          inputBotToken.placeholder = 'oauth:•••••••••••••••••••• (Guardado)';
+        }
+      }
+    } catch (e) {
+      console.warn('Error al consultar estado del bot de Twitch:', e);
+    }
+  }
+
+  // Toggle visibilidad del token
+  if (btnToggleTokenVis && inputBotToken) {
+    btnToggleTokenVis.addEventListener('click', () => {
+      inputBotToken.type = inputBotToken.type === 'password' ? 'text' : 'password';
+      btnToggleTokenVis.textContent = inputBotToken.type === 'password' ? '👁️' : '🙈';
+    });
+  }
+
+  // Guardar configuración del Bot
+  if (btnSaveBotConfig) {
+    btnSaveBotConfig.addEventListener('click', async () => {
+      const bot_username = (inputBotUser?.value || '').trim();
+      const oauth_token = (inputBotToken?.value || '').trim();
+      const channel = (inputBotChannel?.value || '').trim();
+      const timer_minutes = parseInt(selectBotInterval?.value, 10) || 20;
+      const timer_enabled = !!checkBotTimer?.checked;
+
+      btnSaveBotConfig.disabled = true;
+      btnSaveBotConfig.textContent = 'Guardando...';
+
+      try {
+        const payload = { bot_username, channel, timer_minutes, timer_enabled };
+        if (oauth_token && !oauth_token.includes('•')) {
+          payload.oauth_token = oauth_token;
+        }
+
+        const res = await authFetch('/api/dashboard/bot/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Configuración del Bot guardada con éxito', 'success');
+          loadTwitchBotStatus();
+        } else {
+          showToast(data.error || 'Error al guardar configuración', 'error');
+        }
+      } catch {
+        showToast('Error de conexión', 'error');
+      } finally {
+        btnSaveBotConfig.disabled = false;
+        btnSaveBotConfig.textContent = '💾 Guardar Configuración';
+      }
+    });
+  }
+
+  // Conectar / Desconectar Bot
+  if (btnToggleBotConnect) {
+    btnToggleBotConnect.addEventListener('click', async () => {
+      btnToggleBotConnect.disabled = true;
+
+      try {
+        if (twitchBotIsConnected) {
+          btnToggleBotConnect.textContent = 'Desconectando...';
+          const res = await authFetch('/api/dashboard/bot/disconnect', { method: 'POST' });
+          const data = await res.json();
+          showToast(data.message || 'Bot desconectado', 'info');
+        } else {
+          btnToggleBotConnect.textContent = 'Conectando...';
+          const bot_username = (inputBotUser?.value || '').trim();
+          const oauth_token = (inputBotToken?.value || '').trim();
+          const channel = (inputBotChannel?.value || '').trim();
+          const timer_minutes = parseInt(selectBotInterval?.value, 10) || 20;
+          const timer_enabled = !!checkBotTimer?.checked;
+
+          const payload = { bot_username, channel, timer_minutes, timer_enabled, enabled: true };
+          if (oauth_token && !oauth_token.includes('•')) {
+            payload.oauth_token = oauth_token;
+          }
+
+          const res = await authFetch('/api/dashboard/bot/connect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast('✅ ' + data.message, 'success');
+          } else {
+            showToast('❌ ' + (data.error || 'No se pudo conectar'), 'error');
+          }
+        }
+      } catch {
+        showToast('Error conectando con el servidor', 'error');
+      } finally {
+        btnToggleBotConnect.disabled = false;
+        loadTwitchBotStatus();
+      }
+    });
+  }
+
+  // Enviar mensaje de prueba al chat
+  if (btnBotTestMsg) {
+    btnBotTestMsg.addEventListener('click', async () => {
+      btnBotTestMsg.disabled = true;
+      btnBotTestMsg.textContent = '⏳ Enviando...';
+
+      try {
+        const res = await authFetch('/api/dashboard/bot/test-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('🎉 ¡Mensaje enviado a tu chat de Twitch!', 'success');
+        } else {
+          showToast('❌ ' + (data.error || 'Error al enviar mensaje'), 'error');
+        }
+      } catch {
+        showToast('Error conectando con el servidor', 'error');
+      } finally {
+        btnBotTestMsg.disabled = false;
+        btnBotTestMsg.textContent = '🧪 Probar en Chat';
+      }
+    });
+  }
+
+  // Avisar ahora (disparar timer manualmente)
+  if (btnBotTriggerTimer) {
+    btnBotTriggerTimer.addEventListener('click', async () => {
+      btnBotTriggerTimer.disabled = true;
+      btnBotTriggerTimer.textContent = '⏰ Enviando...';
+
+      try {
+        const res = await authFetch('/api/dashboard/bot/trigger-timer', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('🎂 ¡Recordatorio de cumpleaños enviado al chat de Twitch!', 'success');
+        } else {
+          showToast('❌ ' + (data.error || 'Error al ejecutar recordatorio'), 'error');
+        }
+      } catch {
+        showToast('Error conectando con el servidor', 'error');
+      } finally {
+        btnBotTriggerTimer.disabled = false;
+        btnBotTriggerTimer.textContent = '⏰ Avisar Ahora';
+      }
+    });
+  }
+
   // ─── Control del Menú Lateral Móvil (Drawer) ──────────────────────────────
   const mobileToggle = document.getElementById('btn-mobile-sidebar-toggle');
   const sidebar = document.querySelector('.dash-sidebar');
@@ -1188,6 +1522,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Cargar estado inicial
   loadStats();
   loadPausedQueue();
+  loadTwitchBotStatus();
 });
 
 // =============================================================================
