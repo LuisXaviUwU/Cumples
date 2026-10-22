@@ -192,6 +192,21 @@ body {
   width: 100%;
 }
 
+@media (min-width: 900px) {
+  .app-container {
+    max-width: 920px;
+    padding: 0 32px 60px;
+    margin: 24px auto;
+  }
+}
+
+@media (min-width: 1200px) {
+  .app-container {
+    max-width: 1100px;
+    padding: 0 40px 80px;
+  }
+}
+
 /* ─── Hero Header ───────────────────────────────────────────────────────── */
 .hero-header {
   text-align: center;
@@ -753,71 +768,204 @@ footer a {
   }
 }
 
-/* ─── Subnavegación Superior de Usuario (Pestañas) ─────────────────────── */
+/* ─── Subnavegación Superior de Usuario (Sidebar Superior 4 Pestañas) ───────── */
 .user-subnav-bar {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  margin-bottom: 20px;
-  background: rgba(255, 255, 255, 0.04);
-  padding: 5px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 24px;
+  background: rgba(18, 14, 30, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 6px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .user-subnav-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 10px 10px;
+  gap: 8px;
+  padding: 12px 10px;
   border-radius: var(--radius-sm);
   background: transparent;
   border: 1px solid transparent;
-  color: var(--text-dim);
+  color: #94a3b8;
   font-family: var(--font-heading);
-  font-size: 0.86rem;
+  font-size: 0.88rem;
   font-weight: 700;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  position: relative;
+}
+
+.user-subnav-btn .subnav-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+  transition: transform 0.2s ease;
 }
 
 .user-subnav-btn:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.user-subnav-btn:hover .subnav-icon {
+  transform: scale(1.15);
 }
 
 .user-subnav-btn.active {
-  background: linear-gradient(135deg, rgba(145, 70, 255, 0.25), rgba(124, 58, 237, 0.35));
+  background: linear-gradient(135deg, rgba(145, 70, 255, 0.35), rgba(6, 182, 212, 0.25));
   color: #ffffff;
-  border-color: rgba(145, 70, 255, 0.5);
-  box-shadow: 0 4px 15px rgba(145, 70, 255, 0.25);
+  border: 1px solid rgba(145, 70, 255, 0.6);
+  box-shadow: 0 4px 20px rgba(145, 70, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  text-shadow: 0 0 12px rgba(145, 70, 255, 0.6);
+}
+
+.user-subnav-btn.active .subnav-icon {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 6px rgba(145, 70, 255, 0.8));
 }
 
 .tab-label-short {
   display: none;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 680px) {
   .user-subnav-bar {
     gap: 4px;
     padding: 4px;
   }
   .user-subnav-btn {
-    padding: 8px 4px;
-    font-size: 0.76rem;
+    padding: 10px 4px;
+    font-size: 0.78rem;
     gap: 4px;
+    flex-direction: column;
+  }
+  .user-subnav-btn .subnav-icon {
+    font-size: 1.1rem;
   }
   .tab-label-full {
     display: none;
   }
   .tab-label-short {
     display: inline;
+    font-size: 0.74rem;
   }
 }
+
+/* ─── Maqueta de Vista Previa de Alerta OBS (En Tab Lanzar) ─────────────────── */
+.launch-preview-card {
+  background: linear-gradient(135deg, rgba(22, 14, 45, 0.95), rgba(35, 12, 55, 0.9));
+  border: 1.5px solid rgba(168, 85, 247, 0.5);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 25px rgba(168, 85, 247, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  text-align: left;
+  transition: all 0.3s ease;
+}
+
+.launch-preview-card:hover {
+  border-color: rgba(168, 85, 247, 0.8);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), 0 0 35px rgba(168, 85, 247, 0.4);
+}
+
+.launch-preview-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.launch-preview-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 3px solid #f43f5e;
+  object-fit: cover;
+  box-shadow: 0 0 16px rgba(244, 63, 94, 0.6);
+  display: block;
+}
+
+.launch-preview-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.launch-preview-tag {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: linear-gradient(135deg, #f43f5e, #fbbf24);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  margin-bottom: 2px;
+}
+
+.launch-preview-name {
+  font-family: var(--font-heading);
+  font-size: 1.28rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0 0 4px 0;
+  word-break: break-word;
+  line-height: 1.2;
+}
+
+.launch-preview-msg {
+  font-size: 0.88rem;
+  color: #fde047;
+  margin: 0 0 8px 0;
+  font-style: italic;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+.launch-preview-sound-meta {
+  font-size: 0.76rem;
+  color: #cbd5e1;
+}
+
+.btn-preview-pill {
+  background: linear-gradient(135deg, rgba(145, 70, 255, 0.2), rgba(6, 182, 212, 0.2));
+  border: 1px solid rgba(145, 70, 255, 0.5);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-preview-pill:hover {
+  background: linear-gradient(135deg, rgba(145, 70, 255, 0.4), rgba(6, 182, 212, 0.35));
+  border-color: #9146ff;
+  box-shadow: 0 4px 14px rgba(145, 70, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 500px) {
+  .launch-preview-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 16px;
+    gap: 12px;
+  }
+}
+
 
 /* ─── Caja Explicativa de Seguridad ─────────────────────────────────────── */
 .security-explainer-card {
@@ -1723,3 +1871,159 @@ footer a {
   transform: translateY(-1px);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESKTOP GRID LAYOUTS — Launch Tab & Security Tab
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Tab Pane: Visibility Control ─────────────────────────────────────── */
+.user-tab-pane {
+  animation: tab-fade-in 0.28s ease-out;
+}
+
+@keyframes tab-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Launch Grid: Celebration Status + Preview Card ────────────────────── */
+.launch-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 900px) {
+  .launch-dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  .launch-dashboard-grid .celebration-box {
+    margin-bottom: 0;
+  }
+  .launch-dashboard-grid .glass-card.launch-preview-monitor-card {
+    margin-bottom: 0;
+  }
+}
+
+/* Preview monitor card */
+.launch-preview-monitor-card {
+  text-align: left;
+}
+
+/* ─── Security Grid: Forms + Explainer ──────────────────────────────────── */
+.security-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 900px) {
+  .security-dashboard-grid {
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 24px;
+    align-items: start;
+  }
+  .security-forms-column .glass-card {
+    margin-bottom: 20px;
+  }
+  .security-forms-column .glass-card:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* ─── Improved Subnav: Desktop wider labels ─────────────────────────────── */
+@media (min-width: 900px) {
+  .user-subnav-bar {
+    gap: 12px;
+    padding: 8px;
+    border-radius: var(--radius-md);
+  }
+  .user-subnav-btn {
+    padding: 14px 18px;
+    font-size: 0.9rem;
+    gap: 10px;
+    flex-direction: row;
+  }
+  .user-subnav-btn .subnav-icon {
+    font-size: 1.2rem;
+  }
+}
+
+/* ─── Improved Hero for desktop ─────────────────────────────────────────── */
+@media (min-width: 900px) {
+  .hero-header {
+    margin-bottom: 28px;
+  }
+  .hero-title {
+    font-size: clamp(2rem, 4vw, 3rem);
+  }
+  .hero-subtitle {
+    font-size: 0.96rem;
+    max-width: 620px;
+  }
+}
+
+/* ─── Portal top nav desktop ────────────────────────────────────────────── */
+@media (min-width: 900px) {
+  .portal-top-nav {
+    max-width: 360px;
+  }
+  .portal-nav-item {
+    font-size: 0.95rem;
+    padding: 12px 20px;
+  }
+}
+
+/* ─── Glass card better padding on desktop ──────────────────────────────── */
+@media (min-width: 900px) {
+  .glass-card {
+    padding: 32px 32px;
+  }
+}
+
+/* ─── Celebration Box — desktop centering when solo ─────────────────────── */
+@media (min-width: 900px) {
+  .celebration-box {
+    padding: 36px 28px;
+  }
+  .celebration-desc {
+    max-width: 100%;
+  }
+}
+
+/* ─── Profile Pill desktop ──────────────────────────────────────────────── */
+@media (min-width: 900px) {
+  .profile-pill {
+    padding: 16px 24px;
+    margin-bottom: 24px;
+  }
+  .profile-avatar {
+    width: 52px;
+    height: 52px;
+  }
+  .profile-names h3 {
+    font-size: 1.1rem;
+  }
+}
+
+/* ─── Extra small & standard mobile adjustments (<= 420px) ─────────────── */
+@media (max-width: 420px) {
+  .user-subnav-bar {
+    gap: 4px;
+    padding: 4px;
+  }
+  .user-subnav-btn {
+    padding: 8px 3px;
+    font-size: 0.72rem;
+    gap: 3px;
+  }
+  .tab-label-short {
+    font-size: 0.70rem;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+  .user-subnav-btn .subnav-icon {
+    font-size: 1.05rem;
+  }
+}

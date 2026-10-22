@@ -185,6 +185,21 @@ body {
   flex-shrink: 0;
 }
 
+.topbar-left-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.topbar-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .topbar-page-title {
   font-family: var(--font-h);
   font-size: 1.35rem;
@@ -192,6 +207,10 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dash-scroll-content {
@@ -618,6 +637,15 @@ body {
   color: #94a3b8;
 }
 
+.btn-act-name {
+  background: rgba(6, 182, 212, 0.12);
+  border-color: rgba(6, 182, 212, 0.35);
+  color: #38bdf8;
+}
+.btn-act-name:hover {
+  background: rgba(6, 182, 212, 0.22);
+}
+
 .btn-act-date {
   background: rgba(251, 191, 36, 0.12);
   border-color: rgba(251, 191, 36, 0.35);
@@ -848,6 +876,51 @@ body {
   border-color: #3b82f6;
 }
 
+/* Selector de Plataforma: Nightbot vs StreamElements */
+.bot-platform-tabs {
+  display: inline-flex;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.7);
+  padding: 5px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 18px;
+  backdrop-filter: blur(12px);
+}
+
+.btn-bot-platform {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 9px 20px;
+  border-radius: 10px;
+  font-family: var(--font-b);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-bot-platform:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.btn-bot-platform.active[data-platform="nightbot"] {
+  background: linear-gradient(135deg, #9146ff, #7c3aed);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(145, 70, 255, 0.4);
+}
+
+.btn-bot-platform.active[data-platform="streamelements"] {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+}
+
 /* ═════════════════════════════════════════════════════════════════════════════
    RESPONSIVE DESIGN SYSTEM (TABLETS & SMARTPHONES)
    ═════════════════════════════════════════════════════════════════════════════ */
@@ -898,10 +971,25 @@ body {
     align-items: center;
     justify-content: space-between;
     width: 100%;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .topbar-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
   }
 
   .topbar-page-title {
-    font-size: 1.05rem;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
   }
 
   .topbar-actions-wrap {
@@ -1040,3 +1128,126 @@ body {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   DASHBOARD EXTRA POLISH & RESPONSIVE FIXES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Desktop: Better topbar layout & content padding ───────────────────── */
+@media (min-width: 900px) {
+  .dash-topbar {
+    padding: 0 40px;
+  }
+  .dash-scroll-content {
+    padding: 36px 40px;
+  }
+  .topbar-page-title {
+    font-size: 1.5rem;
+  }
+}
+
+/* ─── Desktop: Stats grid 4 columns ────────────────────────────────────── */
+@media (min-width: 1100px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ─── Today cards on very small mobile ─────────────────────────────────── */
+@media (max-width: 480px) {
+  .today-item-card {
+    padding: 14px 12px;
+  }
+  .today-item-left {
+    gap: 10px;
+  }
+  .today-avatar {
+    width: 44px;
+    height: 44px;
+  }
+  .today-info h4 {
+    font-size: 0.95rem;
+  }
+  .btn-alert-direct {
+    width: 100%;
+    justify-content: center;
+    padding: 10px;
+  }
+}
+
+/* ─── Stat cards on very small screens ─────────────────────────────────── */
+@media (max-width: 420px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .stat-card {
+    padding: 12px 10px;
+  }
+  .stat-value {
+    font-size: 1.4rem;
+  }
+  .stat-label {
+    font-size: 0.68rem;
+  }
+}
+
+/* ─── Better OBS setup card on mobile ──────────────────────────────────── */
+@media (max-width: 600px) {
+  .obs-setup-card {
+    padding: 18px 16px;
+  }
+  .obs-copy-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .obs-url-input {
+    width: 100%;
+    font-size: 0.78rem;
+  }
+}
+
+/* ─── Table improvements for very narrow screens ────────────────────────── */
+@media (max-width: 480px) {
+  .dash-table-wrap {
+    padding: 12px 10px;
+  }
+  .bday-table th,
+  .bday-table td {
+    padding: 10px 8px;
+    font-size: 0.78rem;
+  }
+  .btn-act {
+    padding: 5px 7px;
+    font-size: 0.68rem;
+  }
+  .actions-group {
+    gap: 3px;
+  }
+}
+
+/* ─── Nav items active glow on desktop ─────────────────────────────────── */
+@media (min-width: 900px) {
+  .nav-item {
+    font-size: 0.9rem;
+    padding: 12px 16px;
+  }
+  .nav-item.active {
+    background: rgba(145, 70, 255, 0.18);
+    border: 1px solid rgba(145, 70, 255, 0.35);
+    box-shadow: inset 3px 0 0 0 var(--c-purple);
+  }
+}
+
+/* ─── Sidebar wider on large screens ────────────────────────────────────── */
+@media (min-width: 1100px) {
+  :root {
+    --sidebar-w: 280px;
+  }
+}
+
+/* ─── Topbar actions wrap — prevent cramping on mobile ──────────────────── */
+@media (max-width: 480px) {
+  .topbar-actions-wrap .btn-copy span:last-child {
+    display: none;
+  }
+}
