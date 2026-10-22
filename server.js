@@ -40,8 +40,18 @@ const DEFAULT_OVERLAY_CONFIG = {
 let appSettings = { 
     felicitations_enabled: false,
     alerts_paused: false,
-    overlay_config: { ...DEFAULT_OVERLAY_CONFIG }
+    overlay_config: { ...DEFAULT_OVERLAY_CONFIG },
+    twitch_bot: {
+        bot_username: process.env.TWITCH_BOT_USERNAME || '',
+        oauth_token: process.env.TWITCH_BOT_TOKEN || '',
+        channel: process.env.TWITCH_BOT_CHANNEL || STREAMER_LOGIN || 'yocapi_pr',
+        enabled: false,
+        timer_enabled: true,
+        timer_minutes: 20
+    }
 };
+
+const twitchBot = require('./twitchBot');
 
 const pausedAlertsQueue = []; // Alertas en cola cuando la streamer pausa las alertas en vivo
 
@@ -51,7 +61,8 @@ try {
         appSettings = { 
             ...appSettings, 
             ...loaded,
-            overlay_config: { ...DEFAULT_OVERLAY_CONFIG, ...(loaded.overlay_config || {}) }
+            overlay_config: { ...DEFAULT_OVERLAY_CONFIG, ...(loaded.overlay_config || {}) },
+            twitch_bot: { ...appSettings.twitch_bot, ...(loaded.twitch_bot || {}) }
         };
     }
 } catch (e) {
@@ -268,6 +279,18 @@ function getBirthdayStatus(birthMonth, birthDay) {
         daysUntilBirthday: diffDays
     };
 }
+
+// ─── Inicialización del Bot Oficial de Twitch ──────────────────────────────
+twitchBot.initTwitchBot({
+    db,
+    getBirthdayStatus,
+    APP_URL,
+    initialConfig: appSettings.twitch_bot,
+    saveSettings: (partial) => {
+        appSettings = { ...appSettings, ...partial };
+        saveAppSettings();
+    }
+});
 
 // ─── Middleware Autenticación de Usuario ────────────────────────────────────
 async function authenticateUser(req, res, next) {
@@ -1114,30 +1137,152 @@ app.post('/api/dashboard/users/:username/change-date', authenticateDashboard, as
     }
 });
 
-// Modificar nombre de un seguidor desde el Dashboard
+// Modificar usuario / nombre / nick / avatar desde el Dashboard
 app.post('/api/dashboard/users/:username/change-name', authenticateDashboard, async (req, res) => {
     try {
-        const { display_name } = req.body;
-        if (!display_name || typeof display_name !== 'string' || display_name.trim().length === 0) {
-            return res.status(400).json({ error: 'El nombre no puede estar vacío' });
-        }
-        const cleanName = display_name.trim().slice(0, 30);
-        if (cleanName.length < 2) {
-            return res.status(400).json({ error: 'El nombre debe tener al menos 2 caracteres' });
-        }
-        const user = await db.getUser(req.params.username);
-        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+        const { display_name, new_username, avatar_url, refresh_avatar } = req.body;
+        const oldUsername = req.params.username.toLowerCase().trim();
+        const existing = await db.getUser(oldUsername);
+        if (!existing) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-        user.display_name = cleanName;
-        await db.saveUser(user);
+        const targetUsername = (new_username && typeof new_username === 'string' && new_username.trim().length >= 2)
+            ? new_username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '')
+            : oldUsername;
+
+        const cleanDisplayName = (display_name && typeof display_name === 'string' && display_name.trim().length >= 2)
+            ? display_name.trim().slice(0, 30)
+            : targetUsername;
+
+        // Si cambió el username y el destino ya existe en otro usuario distinto
+        if (targetUsername !== oldUsername) {
+            const checkCollision = await db.getUser(targetUsername);
+            if (checkCollision) {
+                return res.status(400).json({ error: `El nick @${targetUsername} ya está registrado para otro usuario` });
+            }
+        }
+
+        // Determinar avatar
+        let finalAvatar = existing.profile_image;
+        if (avatar_url && typeof avatar_url === 'string' && avatar_url.startsWith('http')) {
+            finalAvatar = avatar_url.trim();
+        } else if (refresh_avatar || targetUsername !== oldUsername || !finalAvatar || finalAvatar === '/img/yocapi.png' || !finalAvatar.startsWith('http')) {
+            // Intentar re-obtener foto fresca de Twitch para el nuevo nick
+            twitchAvatarCache.delete(targetUsername);
+            const freshAvatar = await fetchPublicTwitchAvatar(targetUsername);
+            if (freshAvatar && freshAvatar.startsWith('http')) {
+                finalAvatar = freshAvatar;
+            } else if (!finalAvatar) {
+                finalAvatar = '/img/yocapi.png';
+            }
+        }
+
+        const updated = await db.migrateUser(oldUsername, targetUsername, {
+            display_name: cleanDisplayName,
+            profile_image: finalAvatar
+        });
 
         res.json({
             success: true,
-            message: `Nombre de @${user.username} cambiado a "${cleanName}" con éxito.`,
-            display_name: cleanName
+            message: `Usuario @${targetUsername} actualizado con éxito.`,
+            user: updated,
+            display_name: cleanDisplayName,
+            username: targetUsername,
+            profile_image: finalAvatar
         });
     } catch (err) {
-        res.status(500).json({ error: 'Error al cambiar nombre del usuario' });
+        console.error('Error al actualizar usuario:', err);
+        res.status(500).json({ error: 'Error al cambiar datos del usuario' });
+    }
+});
+
+// Endpoint avanzado de edición de usuario
+app.post('/api/dashboard/users/:username/edit', authenticateDashboard, async (req, res) => {
+    req.url = `/api/dashboard/users/${req.params.username}/change-name`;
+    return app._router.handle(req, res);
+});
+
+// Refrescar Avatar desde Twitch CDN bajo demanda
+app.post('/api/dashboard/users/:username/refresh-avatar', authenticateDashboard, async (req, res) => {
+    try {
+        const username = req.params.username.toLowerCase().trim();
+        const user = await db.getUser(username);
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        twitchAvatarCache.delete(username);
+        const fresh = await fetchPublicTwitchAvatar(user.username) || await fetchPublicTwitchAvatar(user.display_name);
+
+        if (fresh && fresh.startsWith('http')) {
+            user.profile_image = fresh;
+            await db.saveUser(user);
+            return res.json({
+                success: true,
+                message: `¡Foto de @${user.display_name || user.username} actualizada desde Twitch!`,
+                profile_image: fresh
+            });
+        }
+
+        res.json({
+            success: false,
+            message: 'No se encontró foto personalizada en Twitch (cuenta usa avatar default o no existe)',
+            profile_image: user.profile_image || '/img/yocapi.png'
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Error al refrescar avatar desde Twitch' });
+    }
+});
+
+// ─── API DE GESTIÓN DEL BOT DE TWITCH (DASHBOARD) ───────────────────────────
+app.get('/api/dashboard/bot/status', authenticateDashboard, (req, res) => {
+    res.json(twitchBot.getBotStatus());
+});
+
+app.post('/api/dashboard/bot/config', authenticateDashboard, async (req, res) => {
+    try {
+        const updated = await twitchBot.updateBotConfig(req.body);
+        res.json({ success: true, bot: updated, message: 'Configuración del bot guardada' });
+    } catch (err) {
+        res.status(500).json({ error: 'Error al guardar configuración del bot' });
+    }
+});
+
+app.post('/api/dashboard/bot/connect', authenticateDashboard, async (req, res) => {
+    try {
+        if (req.body && Object.keys(req.body).length > 0) {
+            await twitchBot.updateBotConfig(req.body);
+        }
+        const result = await twitchBot.connectBot();
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message || 'Error al conectar bot' });
+    }
+});
+
+app.post('/api/dashboard/bot/disconnect', authenticateDashboard, async (req, res) => {
+    try {
+        const result = await twitchBot.disconnectBot();
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message || 'Error al desconectar bot' });
+    }
+});
+
+app.post('/api/dashboard/bot/test-message', authenticateDashboard, async (req, res) => {
+    try {
+        const customMsg = (req.body.message || '').trim();
+        const msg = customMsg || `🤖 [YoCapi Bot]: ¡Conexión con el chat de Twitch establecida exitosamente! Recordatorios de cumpleaños activos 🎉✨`;
+        await twitchBot.sendChat(msg);
+        res.json({ success: true, message: '¡Mensaje de prueba enviado con éxito a tu chat de Twitch!' });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message || 'Error enviando mensaje al chat' });
+    }
+});
+
+app.post('/api/dashboard/bot/trigger-timer', authenticateDashboard, async (req, res) => {
+    try {
+        await twitchBot.runTimerTick();
+        res.json({ success: true, message: 'Recordatorio enviado a tu chat de Twitch' });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message || 'Error ejecutando recordatorio' });
     }
 });
 

@@ -250,6 +250,25 @@ const db = {
         return true;
     },
 
+    async migrateUser(oldRawUsername, newRawUsername, updates = {}) {
+        const oldUsername = oldRawUsername.toLowerCase().trim();
+        const newUsername = newRawUsername.toLowerCase().trim();
+        const oldUser = await this.getUser(oldUsername);
+        if (!oldUser) return null;
+
+        const merged = {
+            ...oldUser,
+            ...updates,
+            username: newUsername
+        };
+
+        await this.saveUser(merged);
+        if (oldUsername !== newUsername) {
+            await this.deleteUser(oldUsername);
+        }
+        return merged;
+    },
+
     // ─ SESIONES ─────────────────────────────────────────────────────────────
     async createSession(token, user) {
         const expiresAt = new Date(Date.now() + 60 * 24 * 3600 * 1000).toISOString();
