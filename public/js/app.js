@@ -552,6 +552,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       await loadSoundCards('edit-sound-container', 'edit_sound', data.user.selected_sound);
 
+      // Llenar campo de cambio de nombre
+      const editDisplayName = document.getElementById('edit-display-name');
+      if (editDisplayName) {
+        editDisplayName.value = data.user.display_name || data.user.username;
+      }
+
+      // Actualizar tarjeta de vista previa en pestaña de Lanzar Alerta
+      const launchName = document.getElementById('launch-card-name');
+      if (launchName) launchName.textContent = data.user.display_name || data.user.username;
+      const launchMsg = document.getElementById('launch-card-msg');
+      if (launchMsg) launchMsg.textContent = data.user.custom_message ? `“${data.user.custom_message}”` : '“¡Un año más en el stream! 🥳”';
+      const launchSound = document.getElementById('launch-card-sound');
+      if (launchSound) launchSound.textContent = data.user.selected_sound || 'HBSilbato.mp3';
+      const launchAvatar = document.getElementById('launch-card-avatar');
+      if (launchAvatar && data.user.profile_image) launchAvatar.src = data.user.profile_image;
+
     } catch (err) {
       console.error('Error comprobando sesión:', err);
       currentUser = null;
@@ -780,6 +796,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       container.innerHTML = html;
 
+      // Listeners de chips de texto rapido (rellenan el input de mensaje)
+      container.querySelectorAll('.btn-quick-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const target = chip.dataset.target;
+          const text = chip.dataset.text;
+          const inputEl = document.getElementById('felic-input-' + target);
+          if (inputEl) { inputEl.value = text; inputEl.focus(); }
+        });
+      });
+
       // Listeners de botones de felicitación
       container.querySelectorAll('.btn-felic-sound').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -991,8 +1017,65 @@ document.addEventListener('DOMContentLoaded', async () => {
         showToast('Error conectando con el servidor', 'error');
       } finally {
         saveBtn.disabled = false;
-        saveBtn.textContent = '💾 Actualizar Seguridad';
+        saveBtn.textContent = '💾 Actualizar Claves de Seguridad';
       }
+    });
+  }
+
+  // Guardar Nuevo Nombre en la Aplicación (Display Name)
+  const formEditName = document.getElementById('form-edit-name');
+  if (formEditName) {
+    formEditName.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const newDisplayName = document.getElementById('edit-display-name').value.trim();
+      if (!newDisplayName || newDisplayName.length < 2) {
+        showToast('El nombre debe tener al menos 2 caracteres', 'error');
+        return;
+      }
+      if (newDisplayName.length > 30) {
+        showToast('El nombre no puede tener más de 30 caracteres', 'error');
+        return;
+      }
+
+      const saveBtn = document.getElementById('btn-save-name');
+      const originalText = saveBtn.textContent;
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Guardando...';
+
+      try {
+        const res = await fetch('/api/user/change-name', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ display_name: newDisplayName })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message || '¡Nombre actualizado con éxito!', 'success');
+          if (currentUser) currentUser.display_name = data.display_name;
+          const uName = document.getElementById('user-name');
+          if (uName) uName.textContent = data.display_name;
+          const launchName = document.getElementById('launch-card-name');
+          if (launchName) launchName.textContent = data.display_name;
+          const prevName = document.getElementById('preview-card-name');
+          if (prevName) prevName.textContent = data.display_name;
+        } else {
+          showToast(data.error || 'Error al actualizar nombre', 'error');
+        }
+      } catch (err) {
+        showToast('Error de conexión al actualizar nombre', 'error');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = originalText;
+      }
+    });
+  }
+
+  // Botón Rápido de Previsualización en pestaña de Lanzar Alerta
+  const btnQuickPreview = document.getElementById('btn-preview-alert-quick');
+  if (btnQuickPreview) {
+    btnQuickPreview.addEventListener('click', () => {
+      const mainPreviewBtn = document.getElementById('btn-preview-alert');
+      if (mainPreviewBtn) mainPreviewBtn.click();
     });
   }
 

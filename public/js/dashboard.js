@@ -358,6 +358,9 @@ async function loadBirthdays() {
             <button class="btn-act ${isLocked ? 'btn-act-unlock' : 'btn-act-free'}" title="${isLocked ? 'Desbloquear fecha de este usuario' : 'Fecha ya desbloqueada'}" data-unlock="${b.username}">
               ${isLocked ? '🔓 Abrir' : '✅ Libre'}
             </button>
+            <button class="btn-act btn-act-name" title="Modificar nombre en la aplicación" data-change-name="${b.username}">
+              ✏️ Nombre
+            </button>
             <button class="btn-act btn-act-date" title="Modificar fecha de cumpleaños" data-change-date="${b.username}">
               📅 Fecha
             </button>
@@ -387,6 +390,11 @@ async function loadBirthdays() {
       // Cambiar Fecha directamente
       tr.querySelector('[data-change-date]')?.addEventListener('click', () => {
         showChangeDateModal(b.username, b.display_name, b.birth_month, b.birth_day);
+      });
+
+      // Cambiar Nombre del seguidor
+      tr.querySelector('[data-change-name]')?.addEventListener('click', () => {
+        showChangeNameModal(b.username, b.display_name);
       });
 
       // Lanzar alerta con selección de audio
@@ -514,6 +522,56 @@ function showChangeDateModal(username, displayName, currentMonth, currentDay) {
     }
   };
 }
+
+function showChangeNameModal(username, currentDisplayName) {
+  const { backdrop, box } = createDashboardModal(`
+    <h3 style="font-size:1.2rem;font-weight:800;margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+      <span>✏️</span> <span>Cambiar Nombre de @${username}</span>
+    </h3>
+    <p style="color:#94a3b8;font-size:0.85rem;margin-bottom:18px;">
+      Modifica el nombre para mostrar de este usuario en las alertas de OBS y en la plataforma.
+    </p>
+    <div style="margin-bottom:18px;">
+      <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:6px;font-weight:700;">NUEVO NOMBRE VISIBLE</label>
+      <input type="text" id="modal-change-name-input" maxlength="30" value="${currentDisplayName || username}" style="width:100%;background:#120e1e;border:1px solid rgba(145,70,255,0.4);color:#e2e8f0;border-radius:10px;padding:12px 14px;font-size:0.95rem;box-sizing:border-box;">
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button id="modal-name-cancel" style="flex:1;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;border-radius:12px;cursor:pointer;font-weight:600;">Cancelar</button>
+      <button id="modal-name-confirm" style="flex:2;padding:12px;background:linear-gradient(135deg,#06b6d4,#9146ff);border:none;color:white;border-radius:12px;cursor:pointer;font-weight:700;">💾 Guardar Nombre</button>
+    </div>
+  `);
+
+  box.querySelector('#modal-name-cancel').onclick = () => backdrop.remove();
+  box.querySelector('#modal-name-confirm').onclick = async () => {
+    const newName = box.querySelector('#modal-change-name-input').value.trim();
+    if (!newName || newName.length < 2) {
+      showToast('El nombre debe tener al menos 2 caracteres', 'error');
+      return;
+    }
+    if (newName.length > 30) {
+      showToast('El nombre no puede tener más de 30 caracteres', 'error');
+      return;
+    }
+    try {
+      const res = await authFetch(`/api/dashboard/users/${username}/change-name`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ display_name: newName })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message, 'success');
+        backdrop.remove();
+        loadBirthdays();
+      } else {
+        showToast(data.error || 'Error al cambiar nombre', 'error');
+      }
+    } catch {
+      showToast('Error de conexión', 'error');
+    }
+  };
+}
+
 
 function showLaunchAlertModal(username, displayName, avatar, message, defaultSound) {
   const { backdrop, box } = createDashboardModal(`
@@ -712,16 +770,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updatePauseUI(isPaused) {
     if (!btnPause || !pauseLabel) return;
+    const iconSpan = btnPause.querySelector('span:first-child');
     if (isPaused) {
-      pauseLabel.textContent = '▶️ Reanudar Alertas';
+      if (iconSpan) iconSpan.textContent = '▶️';
+      pauseLabel.textContent = 'Reanudar';
       btnPause.style.background = 'rgba(239, 68, 68, 0.25)';
       btnPause.style.borderColor = 'rgba(239, 68, 68, 0.6)';
       btnPause.style.color = '#fca5a5';
+      btnPause.title = 'Reanudar la aparición de alertas en directo';
     } else {
-      pauseLabel.textContent = '⏸️ Pausar Alertas';
+      if (iconSpan) iconSpan.textContent = '⏸️';
+      pauseLabel.textContent = 'Pausar';
       btnPause.style.background = 'rgba(245, 158, 11, 0.15)';
       btnPause.style.borderColor = 'rgba(245, 158, 11, 0.4)';
       btnPause.style.color = '#fcd34d';
+      btnPause.title = 'Pausar la aparición de alertas en stream (se guardarán en cola)';
     }
   }
 
@@ -832,16 +895,88 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ─── Pestaña y Funcionalidades de Nightbot ─────────────────────────────────
+  // ─── Pestaña y Funcionalidades de Nightbot & StreamElements ─────────────
   const btnGotoNightbot = document.getElementById('btn-goto-nightbot');
   if (btnGotoNightbot) {
     btnGotoNightbot.addEventListener('click', () => switchTab('nightbot'));
   }
 
-  // Inicializar host de Nightbot
-  updateNightbotHost();
+  let currentBotPlatform = 'nightbot';
 
-  // Copiar Comandos de Nightbot (botón individual)
+  function renderBotCommands(platform) {
+    currentBotPlatform = platform;
+    const origin = window.location.origin;
+
+    // Actualizar botones de selector
+    document.querySelectorAll('.btn-bot-platform').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.platform === platform);
+    });
+
+    // Actualizar líneas de código
+    document.querySelectorAll('.nightbot-code-line').forEach(codeEl => {
+      const template = platform === 'streamelements' ? codeEl.dataset.se : codeEl.dataset.nb;
+      if (template) {
+        const rendered = template.replace(/{HOST}/g, origin);
+        codeEl.textContent = rendered;
+      }
+    });
+
+    // Actualizar labels según la plataforma
+    const upper = platform === 'streamelements' ? 'STREAMELEMENTS' : 'NIGHTBOT';
+    const checkLbl = document.getElementById('label-code-check');
+    if (checkLbl) checkLbl.textContent = `COMANDO DE TWITCH (${upper}):`;
+
+    const timerLbl = document.getElementById('label-code-timer');
+    if (timerLbl) timerLbl.textContent = `TEXTO PARA EL TIMER (${upper}):`;
+
+    const nextLbl = document.getElementById('label-code-next');
+    if (nextLbl) nextLbl.textContent = `COMANDO DE TWITCH (${upper}):`;
+
+    const monthLbl = document.getElementById('label-code-month');
+    if (monthLbl) monthLbl.textContent = `COMANDO DE TWITCH (${upper}):`;
+
+    // Actualizar botón de copia de pack completo
+    const copyPackLabel = document.getElementById('btn-copy-all-label');
+    if (copyPackLabel) {
+      copyPackLabel.textContent = platform === 'streamelements'
+        ? 'Copiar Pack de Comandos (StreamElements)'
+        : 'Copiar Pack de Comandos (Nightbot)';
+    }
+
+    // Actualizar banner de guía
+    const banner = document.getElementById('bot-guide-banner');
+    const guideText = document.getElementById('bot-guide-text');
+    if (platform === 'streamelements') {
+      if (banner) {
+        banner.style.borderLeftColor = '#ef4444';
+        banner.style.background = 'rgba(239, 68, 68, 0.08)';
+      }
+      if (guideText) {
+        guideText.innerHTML = `<strong>Instalación con StreamElements:</strong> <span style="color: #cbd5e1;">(1) Asegúrate que StreamElements sea moderador escribiendo <code>/mod streamelements</code> en Twitch. (2) Copia cualquiera de los comandos <code>!cmd add</code> de abajo y pégalo directamente en tu chat de Twitch, o agrégalo desde el panel de StreamElements &gt; Bot &gt; Chat Commands. (3) Para el <strong>Timer de avisos automáticos</strong>, ve a StreamElements Dashboard &gt; Chat Bot &gt; Timers &gt; Add New Timer y pega el texto del Timer en el mensaje. ¡Listo!</span>`;
+      }
+    } else {
+      if (banner) {
+        banner.style.borderLeftColor = '#9146ff';
+        banner.style.background = 'rgba(145, 70, 255, 0.06)';
+      }
+      if (guideText) {
+        guideText.innerHTML = `<strong>Instalación con Nightbot:</strong> <span style="color: #cbd5e1;">(1) Asegúrate que Nightbot sea moderador en tu chat escribiendo <code>/mod nightbot</code> en Twitch. (2) Copia cualquiera de los comandos <code>!addcom</code> de abajo y pégalo en tu chat de Twitch. (3) Para el <strong>Timer de avisos automáticos</strong>, ve a Nightbot Dashboard &gt; Timers &gt; Add Timer y pega el texto del Timer en el campo Message. ¡Listo!</span>`;
+      }
+    }
+  }
+
+  // Event listeners para tabs de plataforma
+  document.querySelectorAll('.btn-bot-platform').forEach(btn => {
+    btn.addEventListener('click', () => {
+      renderBotCommands(btn.dataset.platform);
+    });
+  });
+
+  // Inicializar host y comandos
+  updateNightbotHost();
+  renderBotCommands('nightbot');
+
+  // Copiar Comandos (botón individual)
   document.querySelectorAll('.btn-copy-cmd').forEach(btn => {
     btn.addEventListener('click', () => {
       const targetId = btn.dataset.target;
@@ -898,27 +1033,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Probar usuario personalizado para !micumple
+  // Probar usuario personalizado para !cumple [usuario]
   const btnTestCustom = document.getElementById('btn-test-check-custom');
   const inputTestUser = document.getElementById('input-test-user');
   const previewCheck = document.getElementById('preview-check');
 
   async function testCustomUserCheck() {
-    const rawNick = (inputTestUser?.value || '').trim();
-    if (!rawNick) {
-      showToast('Escribe un usuario para probar', 'info');
-      if (inputTestUser) inputTestUser.focus();
-      return;
-    }
+    const rawNick = (inputTestUser?.value || '').trim().replace(/^@/, '');
+    const isSelfSim = !rawNick;
+    const testSender = 'capiluisxavi';
 
-    if (previewCheck) previewCheck.textContent = `Consultando cumpleaños de @${rawNick}...`;
+    if (previewCheck) {
+      previewCheck.textContent = isSelfSim
+        ? `Simulando !cumple propio de @${testSender}...`
+        : `Consultando cumpleaños de @${rawNick}...`;
+    }
     if (btnTestCustom) {
       btnTestCustom.disabled = true;
       btnTestCustom.textContent = '⏳ Probando...';
     }
 
     try {
-      const res = await fetch(`/api/bot/check?user=${encodeURIComponent(rawNick)}`);
+      const q = isSelfSim
+        ? `/api/bot/check?user=&sender=${encodeURIComponent(testSender)}`
+        : `/api/bot/check?user=${encodeURIComponent(rawNick)}&sender=${encodeURIComponent(testSender)}`;
+      const res = await fetch(q);
       const text = await res.text();
       if (previewCheck) previewCheck.textContent = text;
     } catch (err) {
@@ -948,35 +1087,69 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnCopyAll) {
     btnCopyAll.addEventListener('click', () => {
       const origin = window.location.origin;
-      const allText = [
-        `# ==============================================================`,
-        `# COMANDOS DE CUMPLEAÑOS PARA NIGHTBOT — ${origin}`,
-        `# ==============================================================`,
-        ``,
-        `# 1. Cumpleaños de Hoy y Gracia (14 Días):`,
-        `!addcom !cumple $(urlfetch ${origin}/api/bot/today)`,
-        ``,
-        `# 2. Consultar fecha de un seguidor:`,
-        `!addcom !micumple $(urlfetch ${origin}/api/bot/check?user=$(query)&sender=$(user))`,
-        ``,
-        `# 3. Próximos cumpleaños en 15 días:`,
-        `!addcom !proximos $(urlfetch ${origin}/api/bot/next)`,
-        ``,
-        `# 4. Cumpleaños de todo el mes actual:`,
-        `!addcom !cumplemes $(urlfetch ${origin}/api/bot/month)`,
-        ``,
-        `# 5. Enlace para registrarse en la plataforma:`,
-        `!addcom !regcumple ¡Registra tu cumpleaños para que te festejemos con alerta en directo en tu día especial! 🎂 Entra gratis aquí 👉 ${origin} 🎈`,
-        ``,
-        `# 6. Felicitar en pantalla con sonido y confeti:`,
-        `!addcom !felicitar 🎊 ¡Mándale una felicitación en directo al cumpleañero con música y tarjetas en pantalla entrando a: ${origin} 🎉`,
-        ``,
-        `# 7. Resumen de comandos de ayuda:`,
-        `!addcom !cumpleinfo 🎂 Comandos: !cumple (hoy) · !micumple (tu fecha) · !proximos (en 15 días) · !cumplemes (este mes) · !regcumple (registrarte) · !felicitar (en vivo)`
-      ].join('\n');
+      const isSE = currentBotPlatform === 'streamelements';
+
+      let allText = '';
+      if (isSE) {
+        allText = [
+          `# ==============================================================`,
+          `# COMANDOS DE CUMPLEAÑOS PARA STREAMELEMENTS — ${origin}`,
+          `# ==============================================================`,
+          ``,
+          `# 1. Comando Dinámico !cumple (consulta tu fecha o la de otro usuario !cumple @amigo):`,
+          `!cmd add !cumple \${customapi ${origin}/api/bot/check?user=\${query}&sender=\${user.name}}`,
+          ``,
+          `# 2. Timer de Avisos Automáticos (Avisa en stream si hay cumpleaños hoy o en 1 a 3 días):`,
+          `# Ve a StreamElements > Bot > Timers > Add New Timer y en "Message" pega:`,
+          `\${customapi ${origin}/api/bot/timer}`,
+          ``,
+          `# 3. Próximos cumpleaños en 15 días:`,
+          `!cmd add !proximos \${customapi ${origin}/api/bot/next}`,
+          ``,
+          `# 4. Cumpleaños de todo el mes actual:`,
+          `!cmd add !cumplemes \${customapi ${origin}/api/bot/month}`,
+          ``,
+          `# 5. Enlace para registrarse en la plataforma:`,
+          `!cmd add !regcumple ¡Registra tu cumpleaños para que te festejemos con alerta en directo en tu día especial! 🎂 Entra gratis aquí 👉 ${origin} 🎈`,
+          ``,
+          `# 6. Felicitar en pantalla con sonido y confeti:`,
+          `!cmd add !felicitar 🎊 ¡Mándale una felicitación en directo al cumpleañero con música y tarjetas en pantalla entrando a: ${origin} 🎉`,
+          ``,
+          `# 7. Resumen de comandos de ayuda:`,
+          `!cmd add !cumpleinfo 🎂 Comandos: !cumple [usuario] · !proximos · !cumplemes · !regcumple · !felicitar`
+        ].join('\n');
+      } else {
+        allText = [
+          `# ==============================================================`,
+          `# COMANDOS DE CUMPLEAÑOS PARA NIGHTBOT — ${origin}`,
+          `# ==============================================================`,
+          ``,
+          `# 1. Comando Dinámico !cumple (consulta tu fecha o la de otro usuario !cumple @amigo):`,
+          `!addcom !cumple $(urlfetch ${origin}/api/bot/check?user=$(query)&sender=$(user))`,
+          ``,
+          `# 2. Timer de Avisos Automáticos (Avisa en stream si hay cumpleaños hoy o en 1 a 3 días):`,
+          `# Ve a Nightbot > Timers > Add Timer y en "Message" pega:`,
+          `$(urlfetch ${origin}/api/bot/timer)`,
+          ``,
+          `# 3. Próximos cumpleaños en 15 días:`,
+          `!addcom !proximos $(urlfetch ${origin}/api/bot/next)`,
+          ``,
+          `# 4. Cumpleaños de todo el mes actual:`,
+          `!addcom !cumplemes $(urlfetch ${origin}/api/bot/month)`,
+          ``,
+          `# 5. Enlace para registrarse en la plataforma:`,
+          `!addcom !regcumple ¡Registra tu cumpleaños para que te festejemos con alerta en directo en tu día especial! 🎂 Entra gratis aquí 👉 ${origin} 🎈`,
+          ``,
+          `# 6. Felicitar en pantalla con sonido y confeti:`,
+          `!addcom !felicitar 🎊 ¡Mándale una felicitación en directo al cumpleañero con música y tarjetas en pantalla entrando a: ${origin} 🎉`,
+          ``,
+          `# 7. Resumen de comandos de ayuda:`,
+          `!addcom !cumpleinfo 🎂 Comandos: !cumple [usuario] · !proximos · !cumplemes · !regcumple · !felicitar`
+        ].join('\n');
+      }
 
       navigator.clipboard.writeText(allText).then(() => {
-        showToast('📋 ¡Pack de comandos copiado! Puedes guardarlo o pegarlo en Discord', 'success');
+        showToast(`📋 ¡Pack de comandos (${isSE ? 'StreamElements' : 'Nightbot'}) copiado!`, 'success');
       }).catch(() => {
         showToast('No se pudo copiar el pack completo', 'error');
       });
