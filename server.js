@@ -557,6 +557,9 @@ app.post('/api/birthday/update', authenticateUser, async (req, res) => {
             }
             user.pin_hash = db.hashPin(cleanPass);
         }
+        if (req.body.display_name && typeof req.body.display_name === 'string' && req.body.display_name.trim().length >= 2) {
+            user.display_name = req.body.display_name.trim().slice(0, 30);
+        }
         if (req.body.new_secret && req.body.new_secret.trim().length >= 2) {
             user.recovery_hash = db.hashSecret(req.body.new_secret);
         }
@@ -576,6 +579,34 @@ app.post('/api/birthday/update', authenticateUser, async (req, res) => {
     } catch (err) {
         console.error('Error al actualizar:', err);
         res.status(500).json({ error: 'Error al actualizar datos' });
+    }
+});
+
+// Cambiar nombre en la aplicación (Seguidor)
+app.post('/api/user/change-name', authenticateUser, async (req, res) => {
+    try {
+        const { display_name } = req.body;
+        if (!display_name || typeof display_name !== 'string' || display_name.trim().length === 0) {
+            return res.status(400).json({ error: 'El nombre no puede estar vacío' });
+        }
+        const cleanName = display_name.trim().slice(0, 30);
+        if (cleanName.length < 2) {
+            return res.status(400).json({ error: 'El nombre debe tener al menos 2 caracteres' });
+        }
+        const user = await db.getUser(req.user.username);
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        user.display_name = cleanName;
+        await db.saveUser(user);
+
+        res.json({
+            success: true,
+            message: `¡Tu nombre se actualizó a "${cleanName}"!`,
+            display_name: cleanName
+        });
+    } catch (err) {
+        console.error('Error al cambiar nombre de usuario:', err);
+        res.status(500).json({ error: 'Error al cambiar nombre' });
     }
 });
 
@@ -1083,6 +1114,33 @@ app.post('/api/dashboard/users/:username/change-date', authenticateDashboard, as
     }
 });
 
+// Modificar nombre de un seguidor desde el Dashboard
+app.post('/api/dashboard/users/:username/change-name', authenticateDashboard, async (req, res) => {
+    try {
+        const { display_name } = req.body;
+        if (!display_name || typeof display_name !== 'string' || display_name.trim().length === 0) {
+            return res.status(400).json({ error: 'El nombre no puede estar vacío' });
+        }
+        const cleanName = display_name.trim().slice(0, 30);
+        if (cleanName.length < 2) {
+            return res.status(400).json({ error: 'El nombre debe tener al menos 2 caracteres' });
+        }
+        const user = await db.getUser(req.params.username);
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        user.display_name = cleanName;
+        await db.saveUser(user);
+
+        res.json({
+            success: true,
+            message: `Nombre de @${user.username} cambiado a "${cleanName}" con éxito.`,
+            display_name: cleanName
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Error al cambiar nombre del usuario' });
+    }
+});
+
 // Obtener estado de felicitaciones en directo
 app.get('/api/dashboard/felicitations-status', authenticateDashboard, (req, res) => {
     res.json({ enabled: !!appSettings.felicitations_enabled });
@@ -1332,23 +1390,38 @@ app.get('/api/bot/today', async (req, res) => {
 app.get('/api/bot/check', async (req, res) => {
     res.type('text/plain; charset=utf-8');
     try {
-        let rawUser = req.query.user || req.query.sender || req.query.q || '';
-        // Si Nightbot pasó "$(query)" como texto literal porque no hubo argumentos, usar fallback
-        if (rawUser.includes('$(query)')) {
-            rawUser = req.query.sender || '';
+        let rawUser = req.query.user || req.query.q || '';
+        let sender = (req.query.sender || '').trim().replace(/^@/, '');
+
+        // Limpiar parámetros si vienen como variables sin evaluar de Nightbot o StreamElements
+        if (rawUser.includes('$(query)') || rawUser.includes('${1:}') || rawUser.includes('${query}') || rawUser === 'null' || rawUser === 'undefined') {
+            rawUser = '';
         }
-        const queryUser = rawUser.trim().replace(/^@/, '').toLowerCase();
+        if (sender.includes('$(user)') || sender.includes('${user.name}') || sender === 'null' || sender === 'undefined') {
+            sender = '';
+        }
+
+        rawUser = rawUser.trim().replace(/^@/, '');
+
+        // Determinar si consulta su propio cumpleaños o el de un amigo
+        const isSelf = !rawUser || (sender && rawUser.toLowerCase() === sender.toLowerCase());
+        const targetLogin = (rawUser || sender).toLowerCase();
+
         const protocol = req.headers['x-forwarded-proto'] || 'http';
         const host = req.headers.host || `localhost:${PORT}`;
         const siteUrl = `${protocol}://${host}`;
 
-        if (!queryUser) {
-            return res.send(`ℹ️ Usa: !micumple [usuario] | Para registrarte: ${siteUrl}`);
+        if (!targetLogin) {
+            return res.send(`ℹ️ Consulta tu cumpleaños con !cumple o el de un amigo con !cumple @usuario | Regístrate gratis en: ${siteUrl} 🎂`);
         }
 
-        const user = await db.getUser(queryUser);
+        const user = await db.getUser(targetLogin);
         if (!user || !user.birth_month || !user.birth_day || user.birthday_unlocked) {
-            return res.send(`⚠️ @${queryUser}, aún no has registrado tu cumpleaños en la plataforma. ¡Hazlo gratis aquí! 👉 ${siteUrl}`);
+            if (isSelf) {
+                return res.send(`⚠️ @${sender || targetLogin}, aún no has registrado tu cumpleaños. ¡Hazlo gratis para festejarte con tu alerta en directo! 👉 ${siteUrl} 🎂`);
+            } else {
+                return res.send(`⚠️ @${rawUser} aún no tiene su cumpleaños registrado en la plataforma. ¡Dile que se registre gratis en ${siteUrl}! 🎈`);
+            }
         }
 
         const status = getBirthdayStatus(user.birth_month, user.birth_day);
@@ -1361,32 +1434,134 @@ app.get('/api/bot/check', async (req, res) => {
             const alreadyCelebrated = lastCelebrated >= status.celebrationYear;
 
             if (status.isToday) {
-                if (alreadyCelebrated) {
-                    // Cumpleaños hoy pero ya lanzó la alerta
-                    return res.send(`🥳 ¡Feliz cumpleaños @${displayName}! 🎊 ¡Ya lanzaste tu alerta de cumpleaños hoy, esperamos que hayas disfrutado tu momento especial en el stream! 🎂`);
+                if (isSelf) {
+                    if (alreadyCelebrated) {
+                        return res.send(`🥳 ¡Feliz cumpleaños @${displayName}! 🎊 Ya lanzaste tu alerta especial hoy. ¡Esperamos que estés disfrutando tu día en el stream de yocapi_pr! 🎂✨`);
+                    } else {
+                        return res.send(`🎂 ¡HOY ES TU CUMPLEAÑOS @${displayName}! 🎉 ¡Entra y lanza tu alerta con sonido y confeti en directo ahora mismo! 👉 ${siteUrl}`);
+                    }
                 } else {
-                    // Cumpleaños exacto hoy, no ha lanzado
-                    return res.send(`🎂 ¡HOY ES TU CUMPLEAÑOS @${displayName}! 🎉 ¡No te olvides de entrar y lanzar tu alerta con sonido en directo ahora! 👉 ${siteUrl}`);
+                    if (alreadyCelebrated) {
+                        return res.send(`🎂 ¡Hoy es el cumpleaños de @${displayName} y ya celebró en directo con su alerta! 🥳 ¡Déjale mucho amor en el chat! 🎊✨`);
+                    } else {
+                        return res.send(`🎂 ¡ATENCIÓN CHAT! ¡HOY es el cumpleaños de @${displayName}! 🎉 Dile que entre a lanzar su alerta en directo con música y confeti 👉 ${siteUrl}`);
+                    }
                 }
             } else {
-                // Período de gracia
+                // Período de gracia (14 días)
                 const daysLeft = status.daysRemainingInGrace;
                 const daysLeftText = daysLeft === 1 ? 'solo 1 día' : `${daysLeft} días`;
-                if (alreadyCelebrated) {
-                    // Ya celebró en el período de gracia
-                    return res.send(`🥳 ¡Feliz cumple tardío @${displayName}! 🎊 Ya lanzaste tu alerta este año. ¡Hasta el próximo cumpleaños! 🎂`);
+
+                if (isSelf) {
+                    if (alreadyCelebrated) {
+                        return res.send(`🥳 ¡Feliz cumple tardío @${displayName}! Ya celebraste tu alerta este año. ¡Hasta tu próximo cumpleaños! 🎈🎂`);
+                    } else {
+                        return res.send(`🎈 @${displayName}, tu cumpleaños fue el ${user.birth_day} de ${monthText} y ¡aún estás en período de gracia! Te quedan ${daysLeftText} para lanzar tu alerta en directo. ¡Aprovéchalo aquí! 👉 ${siteUrl}`);
+                    }
                 } else {
-                    // En gracia, aún no ha lanzado
-                    return res.send(`🎈 @${displayName}, tu cumpleaños fue el ${user.birth_day} de ${monthText} y ¡aún puedes lanzar tu alerta! Te quedan ${daysLeftText} de período de gracia. ¡Entra ya! 👉 ${siteUrl}`);
+                    if (alreadyCelebrated) {
+                        return res.send(`🎈 @${displayName} cumplió años el ${user.birth_day} de ${monthText} y ya celebró en directo este año. 🥳 ¡Déjale sus felicitaciones en el chat!`);
+                    } else {
+                        return res.send(`🎈 @${displayName} cumplió años el ${user.birth_day} de ${monthText} y aún está en período de gracia (${daysLeftText} restantes). ¡Dile que entre a lanzar su alerta! 👉 ${siteUrl}`);
+                    }
                 }
             }
         }
 
         const days = status.daysUntilBirthday;
-        const daysText = days === 1 ? '¡falta solo 1 día!' : `faltan ${days} días`;
-        return res.send(`🎉 @${displayName}, tu cumpleaños está registrado para el ${user.birth_day} de ${monthText} (${daysText}). ¡Te esperamos en stream! 🎂`);
+        if (days === 1) {
+            if (isSelf) {
+                return res.send(`🎉 @${displayName}, ¡MAÑANA (${user.birth_day} de ${monthText}) es tu cumpleaños! 🎂 ¡Prepárate para lanzar tu alerta en stream mañana! 👉 ${siteUrl}`);
+            } else {
+                return res.send(`🎉 ¡MAÑANA (${user.birth_day} de ${monthText}) es el cumpleaños de @${displayName}! 🎂 ¡No se olviden de felicitarle en stream!`);
+            }
+        } else if (days <= 7) {
+            if (isSelf) {
+                return res.send(`🗓️ @${displayName}, ¡ya casi! Faltan solo ${days} días para tu cumpleaños (${user.birth_day} de ${monthText}). ¡Se viene la fiesta en stream! 🥳`);
+            } else {
+                return res.send(`🗓️ ¡El cumpleaños de @${displayName} es muy pronto! Faltan solo ${days} días (${user.birth_day} de ${monthText}). ¡Anoten la fecha en el chat! 🎂`);
+            }
+        } else {
+            if (isSelf) {
+                return res.send(`🗓️ @${displayName}, tu cumpleaños está registrado para el ${user.birth_day} de ${monthText} (faltan ${days} días). ¡Te esperamos en stream para festejarte! 🎂✨`);
+            } else {
+                return res.send(`🗓️ El cumpleaños de @${displayName} es el ${user.birth_day} de ${monthText} (faltan ${days} días). ¡Anoten la fecha para felicitarle! 🎂✨`);
+            }
+        }
     } catch (err) {
-        res.send('⚠️ Error consultando usuario.');
+        res.send('⚠️ Error consultando cumpleaños.');
+    }
+});
+
+// ─── API PARA TIMERS / ANUNCIOS AUTOMÁTICOS (NIGHTBOT & STREAMELEMENTS) ─────────
+app.get('/api/bot/timer', async (req, res) => {
+    res.type('text/plain; charset=utf-8');
+    try {
+        const users = await db.getAllUsers();
+        const protocol = req.headers['x-forwarded-proto'] || 'http';
+        const host = req.headers.host || `localhost:${PORT}`;
+        const siteUrl = `${protocol}://${host}`;
+
+        const todayBirthdays = [];
+        const graceBirthdays = [];
+        const upcomingVerySoon = []; // 1 a 3 días
+
+        const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+        for (const u of users) {
+            if (!u.birth_month || !u.birth_day || u.birthday_unlocked) continue;
+            const status = getBirthdayStatus(u.birth_month, u.birth_day);
+            const name = u.display_name || u.username;
+
+            if (status.canCelebrate) {
+                const lastCelebrated = parseInt(u.last_celebrated_year, 10) || 0;
+                const alreadyCelebrated = lastCelebrated >= status.celebrationYear;
+
+                if (status.isToday) {
+                    todayBirthdays.push({ name, alreadyCelebrated });
+                } else if (!alreadyCelebrated) {
+                    graceBirthdays.push({ name, daysLeft: status.daysRemainingInGrace });
+                }
+            } else if (status.daysUntilBirthday > 0 && status.daysUntilBirthday <= 3) {
+                upcomingVerySoon.push({
+                    name,
+                    day: u.birth_day,
+                    month: monthNames[u.birth_month],
+                    days: status.daysUntilBirthday
+                });
+            }
+        }
+
+        // 1. Prioridad Máxima: Cumpleaños de HOY
+        if (todayBirthdays.length > 0) {
+            const list = todayBirthdays.map(b => `@${b.name}`).join(', ');
+            return res.send(`🎂 ¡ATENCIÓN CHAT! ¡Hoy es el cumpleaños de ${list}! 🥳 ¡Mándale mucho amor en el chat y dile que entre a lanzar su alerta en directo con confeti y sonido! 👉 ${siteUrl} 🎉`);
+        }
+
+        // 2. Prioridad: Cumpleaños en Período de Gracia (que aún no han lanzado su alerta)
+        if (graceBirthdays.length > 0) {
+            const list = graceBirthdays.map(b => `@${b.name}`).join(', ');
+            return res.send(`🎈 ¡Aviso de Cumpleaños! ${list} está en período de gracia. ¡Entra a lanzar tu alerta en directo antes de que expire tu plazo! 👉 ${siteUrl} ✨`);
+        }
+
+        // 3. Prioridad: Cumpleaños en los próximos 1 a 3 días
+        if (upcomingVerySoon.length > 0) {
+            upcomingVerySoon.sort((a, b) => a.days - b.days);
+            const list = upcomingVerySoon.map(u => {
+                const when = u.days === 1 ? '¡MAÑANA!' : `en ${u.days} días (${u.day} de ${u.month})`;
+                return `@${u.name} (${when})`;
+            }).join(' · ');
+            return res.send(`🎈 ¡SE ACERCA UN CUMPLEAÑOS! ${list} 🎂 ¡Vayan preparando sus felicitaciones para el stream! 🎉`);
+        }
+
+        // 4. Si no hay cumpleaños hoy ni en 3 días: invitación amistosa a registrarse
+        if (req.query.silent === 'true' || req.query.silent === '1') {
+            return res.send(''); // Modo silencioso: no manda nada si no hay cumple cercano
+        }
+
+        return res.send(`✨ ¿Cumples años pronto? ¡Regístrate gratis para que el stream de yocapi_pr te festeje en vivo con tu música y alerta favorita en pantalla! 👉 ${siteUrl} 🎂🎈`);
+    } catch (err) {
+        res.send('⚠️ Error consultando temporizador de cumpleaños.');
     }
 });
 
