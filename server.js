@@ -37,6 +37,10 @@ const DEFAULT_OVERLAY_CONFIG = {
     volume: 0.85
 };
 
+// Si las variables de entorno del bot están presentes, auto-habilitarlo
+// (permite que funcione en Render sin necesitar un settings.json preexistente)
+const _botAutoEnabled = !!(process.env.TWITCH_BOT_USERNAME && process.env.TWITCH_BOT_TOKEN);
+
 let appSettings = { 
     felicitations_enabled: false,
     alerts_paused: false,
@@ -45,7 +49,7 @@ let appSettings = {
         bot_username: process.env.TWITCH_BOT_USERNAME || '',
         oauth_token: process.env.TWITCH_BOT_TOKEN || '',
         channel: process.env.TWITCH_BOT_CHANNEL || STREAMER_LOGIN || 'yocapi_pr',
-        enabled: false,
+        enabled: _botAutoEnabled, // true si están definidas las vars de entorno
         timer_enabled: true,
         timer_minutes: 20
     }
@@ -68,6 +72,14 @@ try {
 } catch (e) {
     console.error('Error cargando settings.json:', e);
 }
+
+// Las variables de entorno siempre tienen prioridad sobre settings.json
+// Permite que Render funcione correctamente aunque no exista settings.json
+if (process.env.TWITCH_BOT_USERNAME) appSettings.twitch_bot.bot_username = process.env.TWITCH_BOT_USERNAME;
+if (process.env.TWITCH_BOT_TOKEN)    appSettings.twitch_bot.oauth_token  = process.env.TWITCH_BOT_TOKEN;
+if (process.env.TWITCH_BOT_CHANNEL)  appSettings.twitch_bot.channel       = process.env.TWITCH_BOT_CHANNEL;
+if (_botAutoEnabled)                  appSettings.twitch_bot.enabled        = true;
+
 
 function saveAppSettings() {
     try {
