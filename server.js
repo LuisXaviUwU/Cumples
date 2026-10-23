@@ -1143,7 +1143,7 @@ app.post('/api/dashboard/users/:username/unlock-date', authenticateDashboard, as
 // Modificar directamente la fecha de un usuario desde el Dashboard
 app.post('/api/dashboard/users/:username/change-date', authenticateDashboard, async (req, res) => {
     try {
-        const { birth_month, birth_day } = req.body;
+        const { birth_month, birth_day, reset_celebration } = req.body;
         const m = parseInt(birth_month, 10);
         const d = parseInt(birth_day, 10);
         if (isNaN(m) || m < 1 || m > 12 || isNaN(d) || d < 1 || d > 31) {
@@ -1157,11 +1157,41 @@ app.post('/api/dashboard/users/:username/change-date', authenticateDashboard, as
         user.birth_day = d;
         user.birthday_unlocked = false;
         user.created_at = new Date().toISOString();
+
+        // Si se solicita o por defecto al cambiar la fecha, permitir volver a celebrar este año
+        if (reset_celebration !== false) {
+            user.last_celebrated_year = 0;
+            user.last_played_date = null;
+            user.last_activated = null;
+        }
+
         await db.saveUser(user);
 
-        res.json({ success: true, message: `Fecha de @${user.username} cambiada a ${d}/${m} con éxito.` });
+        const extraMsg = reset_celebration !== false ? ' ¡Se habilitó para volver a lanzar su alerta!' : '';
+        res.json({ success: true, message: `Fecha de @${user.username} cambiada a ${d}/${m} con éxito.${extraMsg}` });
     } catch (err) {
         res.status(500).json({ error: 'Error al cambiar fecha' });
+    }
+});
+
+// Permitir volver a lanzar alerta aunque ya haya lanzado este año (resetear celebración)
+app.post('/api/dashboard/users/:username/reset-celebration', authenticateDashboard, async (req, res) => {
+    try {
+        const user = await db.getUser(req.params.username);
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        user.last_celebrated_year = 0;
+        user.last_played_date = null;
+        user.last_activated = null;
+        await db.saveUser(user);
+
+        res.json({
+            success: true,
+            message: `¡Celebración de @${user.display_name || user.username} reseteada! Ya puede volver a lanzar su alerta (con !hoyesmicumple o desde la web).`
+        });
+    } catch (err) {
+        console.error('Error al resetear celebración:', err);
+        res.status(500).json({ error: 'Error al resetear celebración' });
     }
 });
 
