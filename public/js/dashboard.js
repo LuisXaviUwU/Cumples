@@ -1338,7 +1338,16 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.config) {
         if (inputBotUser && !inputBotUser.value) inputBotUser.value = data.config.bot_username || '';
         if (inputBotChannel && !inputBotChannel.value) inputBotChannel.value = data.config.channel || 'yocapi_pr';
-        if (selectBotInterval) selectBotInterval.value = String(data.config.timer_minutes || 20);
+        if (selectBotInterval) {
+          selectBotInterval.value = String(data.config.timer_minutes || 60);
+          if (timerIntervalDisplay) {
+            const val = parseInt(selectBotInterval.value, 10);
+            if (val === 60) timerIntervalDisplay.textContent = '1 hora';
+            else if (val === 90) timerIntervalDisplay.textContent = '1 hora y media';
+            else if (val === 120) timerIntervalDisplay.textContent = '2 horas';
+            else timerIntervalDisplay.textContent = `${val} minutos`;
+          }
+        }
         if (checkBotTimer) checkBotTimer.checked = !!data.config.timer_enabled;
         if (data.config.has_token && inputBotToken && !inputBotToken.value) {
           inputBotToken.placeholder = 'oauth:•••••••••••••••••••• (Guardado)';
@@ -1371,7 +1380,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const bot_username = (inputBotUser?.value || '').trim();
       const oauth_token = (inputBotToken?.value || '').trim();
       const channel = (inputBotChannel?.value || '').trim();
-      const timer_minutes = parseInt(selectBotInterval?.value, 10) || 20;
+      const timer_minutes = parseInt(selectBotInterval?.value, 10) || 60;
       const timer_enabled = !!checkBotTimer?.checked;
 
       btnSaveBotConfig.disabled = true;
@@ -1420,7 +1429,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const bot_username = (inputBotUser?.value || '').trim();
           const oauth_token = (inputBotToken?.value || '').trim();
           const channel = (inputBotChannel?.value || '').trim();
-          const timer_minutes = parseInt(selectBotInterval?.value, 10) || 20;
+          const timer_minutes = parseInt(selectBotInterval?.value, 10) || 60;
           const timer_enabled = !!checkBotTimer?.checked;
 
           const payload = { bot_username, channel, timer_minutes, timer_enabled, enabled: true };
@@ -1526,8 +1535,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const timerIntervalDisplay = document.getElementById('timer-interval-display');
   if (selectBotInterval && timerIntervalDisplay) {
     const updateTimerDisplay = () => {
-      const val = selectBotInterval.value;
-      timerIntervalDisplay.textContent = val >= 60 ? '1 hora' : `${val} minutos`;
+      const val = parseInt(selectBotInterval.value, 10) || 60;
+      if (val === 60) timerIntervalDisplay.textContent = '1 hora';
+      else if (val === 90) timerIntervalDisplay.textContent = '1 hora y media';
+      else if (val === 120) timerIntervalDisplay.textContent = '2 horas';
+      else timerIntervalDisplay.textContent = `${val} minutos`;
     };
     selectBotInterval.addEventListener('change', updateTimerDisplay);
     updateTimerDisplay();
