@@ -1,5 +1,5 @@
 /**
- * YoCapi Birthday System — OBS Overlay Controller 3.0 (Super Festive & Reliable)
+ * Yocapi Birthday System — OBS Overlay Controller 3.0 (Super Festive & Reliable)
  */
 
 const params = new URLSearchParams(window.location.search);
@@ -275,7 +275,7 @@ function connectSSE() {
   const evtSource = new EventSource(`/api/overlay/stream?token=${encodeURIComponent(token)}`);
 
   evtSource.onopen = () => {
-    if (debugStatus) debugStatus.textContent = 'OBS Conectado a YoCapi Cumpleaños 🟢';
+    if (debugStatus) debugStatus.textContent = 'OBS Conectado a Yocapi Cumpleaños 🟢';
     console.log('[OBS Overlay] Conexión SSE establecida con éxito.');
   };
 

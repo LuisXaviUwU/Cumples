@@ -1,5 +1,5 @@
 /**
- * YoCapi Birthday System — Interactive Community Calendar Logic
+ * Yocapi Birthday System — Interactive Community Calendar Logic
  */
 
 let allCelebrants = [];

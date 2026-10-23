@@ -1,5 +1,5 @@
 /**
- * YoCapi Birthday System — Streamer Dashboard Controller
+ * Yocapi Birthday System — Streamer Dashboard Controller
  */
 
 let dashboardKey = '';

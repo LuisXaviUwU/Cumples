@@ -1,5 +1,5 @@
 /**
- * YoCapi Birthday System — Client App Logic (Nick + PIN, Mobile-First)
+ * Yocapi Birthday System — Client App Logic (Nick + PIN, Mobile-First)
  */
 
 let currentAudio = null;
