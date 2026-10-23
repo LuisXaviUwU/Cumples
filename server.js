@@ -298,6 +298,7 @@ twitchBot.initTwitchBot({
     getBirthdayStatus,
     APP_URL,
     initialConfig: appSettings.twitch_bot,
+    cmdResponses: appSettings.bot_cmd_responses || {},
     saveSettings: (partial) => {
         appSettings = { ...appSettings, ...partial };
         saveAppSettings();
@@ -1298,7 +1299,31 @@ app.post('/api/dashboard/bot/trigger-timer', authenticateDashboard, async (req, 
     }
 });
 
+// ─── Obtener respuestas personalizadas de comandos del bot ──────────────────
+app.get('/api/dashboard/bot/cmd-responses', authenticateDashboard, (req, res) => {
+    res.json({ responses: appSettings.bot_cmd_responses || {} });
+});
+
+// ─── Guardar respuesta personalizada de un comando del bot ─────────────────
+app.post('/api/dashboard/bot/cmd-response', authenticateDashboard, (req, res) => {
+    const { cmd, response } = req.body;
+    const allowedCmds = ['regcumple', 'felicitar'];
+    if (!cmd || !allowedCmds.includes(cmd)) {
+        return res.status(400).json({ error: 'Comando no válido o no editable' });
+    }
+    if (!response || response.trim().length < 5) {
+        return res.status(400).json({ error: 'La respuesta no puede estar vacía' });
+    }
+    if (!appSettings.bot_cmd_responses) appSettings.bot_cmd_responses = {};
+    appSettings.bot_cmd_responses[cmd] = response.trim();
+    saveAppSettings();
+    // Pasar la respuesta actualizada al bot en memoria
+    twitchBot.updateCmdResponse(cmd, response.trim());
+    res.json({ success: true, message: `Respuesta de !${cmd} guardada` });
+});
+
 // Obtener estado de felicitaciones en directo
+
 app.get('/api/dashboard/felicitations-status', authenticateDashboard, (req, res) => {
     res.json({ enabled: !!appSettings.felicitations_enabled });
 });

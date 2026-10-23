@@ -26,6 +26,18 @@ let getBirthdayStatusRef = null;
 let appUrlRef = 'http://localhost:3001';
 let saveSettingsCallback = null;
 
+// Respuestas personalizables para comandos estáticos
+let customCmdResponses = {
+    regcumple: null,
+    felicitar: null
+};
+
+function updateCmdResponse(cmd, text) {
+    if (cmd in customCmdResponses) {
+        customCmdResponses[cmd] = text || null;
+    }
+}
+
 const MONTH_NAMES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
@@ -282,12 +294,18 @@ async function handleChatMessage(channel, tags, message, self) {
 
     // 4. COMANDO: !regcumple
     if (command === '!regcumple') {
-        return sendChat(`🎂 ¡Registra tu cumpleaños para que te festejemos con alerta en directo en tu día especial! Entra gratis aquí 👉 ${appUrlRef} 🎈`);
+        const msg = customCmdResponses.regcumple
+            ? customCmdResponses.regcumple.replace(/\{URL\}/gi, appUrlRef)
+            : `🎂 ¡Registra tu cumpleaños para que te festejemos con alerta en directo en tu día especial! 🎂 Entra gratis aquí 👉 ${appUrlRef} 🎈`;
+        return sendChat(msg);
     }
 
     // 5. COMANDO: !felicitar
     if (command === '!felicitar') {
-        return sendChat(`🎊 ¡Mándale una felicitación en directo al cumpleañero con música y tarjetas en pantalla entrando a: ${appUrlRef} 🎉`);
+        const msg = customCmdResponses.felicitar
+            ? customCmdResponses.felicitar.replace(/\{URL\}/gi, appUrlRef)
+            : `🎊 ¡Mándale una felicitación en directo al cumpleañero con música y tarjetas en pantalla entrando a: ${appUrlRef} 🎉`;
+        return sendChat(msg);
     }
 
     // 6. COMANDO: !cumpleinfo o !ayudacumple
@@ -381,6 +399,13 @@ function initTwitchBot(options) {
         botConfig = { ...botConfig, ...options.initialConfig };
     }
 
+    // Cargar respuestas personalizadas desde settings guardados
+    if (options.cmdResponses) {
+        for (const [cmd, text] of Object.entries(options.cmdResponses)) {
+            updateCmdResponse(cmd, text);
+        }
+    }
+
     // Auto-conectar si estaba habilitado y cuenta con credenciales
     if (botConfig.enabled && botConfig.bot_username && botConfig.oauth_token) {
         connectBot().catch(e => console.warn('[TwitchBot] Auto-connect falló:', e.message));
@@ -436,6 +461,7 @@ module.exports = {
     initTwitchBot,
     getBotStatus,
     updateBotConfig,
+    updateCmdResponse,
     connectBot,
     disconnectBot,
     sendChat,
