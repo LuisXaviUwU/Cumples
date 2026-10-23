@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -464,12 +464,13 @@
               <div>
                 <label style="display: block; font-size: 0.72rem; color: #94a3b8; margin-bottom: 5px; font-weight: 700; letter-spacing: 0.05em;">AVISO AUTOMÁTICO CADA</label>
                 <select id="bot-select-interval" style="width: 100%; background: #120e1e; border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 0.88rem; box-sizing: border-box;">
-                  <option value="10">10 minutos</option>
                   <option value="15">15 minutos</option>
-                  <option value="20" selected>20 minutos (Recomendado)</option>
+                  <option value="20">20 minutos</option>
                   <option value="30">30 minutos</option>
                   <option value="45">45 minutos</option>
-                  <option value="60">1 hora</option>
+                  <option value="60" selected>1 hora (Predeterminado)</option>
+                  <option value="90">1 hora y media</option>
+                  <option value="120">2 horas</option>
                 </select>
               </div>
             </form>
@@ -618,7 +619,7 @@
               </div>
 
               <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                <span style="font-size: 0.78rem; color: #64748b;">Configurado actualmente a cada <strong id="timer-interval-display" style="color: #fbbf24;">20 minutos</strong></span>
+                <span style="font-size: 0.78rem; color: #64748b;">Configurado actualmente a cada <strong id="timer-interval-display" style="color: #fbbf24;">1 hora</strong></span>
                 <button type="button" id="btn-bot-trigger-timer-2" class="btn-copy" style="padding: 7px 14px; font-size: 0.8rem; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5); color: #fde047;">⏰ Disparar Ahora</button>
               </div>
             </div>
