@@ -69,7 +69,7 @@ function switchTab(tabId) {
   if (tabId === 'nightbot') {
     titleEl.innerHTML = '<span>🤖</span> Bots de Twitch & Automatización';
     updateNightbotHost();
-    loadTwitchBotStatus();
+    if (typeof window._loadTwitchBotStatus === 'function') window._loadTwitchBotStatus();
   }
   if (tabId === 'logs') {
     titleEl.innerHTML = '<span>📜</span> Historial de Alertas en Stream';
@@ -1298,6 +1298,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let twitchBotIsConnected = false;
 
+  // ─── loadTwitchBotStatus: expuesta globalmente para que switchTab la pueda llamar ──
   async function loadTwitchBotStatus() {
     if (!badgeBotStatus) return;
     try {
@@ -1347,6 +1348,14 @@ document.addEventListener('DOMContentLoaded', () => {
       console.warn('Error al consultar estado del bot de Twitch:', e);
     }
   }
+
+  // Exponer globalmente para que switchTab (scope global) pueda llamarla
+  window._loadTwitchBotStatus = loadTwitchBotStatus;
+
+  // Auto-refresh del estado del bot cada 15 segundos (actualiza el badge automáticamente)
+  setInterval(() => {
+    if (document.visibilityState === 'visible') loadTwitchBotStatus();
+  }, 15000);
 
   // Toggle visibilidad del token
   if (btnToggleTokenVis && inputBotToken) {
@@ -1490,6 +1499,91 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ─── Botón duplicado "Disparar Ahora" en la card del Timer ──────────────────
+  const btnBotTriggerTimer2 = document.getElementById('btn-bot-trigger-timer-2');
+  if (btnBotTriggerTimer2) {
+    btnBotTriggerTimer2.addEventListener('click', async () => {
+      btnBotTriggerTimer2.disabled = true;
+      btnBotTriggerTimer2.textContent = '⏰ Enviando...';
+      try {
+        const res = await authFetch('/api/dashboard/bot/trigger-timer', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('🎂 ¡Recordatorio enviado al chat de Twitch!', 'success');
+        } else {
+          showToast('❌ ' + (data.error || 'Error al ejecutar recordatorio'), 'error');
+        }
+      } catch {
+        showToast('Error conectando con el servidor', 'error');
+      } finally {
+        btnBotTriggerTimer2.disabled = false;
+        btnBotTriggerTimer2.textContent = '⏰ Disparar Ahora';
+      }
+    });
+  }
+
+  // ─── Sincronizar display del intervalo del timer ──────────────────────────
+  const timerIntervalDisplay = document.getElementById('timer-interval-display');
+  if (selectBotInterval && timerIntervalDisplay) {
+    const updateTimerDisplay = () => {
+      const val = selectBotInterval.value;
+      timerIntervalDisplay.textContent = val >= 60 ? '1 hora' : `${val} minutos`;
+    };
+    selectBotInterval.addEventListener('change', updateTimerDisplay);
+    updateTimerDisplay();
+  }
+
+  // ─── Guardar respuestas editables de comandos (cmd-response-*) ────────────
+  async function saveCmdResponse(cmdName, responseText) {
+    try {
+      const res = await authFetch('/api/dashboard/bot/cmd-response', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cmd: cmdName, response: responseText })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`✅ Respuesta de !${cmdName} guardada`, 'success');
+      } else {
+        showToast(data.error || 'Error al guardar respuesta', 'error');
+      }
+    } catch {
+      showToast('Error conectando con el servidor', 'error');
+    }
+  }
+
+  // Cargar respuestas guardadas al iniciar
+  async function loadCmdResponses() {
+    try {
+      const res = await authFetch('/api/dashboard/bot/cmd-responses');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.responses) {
+        for (const [cmd, text] of Object.entries(data.responses)) {
+          const ta = document.getElementById(`cmd-response-${cmd}`);
+          if (ta && text) ta.value = text;
+        }
+      }
+    } catch (e) {
+      console.warn('No se pudieron cargar respuestas de comandos:', e);
+    }
+  }
+  loadCmdResponses();
+
+  // Listeners para botones "💾 Guardar" de cada comando
+  document.querySelectorAll('.btn-save-cmd-response').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const cmd = btn.dataset.cmd;
+      const ta = document.getElementById(`cmd-response-${cmd}`);
+      if (!ta) return;
+      btn.disabled = true;
+      btn.textContent = '⏳ Guardando...';
+      await saveCmdResponse(cmd, ta.value.trim());
+      btn.disabled = false;
+      btn.textContent = '💾 Guardar';
+    });
+  });
+
   // ─── Control del Menú Lateral Móvil (Drawer) ──────────────────────────────
   const mobileToggle = document.getElementById('btn-mobile-sidebar-toggle');
   const sidebar = document.querySelector('.dash-sidebar');
@@ -1522,7 +1616,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Cargar estado inicial
   loadStats();
   loadPausedQueue();
-  loadTwitchBotStatus();
+  loadTwitchBotStatus(); // carga inicial del estado del bot
 });
 
 // =============================================================================
