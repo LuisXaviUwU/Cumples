@@ -213,7 +213,9 @@ async function handleChatMessage(channel, tags, message, self) {
         '!cumple', '!micumple', '!proximos', '!cumplemes', '!regcumple', 
         '!cumpleinfo', '!ayudacumple', '!hoyesmicumple', '!mialerta', '!lanzarmicumple',
         '!felicidades', '!felicidades1', '!felicidades2', '!felicidades3',
-        '!felicitar', '!felicitar1', '!felicitar2', '!felicitar3'
+        '!felicitar', '!felicitar1', '!felicitar2', '!felicitar3',
+        '!hbcambio', '!hbfrase', '!micumplefrase',
+        '!hbsonido', '!cambiarsonido', '!misonido'
     ];
     if (KNOWN_COMMANDS.includes(command)) {
         if (isCommandRateLimited(sender, command)) {
@@ -565,9 +567,74 @@ async function handleChatMessage(channel, tags, message, self) {
         return sendChat(`💌 ¡Felicitación en pantalla! 🎉 @${sender} felicitó a @${toName} en directo (${soundLabel})${msgSnippet} 🥳✨`);
     }
 
-    // ─── COMANDO 7: !cumpleinfo o !ayudacumple ────────────────────────────────
+    // ─── COMANDO 7: !hbcambio <frase> (Modificar frase/descripción de la ficha) ──
+    if (command === '!hbcambio' || command === '!hbfrase' || command === '!micumplefrase') {
+        if (!dbRef) return;
+        const senderLogin = sender.toLowerCase().replace(/[^a-z0-9_]/g, '');
+        const user = await dbRef.getUser(senderLogin);
+
+        if (!user || !user.birth_month || !user.birth_day || user.birthday_unlocked) {
+            return sendChat(`⚠️ @${sender}, primero debes registrar tu cumpleaños en el sistema para personalizar tu frase 👉 ${appUrlRef} 🎂`);
+        }
+
+        const newPhrase = parts.slice(1).join(' ').trim();
+        if (!newPhrase) {
+            const currentPhrase = user.custom_message || '¡Hoy es mi cumpleaños!';
+            return sendChat(`💬 @${sender}, tu frase actual para la alerta es: "${currentPhrase}". Para cambiarla usa: !hbcambio Tu nueva frase aquí (máx 60 letras) 🎈`);
+        }
+
+        const cleanPhrase = newPhrase.slice(0, 60).trim();
+        user.custom_message = cleanPhrase;
+        await dbRef.saveUser(user);
+
+        return sendChat(`✨ @${sender}, ¡frase de tu alerta actualizada con éxito! Se mostrará: "${cleanPhrase}" cuando lances tu festejo en stream 🎂🎉`);
+    }
+
+    // ─── COMANDO 8: !hbsonido <1 | 2 | 3> (Modificar sonido de la alerta) ─────────
+    if (command === '!hbsonido' || command === '!cambiarsonido' || command === '!misonido') {
+        if (!dbRef) return;
+        const senderLogin = sender.toLowerCase().replace(/[^a-z0-9_]/g, '');
+        const user = await dbRef.getUser(senderLogin);
+
+        if (!user || !user.birth_month || !user.birth_day || user.birthday_unlocked) {
+            return sendChat(`⚠️ @${sender}, primero debes registrar tu cumpleaños en el sistema para elegir tu sonido 👉 ${appUrlRef} 🎂`);
+        }
+
+        const soundNames = {
+            'HBSilbato.mp3': '🎺 Silbato Festivo (Opción 1)',
+            'MBMusica.mp3': '🎵 Música de Fiesta (Opción 2)',
+            'HBVoz.mp3': '🎤 Felicitación con Voz (Opción 3)'
+        };
+
+        const choice = (parts[1] || '').trim().toLowerCase();
+        let chosenSound = null;
+        let soundLabel = '';
+
+        if (choice === '1' || choice === 'silbato') {
+            chosenSound = 'HBSilbato.mp3';
+            soundLabel = '🎺 Silbato Festivo';
+        } else if (choice === '2' || choice === 'musica' || choice === 'música' || choice === 'fiesta') {
+            chosenSound = 'MBMusica.mp3';
+            soundLabel = '🎵 Música de Fiesta';
+        } else if (choice === '3' || choice === 'voz' || choice === 'felicitacion' || choice === 'felicitación') {
+            chosenSound = 'HBVoz.mp3';
+            soundLabel = '🎤 Felicitación con Voz';
+        }
+
+        if (!chosenSound) {
+            const currentSoundName = soundNames[user.selected_sound] || '🎺 Silbato Festivo (Opción 1)';
+            return sendChat(`🎵 @${sender}, tu sonido actual es: ${currentSoundName}. Para cambiarlo usa: !hbsonido 1 (🎺 Silbato) · !hbsonido 2 (🎵 Música) · !hbsonido 3 (🎤 Voz) 🥳`);
+        }
+
+        user.selected_sound = chosenSound;
+        await dbRef.saveUser(user);
+
+        return sendChat(`🎵 @${sender}, ¡sonido de tu alerta actualizado a ${soundLabel}! Sonará cuando lances tu festejo en directo 🥳✨`);
+    }
+
+    // ─── COMANDO 9: !cumpleinfo o !ayudacumple ────────────────────────────────
     if (command === '!cumpleinfo' || command === '!ayudacumple') {
-        return sendChat(`🎉 Comandos de Fiesta: !hoyesmicumple (lanza tu alerta) · !felicidades [mensaje] (tarjeta en pantalla) · !felicidades1 (música) · !felicidades2 (silbato) · !felicidades3 (voz) · !cumple · !proximos · !cumplemes · !regcumple 🎂✨`);
+        return sendChat(`🎉 Comandos de Fiesta: !hoyesmicumple (lanza tu alerta) · !felicidades [mensaje] (!felicidades1/2/3) · !hbcambio <frase> · !hbsonido <1/2/3> · !cumple · !proximos · !cumplemes · !regcumple 🎂✨`);
     }
 }
 
