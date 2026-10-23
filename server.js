@@ -1,5 +1,5 @@
 /**
- * YoCapi Birthday System v2.0 — Backend Server
+ * Yocapi Birthday System v2.0 — Backend Server
  * Nick de Twitch + PIN (Sin OAuth de Twitch) + Firebase Firestore + OBS Overlay
  */
 
@@ -138,7 +138,7 @@ function fetchHttpJson(url, options = {}) {
     return new Promise((resolve) => {
         const req = https.get(url, {
             timeout: 4000,
-            headers: { 'User-Agent': 'YoCapi-Birthday-System/2.0', ...(options.headers || {}) }
+            headers: { 'User-Agent': 'Yocapi-Birthday-System/2.0', ...(options.headers || {}) }
         }, (res) => {
             if (res.statusCode < 200 || res.statusCode >= 300) return resolve(null);
             let data = '';
@@ -196,7 +196,7 @@ function fetchTwitchGQL(cleanName) {
 function fetchDecapi(cleanName) {
     return new Promise((resolve) => {
         const req = https.get(`https://decapi.me/twitch/avatar/${cleanName}`, {
-            headers: { 'User-Agent': 'YoCapi-Birthday-System/2.0' },
+            headers: { 'User-Agent': 'Yocapi-Birthday-System/2.0' },
             timeout: 4000
         }, (res) => {
             if (res.statusCode < 200 || res.statusCode >= 300) return resolve(null);
@@ -309,6 +309,11 @@ twitchBot.initTwitchBot({
     APP_URL,
     initialConfig: appSettings.twitch_bot,
     cmdResponses: appSettings.bot_cmd_responses || {},
+    broadcastToOverlay: (data) => broadcastToOverlay(data),
+    getAppSettings: () => appSettings,
+    acquireMusicLock: (u) => acquireMusicLock(u),
+    getMusicLockStatus: () => getMusicLockStatus(),
+    pausedAlertsQueue,
     saveSettings: (partial) => {
         appSettings = { ...appSettings, ...partial };
         saveAppSettings();
@@ -1292,7 +1297,7 @@ app.post('/api/dashboard/bot/disconnect', authenticateDashboard, async (req, res
 app.post('/api/dashboard/bot/test-message', authenticateDashboard, async (req, res) => {
     try {
         const customMsg = (req.body.message || '').trim();
-        const msg = customMsg || `🤖 [YoCapi Bot]: ¡Conexión con el chat de Twitch establecida exitosamente! Recordatorios de cumpleaños activos 🎉✨`;
+        const msg = customMsg || `🤖 [Yocapi Bot]: ¡Conexión con el chat de Twitch establecida exitosamente! Recordatorios de cumpleaños activos 🎉✨`;
         await twitchBot.sendChat(msg);
         res.json({ success: true, message: '¡Mensaje de prueba enviado con éxito a tu chat de Twitch!' });
     } catch (err) {
@@ -1848,7 +1853,7 @@ app.get(['/dashboard', '/dashboard.html', '/admin', '/panel'], (req, res) => {
 // ─── Inicio de Servidor ─────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n==================================================`);
-    console.log(`🎂 YoCapi Birthday Platform v2.0 (Nick + PIN)`);
+    console.log(`🎂 Yocapi Birthday Platform v2.0 (Nick + PIN)`);
     console.log(`🌐 Servidor: http://localhost:${PORT}`);
     console.log(`📺 Overlay OBS: http://localhost:${PORT}/overlay?token=${OVERLAY_TOKEN}`);
     console.log(`⚙️  Dashboard Secreto: http://localhost:${PORT}/${DASHBOARD_SECRET_PATH}`);

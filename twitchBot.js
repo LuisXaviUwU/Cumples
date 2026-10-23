@@ -1,5 +1,5 @@
 /**
- * YoCapi Birthday System — Bot de Twitch Integrado (tmi.js)
+ * Yocapi Birthday System — Bot de Twitch Integrado (tmi.js)
  * Conexión nativa a IRC de Twitch, comandos dinámicos y recordatorios automáticos en directo
  */
 
@@ -52,6 +52,11 @@ let dbRef = null;
 let getBirthdayStatusRef = null;
 let appUrlRef = 'http://localhost:3001';
 let saveSettingsCallback = null;
+let broadcastToOverlayRef = null;
+let getAppSettingsRef = null;
+let acquireMusicLockRef = null;
+let getMusicLockStatusRef = null;
+let pausedAlertsQueueRef = null;
 
 // Respuestas personalizables para comandos estáticos
 let customCmdResponses = {
@@ -146,8 +151,8 @@ async function buildAnnouncementMessage() {
 
         // 4. Mensajes rotativos de invitación a la comunidad (más dinámicos y divertidos)
         const communityInvites = [
-            `✨ ¿Cumples años pronto? ¡Regístrate gratis para que YoCapi y el chat te festejen en vivo con tu música y alerta favorita en pantalla! 👉 ${appUrlRef} 🎂🎈`,
-            `👑 ¡Que no pase tu cumple sin fiestón! Anota tu fecha gratis en el sistema de YoCapi y el día de tu cumple activa tu propia tarjeta con sonido en vivo 👉 ${appUrlRef} 🎉🍰`,
+            `✨ ¿Cumples años pronto? ¡Regístrate gratis para que Yocapi y el chat te festejen en vivo con tu música y alerta favorita en pantalla! 👉 ${appUrlRef} 🎂🎈`,
+            `👑 ¡Que no pase tu cumple sin fiestón! Anota tu fecha gratis en el sistema de Yocapi y el día de tu cumple activa tu propia tarjeta con sonido en vivo 👉 ${appUrlRef} 🎉🍰`,
             `🎈 ¿Sabías que tenemos sistema de cumpleaños en vivo? Regístrate gratis para que el bot te recuerde y celebres tu día especial junto a toda la comunidad 👉 ${appUrlRef} 🎂✨`
         ];
         return communityInvites[Math.floor(Math.random() * communityInvites.length)];
@@ -204,7 +209,13 @@ async function handleChatMessage(channel, tags, message, self) {
     const sender = tags['display-name'] || tags.username || 'amigo';
 
     // 2. COOLDOWN ANTI-SPAM (Evita que el mismo usuario dispare el mismo comando repetidamente en < 3s)
-    if (['!cumple', '!micumple', '!proximos', '!cumplemes', '!regcumple', '!felicitar', '!cumpleinfo', '!ayudacumple'].includes(command)) {
+    const KNOWN_COMMANDS = [
+        '!cumple', '!micumple', '!proximos', '!cumplemes', '!regcumple', 
+        '!cumpleinfo', '!ayudacumple', '!hoyesmicumple', '!mialerta', '!lanzarmicumple',
+        '!felicidades', '!felicidades1', '!felicidades2', '!felicidades3',
+        '!felicitar', '!felicitar1', '!felicitar2', '!felicitar3'
+    ];
+    if (KNOWN_COMMANDS.includes(command)) {
         if (isCommandRateLimited(sender, command)) {
             return;
         }
@@ -237,7 +248,7 @@ async function handleChatMessage(channel, tags, message, self) {
             if (bStatus.isToday) {
                 if (isSelf) {
                     if (alreadyCelebrated) {
-                        return sendChat(`👑 ¡Feliz cumpleaños @${displayName}! 🥳 Ya reventaste el stream con tu alerta en directo. ¡Esperamos que estés disfrutando tu día al máximo en el canal de YoCapi! 🎂✨`);
+                        return sendChat(`👑 ¡Feliz cumpleaños @${displayName}! 🥳 Ya reventaste el stream con tu alerta en directo. ¡Esperamos que estés disfrutando tu día al máximo en el canal de Yocapi! 🎂✨`);
                     } else {
                         return sendChat(`🚨 ¡PONGAN MÚSICA Y SAQUEN LOS REGALOS! 🎂👑 ¡HOY ES TU DÍA @${displayName}! 🎉🎈 El chat se viste de gala. ¡Entra a lanzar tu alerta en directo con tu canción favorita AHORA MISMO! 👉 ${appUrlRef} 🥳✨`);
                     }
@@ -278,13 +289,13 @@ async function handleChatMessage(channel, tags, message, self) {
             }
         } else if (days <= 7) {
             if (isSelf) {
-                return sendChat(`⏳ ¡Modo fiesta activándose! @${displayName}, faltan solo ${days} días para tu cumpleaños (${user.birth_day} de ${monthText}). 🎈 ¡Se viene fiestón en el stream de YoCapi! 🎂🥳`);
+                return sendChat(`⏳ ¡Modo fiesta activándose! @${displayName}, faltan solo ${days} días para tu cumpleaños (${user.birth_day} de ${monthText}). 🎈 ¡Se viene fiestón en el stream de Yocapi! 🎂🥳`);
             } else {
                 return sendChat(`⏳ ¡Cuenta regresiva activada! Faltan solo ${days} días para festejar a @${displayName} (${user.birth_day} de ${monthText}). 🎈 ¡Anoten la fecha en el calendario chat! 🎂🎉`);
             }
         } else {
             if (isSelf) {
-                return sendChat(`🗓️ @${displayName}, tu fecha dorada en el calendario es el ${user.birth_day} de ${monthText} (faltan ${days} días). 🎂 ¡Ya tenemos la fiesta y el confeti listos en el stream de YoCapi! ✨🎈`);
+                return sendChat(`🗓️ @${displayName}, tu fecha dorada en el calendario es el ${user.birth_day} de ${monthText} (faltan ${days} días). 🎂 ¡Ya tenemos la fiesta y el confeti listos en el stream de Yocapi! ✨🎈`);
             } else {
                 return sendChat(`🗓️ El cumpleaños de @${displayName} está anotado para el ${user.birth_day} de ${monthText} (faltan ${days} días). 🎂 ¡A marcar la fecha en el calendario para llenarle el chat de amor! 🎈✨`);
             }
@@ -333,28 +344,230 @@ async function handleChatMessage(channel, tags, message, self) {
 
         monthCelebrants.sort((a, b) => a.birth_day - b.birth_day);
         const list = monthCelebrants.slice(0, 7).map(u => `@${u.display_name || u.username} (día ${u.birth_day})`).join(' · ');
-        return sendChat(`🗓️ Cartelera festiva de ${currentMonthName} (${monthCelebrants.length} cumpleañeros): ${list} 🎂🎈 ¡Este mes hay fiesta asegurada en el canal de YoCapi!`);
+        return sendChat(`🗓️ Cartelera festiva de ${currentMonthName} (${monthCelebrants.length} cumpleañeros): ${list} 🎂🎈 ¡Este mes hay fiesta asegurada en el canal de Yocapi!`);
     }
 
     // ─── COMANDO 4: !regcumple ────────────────────────────────────────────────
     if (command === '!regcumple') {
         const msg = customCmdResponses.regcumple
             ? customCmdResponses.regcumple.replace(/\{URL\}/gi, appUrlRef)
-            : `🎂 ¿Quieres que el stream de YoCapi explote con tu música y alerta personalizada en pantalla el día de tu cumpleaños? ¡Regístrate 100% gratis aquí! 👉 ${appUrlRef} 🎈✨`;
+            : `🎂 ¿Quieres que el stream de Yocapi explote con tu música y alerta personalizada en pantalla el día de tu cumpleaños? ¡Regístrate 100% gratis aquí! 👉 ${appUrlRef} 🎈✨`;
         return sendChat(msg);
     }
 
-    // ─── COMANDO 5: !felicitar ────────────────────────────────────────────────
-    if (command === '!felicitar') {
-        const msg = customCmdResponses.felicitar
-            ? customCmdResponses.felicitar.replace(/\{URL\}/gi, appUrlRef)
-            : `💌 ¿Alguien cumple años hoy? ¡Mándale una felicitación en directo que saldrá en la pantalla del stream con audio, confeti y tarjeta festiva! 👉 ${appUrlRef} 🎉🥳`;
-        return sendChat(msg);
+    // ─── COMANDO 5: !hoyesmicumple (Lanzar la alerta del cumpleañero en directo) ───
+    if (command === '!hoyesmicumple' || command === '!mialerta' || command === '!lanzarmicumple') {
+        if (!dbRef || !getBirthdayStatusRef) return;
+        const senderLogin = sender.toLowerCase().replace(/[^a-z0-9_]/g, '');
+        const user = await dbRef.getUser(senderLogin);
+
+        if (!user || !user.birth_month || !user.birth_day || user.birthday_unlocked) {
+            return sendChat(`⚠️ @${sender}, ¡aún no estás registrado en el sistema de cumpleaños! Entra gratis a anotarte para activar tu alerta en vivo 👉 ${appUrlRef} 🎂`);
+        }
+
+        const bStatus = getBirthdayStatusRef(user.birth_month, user.birth_day);
+        const monthText = MONTH_NAMES[user.birth_month] || user.birth_month;
+        const displayName = user.display_name || user.username;
+
+        if (!bStatus.canCelebrate) {
+            const days = bStatus.daysUntilBirthday;
+            return sendChat(`🗓️ @${displayName}, tu cumpleaños registrado es el ${user.birth_day} de ${monthText} (faltan ${days} días). ¡Tu alerta con música y confeti se desbloqueará en tu día especial! 🎂✨`);
+        }
+
+        const lastCelebrated = parseInt(user.last_celebrated_year, 10) || 0;
+        const alreadyCelebrated = lastCelebrated >= bStatus.celebrationYear;
+
+        if (alreadyCelebrated) {
+            return sendChat(`👑 @${displayName}, ¡ya lanzaste tu alerta de cumpleaños este año! Esperamos que hayas disfrutado tu festejo en stream. ¡Te esperamos para el próximo año! 🥳🎂`);
+        }
+
+        // Marcar celebración en la base de datos para no duplicar
+        user.last_activated = new Date().toISOString();
+        user.last_played_date = new Date().toISOString().split('T')[0];
+        user.last_celebrated_year = bStatus.celebrationYear;
+        await dbRef.saveUser(user);
+
+        const sound = user.selected_sound || 'HBSilbato.mp3';
+        const messageText = user.custom_message || '¡Hoy es mi cumpleaños!';
+
+        await dbRef.logAlert({
+            username: user.username,
+            display_name: displayName,
+            sound_file: sound,
+            message: messageText
+        });
+
+        const alertPayload = {
+            type: 'alert',
+            user: displayName,
+            avatar: user.profile_image || '/img/yocapi.png',
+            sound: sound,
+            message: messageText,
+            isToday: bStatus.isToday,
+            isGrace: bStatus.isGracePeriod,
+            theme: 'purple',
+            timestamp: Date.now()
+        };
+
+        const appSettings = getAppSettingsRef ? getAppSettingsRef() : {};
+
+        if (appSettings.alerts_paused && pausedAlertsQueueRef) {
+            pausedAlertsQueueRef.push({
+                id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                user: displayName,
+                avatar: user.profile_image || '/img/yocapi.png',
+                message: messageText,
+                sound: sound,
+                time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                payload: alertPayload
+            });
+            return sendChat(`🎂 @${displayName}, ¡tu alerta fue guardada en fila! Yocapi tiene las alertas pausadas momentáneamente; saldrá en pantalla en cuanto reanude 🎈✨`);
+        }
+
+        if (broadcastToOverlayRef) {
+            broadcastToOverlayRef(alertPayload);
+        }
+
+        return sendChat(`🚨🎂 ¡FIESTA TOTAL EN DIRECTO! 👑 ¡@${displayName} acaba de detonar su alerta de cumpleaños en pantalla con confeti y música! 🥳🎉 ¡Llenen el chat de felicitaciones y amor!`);
     }
 
-    // ─── COMANDO 6: !cumpleinfo o !ayudacumple ────────────────────────────────
+    // ─── COMANDO 6: !felicidades [mensaje] o !felicidades1/2/3 ─────────────────
+    const felicitationCommands = [
+        '!felicidades', '!felicidades1', '!felicidades2', '!felicidades3',
+        '!felicitar', '!felicitar1', '!felicitar2', '!felicitar3'
+    ];
+
+    if (felicitationCommands.includes(command)) {
+        if (!dbRef || !getBirthdayStatusRef) return;
+        const appSettings = getAppSettingsRef ? getAppSettingsRef() : {};
+
+        // Si es !felicitar a secas sin mensaje y sin que haya felicitaciones activas, mostrar mensaje informativo
+        if (command === '!felicitar' && !arg && !appSettings.felicitations_enabled) {
+            const msg = customCmdResponses.felicitar
+                ? customCmdResponses.felicitar.replace(/\{URL\}/gi, appUrlRef)
+                : `💌 ¿Alguien cumple años hoy? ¡Mándale una felicitación en directo con tarjeta en pantalla entrando a: ${appUrlRef} 🎉🥳`;
+            return sendChat(msg);
+        }
+
+        // 1. Verificar si las felicitaciones están permitidas por la streamer
+        if (!appSettings.felicitations_enabled) {
+            return sendChat(`⚠️ @${sender}, las felicitaciones en pantalla están cerradas o en pausa por Yocapi en este momento. ¡Atento a cuando las active en directo! 📺✨`);
+        }
+
+        // 2. Verificar que el que felicita esté registrado en la BD
+        const senderLogin = sender.toLowerCase().replace(/[^a-z0-9_]/g, '');
+        const senderUser = await dbRef.getUser(senderLogin);
+
+        if (!senderUser || !senderUser.birth_month || !senderUser.birth_day || senderUser.birthday_unlocked) {
+            return sendChat(`⚠️ @${sender}, para enviar felicitaciones con tu tarjeta a la pantalla debes registrar tu cumpleaños gratis primero 👉 ${appUrlRef} 🎈`);
+        }
+
+        // 3. Determinar el cumpleañero objetivo
+        let targetUser = null;
+        let customMsg = '';
+
+        if (arg) {
+            const potentialTarget = await dbRef.getUser(arg.toLowerCase());
+            if (potentialTarget && potentialTarget.birth_month && potentialTarget.birth_day) {
+                const tStatus = getBirthdayStatusRef(potentialTarget.birth_month, potentialTarget.birth_day);
+                if (tStatus.canCelebrate) {
+                    targetUser = potentialTarget;
+                    customMsg = parts.slice(2).join(' ').trim();
+                }
+            }
+        }
+
+        if (!targetUser) {
+            const allUsers = await dbRef.getAllUsers();
+            const activeCelebrants = [];
+            for (const u of allUsers) {
+                if (!u.birth_month || !u.birth_day || u.birthday_unlocked) continue;
+                const s = getBirthdayStatusRef(u.birth_month, u.birth_day);
+                if (s.canCelebrate) {
+                    activeCelebrants.push({ user: u, status: s });
+                }
+            }
+
+            if (activeCelebrants.length === 0) {
+                return sendChat(`🎈 @${sender}, en este momento no hay cumpleañeros activos en stream para felicitar. Usa !proximos para ver los siguientes en el calendario 🎂`);
+            }
+
+            const todayOne = activeCelebrants.find(c => c.status.isToday) || activeCelebrants[0];
+            targetUser = todayOne.user;
+            customMsg = parts.slice(1).join(' ').trim();
+        }
+
+        // 4. Evitar auto-felicitación
+        if (targetUser.username.toLowerCase() === senderLogin) {
+            return sendChat(`😅 @${sender}, ¡no puedes auto-felicitarte! Para lanzar tu propia alerta en pantalla usa el comando !hoyesmicumple 🎂👑`);
+        }
+
+        // 5. Determinar el sonido y gestionar el mutex de música
+        let chosenSound = 'HBSilbato.mp3';
+        let soundLabel = '🎺 Silbato Festivo';
+
+        if (command === '!felicidades1' || command === '!felicitar1') {
+            chosenSound = 'MBMusica.mp3';
+            soundLabel = '🎵 Música de Fiesta';
+        } else if (command === '!felicidades2' || command === '!felicitar2') {
+            chosenSound = 'HBSilbato.mp3';
+            soundLabel = '🎺 Silbato Festivo';
+        } else if (command === '!felicidades3' || command === '!felicitar3') {
+            chosenSound = 'HBVoz.mp3';
+            soundLabel = '🎤 Felicitación con Voz';
+        } else {
+            // !felicidades o !felicitar a secas -> Selección aleatoria de los 3
+            const soundOptions = [
+                { file: 'MBMusica.mp3', label: '🎵 Música de Fiesta' },
+                { file: 'HBSilbato.mp3', label: '🎺 Silbato Festivo' },
+                { file: 'HBVoz.mp3', label: '🎤 Felicitación con Voz' }
+            ];
+            const musicLock = getMusicLockStatusRef ? getMusicLockStatusRef() : { locked: false };
+            const availableOptions = musicLock.locked 
+                ? soundOptions.filter(s => s.file !== 'MBMusica.mp3') 
+                : soundOptions;
+            const picked = availableOptions[Math.floor(Math.random() * availableOptions.length)];
+            chosenSound = picked.file;
+            soundLabel = picked.label;
+        }
+
+        // Mutex si es música (MBMusica.mp3)
+        if (chosenSound === 'MBMusica.mp3') {
+            if (acquireMusicLockRef && !acquireMusicLockRef(sender)) {
+                const musicStatus = getMusicLockStatusRef ? getMusicLockStatusRef() : {};
+                const secsLeft = Math.ceil((musicStatus.remainingMs || 5000) / 1000);
+                return sendChat(`🎵 @${sender}, la música de cumpleaños ya está sonando (${secsLeft}s restantes). ¡Lanza !felicidades2 (silbato) o !felicidades3 (voz) mientras tanto! 🎺`);
+            }
+        }
+
+        // 6. Enviar al overlay de OBS
+        if (broadcastToOverlayRef) {
+            broadcastToOverlayRef({
+                type: 'felicitation',
+                from: senderUser.display_name || senderUser.username,
+                fromAvatar: senderUser.profile_image || '/img/yocapi.png',
+                to: targetUser.display_name || targetUser.username,
+                sound: chosenSound,
+                message: customMsg.slice(0, 60),
+                timestamp: Date.now()
+            });
+
+            if (chosenSound === 'MBMusica.mp3') {
+                broadcastToOverlayRef({
+                    type: 'music_lock_update',
+                    music_lock: getMusicLockStatusRef ? getMusicLockStatusRef() : { locked: true }
+                });
+            }
+        }
+
+        const toName = targetUser.display_name || targetUser.username;
+        const msgSnippet = customMsg ? ` con el mensaje: "${customMsg.slice(0, 45)}"` : '';
+        return sendChat(`💌 ¡Felicitación en pantalla! 🎉 @${sender} felicitó a @${toName} en directo (${soundLabel})${msgSnippet} 🥳✨`);
+    }
+
+    // ─── COMANDO 7: !cumpleinfo o !ayudacumple ────────────────────────────────
     if (command === '!cumpleinfo' || command === '!ayudacumple') {
-        return sendChat(`🎉 Comandos de Fiesta: !cumple (tu fecha o !cumple @amigo) · !proximos (en 15 días) · !cumplemes (del mes) · !regcumple (anótate gratis) · !felicitar (alerta en directo) 🎂✨`);
+        return sendChat(`🎉 Comandos de Fiesta: !hoyesmicumple (lanza tu alerta) · !felicidades [mensaje] (tarjeta en pantalla) · !felicidades1 (música) · !felicidades2 (silbato) · !felicidades3 (voz) · !cumple · !proximos · !cumplemes · !regcumple 🎂✨`);
     }
 }
 
@@ -447,6 +660,11 @@ function initTwitchBot(options) {
     getBirthdayStatusRef = options.getBirthdayStatus;
     appUrlRef = options.APP_URL || appUrlRef;
     saveSettingsCallback = options.saveSettings;
+    broadcastToOverlayRef = options.broadcastToOverlay || null;
+    getAppSettingsRef = options.getAppSettings || null;
+    acquireMusicLockRef = options.acquireMusicLock || null;
+    getMusicLockStatusRef = options.getMusicLockStatus || null;
+    pausedAlertsQueueRef = options.pausedAlertsQueue || null;
 
     if (options.initialConfig) {
         botConfig = { ...botConfig, ...options.initialConfig };

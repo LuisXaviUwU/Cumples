@@ -1,5 +1,5 @@
 /**
- * YoCapi Birthday System — Capa de Persistencia Universal
+ * Yocapi Birthday System — Capa de Persistencia Universal
  * Modo: Nick de Twitch + PIN + Palabra Secreta de Recuperación
  * Soporta:
  *  1. Firebase Firestore (Modo Cloud en Render con proyecto yocapi-cumples)

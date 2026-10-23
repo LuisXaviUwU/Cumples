@@ -19,7 +19,7 @@
     "render",
     "firebase"
   ],
-  "author": "YoCapi Stream Team",
+  "author": "Yocapi Stream Team",
   "license": "ISC",
   "dependencies": {
     "cookie-parser": "^1.4.7",
