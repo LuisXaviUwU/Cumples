@@ -51,7 +51,7 @@ let appSettings = {
         channel: process.env.TWITCH_BOT_CHANNEL || STREAMER_LOGIN || 'yocapi_pr',
         enabled: _botAutoEnabled, // true si están definidas las vars de entorno
         timer_enabled: true,
-        timer_minutes: 20
+        timer_minutes: 60
     }
 };
 
@@ -257,8 +257,18 @@ async function fetchPublicTwitchAvatar(username) {
 }
 
 // ─── Helper Cálculo de Cumpleaños & Gracia ──────────────────────────────────
+function getNowDate() {
+    const tz = process.env.TIMEZONE || 'America/Mexico_City';
+    try {
+        const localStr = new Date().toLocaleString('en-US', { timeZone: tz });
+        return new Date(localStr);
+    } catch (_) {
+        return new Date();
+    }
+}
+
 function getBirthdayStatus(birthMonth, birthDay) {
-    const now = new Date();
+    const now = getNowDate();
     const currentYear = now.getFullYear();
 
     for (const year of [currentYear, currentYear - 1]) {
