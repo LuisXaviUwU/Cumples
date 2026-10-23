@@ -192,11 +192,21 @@ async function loadTodayCelebrants() {
           const tagText = c.status.isToday ? '🎂 ¡CUMPLEAÑOS HOY!' : `🎈 Período de Gracia (${c.status.daysRemainingInGrace} días rest.)`;
           const tagColor = c.status.isToday ? 'var(--c-pink)' : 'var(--c-gold)';
 
+          const currentCelebrationYear = c.status?.celebrationYear || new Date().getFullYear();
+          const hasCelebrated = (parseInt(c.last_celebrated_year, 10) || 0) >= currentCelebrationYear;
+          const celebBadge = hasCelebrated
+            ? '<span style="font-size:0.72rem; color:#f87171; background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.35); padding:2px 8px; border-radius:6px; font-weight:700;">✅ Ya lanzó este año</span>'
+            : '<span style="font-size:0.72rem; color:#34d399; background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.35); padding:2px 8px; border-radius:6px; font-weight:700;">⏳ Listo para lanzar</span>';
+
           card.innerHTML = `
             <div class="today-item-left">
               <img src="${c.profile_image || '/img/yocapi.png'}" onerror="this.src='/img/yocapi.png'" alt="${c.display_name}" class="today-avatar">
               <div class="today-info">
-                <h4>${c.display_name} <span style="font-size:0.75rem; font-weight:700; color:${tagColor}; margin-left:8px;">${tagText}</span></h4>
+                <h4>
+                  ${c.display_name} 
+                  <span style="font-size:0.75rem; font-weight:700; color:${tagColor}; margin-left:8px;">${tagText}</span>
+                  ${celebBadge}
+                </h4>
                 <p>${c.custom_message ? `"${c.custom_message}"` : 'Sin mensaje personalizado'} &bull; Sonido: <strong>${c.selected_sound || 'HBSilbato.mp3'}</strong></p>
               </div>
             </div>
@@ -208,6 +218,9 @@ async function loadTodayCelebrants() {
               </select>
               <button class="btn-alert-direct" data-user="${c.display_name}" data-avatar="${c.profile_image}" data-sound="${c.selected_sound}" data-msg="${c.custom_message || ''}">
                 🎉 Lanzar a OBS
+              </button>
+              <button class="btn-copy btn-quick-reset-celebration" data-username="${c.username}" style="padding:6px 10px; font-size:0.78rem; background:rgba(16,185,129,0.2); border-color:rgba(16,185,129,0.4); color:#34d399; font-weight:700;" title="Permite que este usuario pueda volver a lanzar su alerta con !hoyesmicumple o desde la web">
+                🔄 Permitir Relanzar
               </button>
             </div>
           `;
@@ -242,6 +255,28 @@ async function loadTodayCelebrants() {
             } finally {
               btn.disabled = false;
               btn.innerHTML = '🎉 Lanzar a OBS';
+            }
+          });
+
+          card.querySelector('.btn-quick-reset-celebration')?.addEventListener('click', async (e) => {
+            const btn = e.currentTarget;
+            btn.disabled = true;
+            btn.textContent = 'Reseteando...';
+            try {
+              const rRes = await authFetch(`/api/dashboard/users/${c.username}/reset-celebration`, { method: 'POST' });
+              const rData = await rRes.json();
+              if (rData.success) {
+                showToast(rData.message, 'success');
+                loadToday();
+                loadBirthdays();
+              } else {
+                showToast(rData.error || 'Error al resetear', 'error');
+              }
+            } catch {
+              showToast('Error de conexión', 'error');
+            } finally {
+              btn.disabled = false;
+              btn.textContent = '🔄 Permitir Relanzar';
             }
           });
 
@@ -359,6 +394,9 @@ async function loadBirthdays() {
             <button class="btn-act btn-act-launch" title="Lanzar alerta en directo a OBS" data-launch-alert="${b.username}">
               🚀 Lanzar
             </button>
+            <button class="btn-act btn-act-reset" title="Permitir volver a lanzar alerta este año (resetea celebración)" data-reset-celebration="${b.username}">
+              🔄 Relanzar
+            </button>
             <button class="btn-act ${isLocked ? 'btn-act-unlock' : 'btn-act-free'}" title="${isLocked ? 'Desbloquear fecha de este usuario' : 'Fecha ya desbloqueada'}" data-unlock="${b.username}">
               ${isLocked ? '🔓 Abrir' : '✅ Libre'}
             </button>
@@ -395,6 +433,23 @@ async function loadBirthdays() {
         } finally {
           btn.disabled = false;
           btn.textContent = '🔄';
+        }
+      });
+
+      // Resetear celebración (permitir relanzar)
+      tr.querySelector('[data-reset-celebration]')?.addEventListener('click', async () => {
+        try {
+          const res = await authFetch(`/api/dashboard/users/${b.username}/reset-celebration`, { method: 'POST' });
+          const data = await res.json();
+          if (data.success) {
+            showToast(data.message, 'success');
+            loadBirthdays();
+            loadToday();
+          } else {
+            showToast(data.error || 'Error al resetear celebración', 'error');
+          }
+        } catch {
+          showToast('Error de conexión', 'error');
         }
       });
 
@@ -516,6 +571,10 @@ function showChangeDateModal(username, displayName, currentMonth, currentDay) {
         <input type="number" id="modal-change-day" min="1" max="31" value="${currentDay}" style="width:100%;background:#120e1e;border:1px solid rgba(145,70,255,0.3);color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:0.9rem;box-sizing:border-box;">
       </div>
     </div>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:4px;margin-bottom:16px;cursor:pointer;font-size:0.83rem;color:#cbd5e1;">
+      <input type="checkbox" id="modal-change-reset-celebration" checked style="accent-color:#9146ff;width:16px;height:16px;">
+      <span>Permitir volver a lanzar alerta este año (Resetear celebración previa)</span>
+    </label>
     <div style="display:flex;gap:10px;">
       <button id="modal-change-cancel" style="flex:1;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;border-radius:12px;cursor:pointer;font-weight:600;">Cancelar</button>
       <button id="modal-change-confirm" style="flex:2;padding:12px;background:linear-gradient(135deg,#9146ff,#7c3aed);border:none;color:white;border-radius:12px;cursor:pointer;font-weight:700;">✅ Guardar Fecha</button>
@@ -526,6 +585,7 @@ function showChangeDateModal(username, displayName, currentMonth, currentDay) {
   box.querySelector('#modal-change-confirm').onclick = async () => {
     const m = parseInt(box.querySelector('#modal-change-month').value, 10);
     const d = parseInt(box.querySelector('#modal-change-day').value, 10);
+    const resetCelebration = box.querySelector('#modal-change-reset-celebration')?.checked ?? true;
     if (isNaN(m) || isNaN(d) || d < 1 || d > 31) {
       showToast('Mes o día inválido', 'error');
       return;
@@ -534,13 +594,14 @@ function showChangeDateModal(username, displayName, currentMonth, currentDay) {
       const res = await authFetch(`/api/dashboard/users/${username}/change-date`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ birth_month: m, birth_day: d })
+        body: JSON.stringify({ birth_month: m, birth_day: d, reset_celebration: resetCelebration })
       });
       const data = await res.json();
       if (data.success) {
         showToast(data.message, 'success');
         backdrop.remove();
         loadBirthdays();
+        loadToday();
       } else {
         showToast(data.error || 'Error al cambiar fecha', 'error');
       }
