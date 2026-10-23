@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -410,90 +410,66 @@
           </div>
         </div>
 
-        <!-- PESTAÑA: COMANDOS & BOTS DE TWITCH -->
+        <!-- PESTAÑA: YOCAPIBOT — COMANDOS Y CONFIGURACIÓN -->
         <div id="tab-nightbot" class="dash-tab-content" style="display: none;">
 
-          <!-- SECCIÓN 1: BOT OFICIAL DE TWITCH (CONEXIÓN DIRECTA) -->
-          <div class="glass-card" style="padding: 24px; margin-bottom: 28px; border: 1.5px solid rgba(145, 70, 255, 0.45); background: linear-gradient(135deg, rgba(22, 16, 42, 0.95), rgba(16, 12, 32, 0.95)); border-radius: 18px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
+          <!-- CABECERA: Estado y controles del Bot -->
+          <div class="glass-card" style="padding: 24px; margin-bottom: 24px; border: 1.5px solid rgba(145, 70, 255, 0.5); background: linear-gradient(135deg, rgba(22,16,42,0.97), rgba(12,9,24,0.97)); border-radius: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;">
               <div style="display: flex; align-items: center; gap: 14px;">
-                <span style="font-size: 2.4rem;">🤖</span>
+                <span style="font-size: 2.8rem; line-height: 1;">🤖</span>
                 <div>
-                  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px; flex-wrap: wrap;">
-                    <h3 style="font-family: var(--font-h); font-size: 1.25rem; font-weight: 800; color: #fff; margin: 0;">
-                      Bot Oficial de Twitch (Conexión Directa)
-                    </h3>
-                    <span id="twitch-bot-status-badge" style="padding: 4px 12px; border-radius: 14px; font-size: 0.78rem; font-weight: 800; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);">
-                      🔴 Desconectado
-                    </span>
+                  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px;">
+                    <h3 style="font-family: var(--font-h); font-size: 1.3rem; font-weight: 800; color: #fff; margin: 0;">YocapiBot — Bot Oficial de Twitch</h3>
+                    <span id="twitch-bot-status-badge" style="padding: 4px 14px; border-radius: 14px; font-size: 0.78rem; font-weight: 800; background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4);">🔴 Desconectado</span>
                   </div>
-                  <p style="color: #94a3b8; font-size: 0.85rem; margin: 0;">
-                    Conecta tu propia cuenta bot para responder comandos interactivos (<code>!cumple</code>, <code>!proximos</code>, etc.) y enviar recordatorios automáticos de cumpleaños en directo a tu chat de Twitch.
-                  </p>
+                  <p style="color: #94a3b8; font-size: 0.85rem; margin: 0; max-width: 600px;">Bot conectado directamente al chat de Twitch vía IRC. Responde comandos en vivo, avisa de cumpleaños automáticamente y personaliza cada respuesta desde aquí.</p>
                 </div>
               </div>
               <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button type="button" id="btn-bot-toggle-connect" class="btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); padding: 10px 20px; font-size: 0.88rem; font-weight: 800; border-radius: 10px; border: none; cursor: pointer; color: #fff; display: inline-flex; align-items: center; gap: 8px;">
-                  <span>🟢</span>
-                  <span id="btn-bot-toggle-label">Conectar Bot</span>
+                <button type="button" id="btn-bot-toggle-connect" class="btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); padding: 10px 22px; font-size: 0.88rem; font-weight: 800; border-radius: 10px; border: none; cursor: pointer; color: #fff; display: inline-flex; align-items: center; gap: 8px;">
+                  <span>🟢</span><span id="btn-bot-toggle-label">Conectar Bot</span>
                 </button>
-                <button type="button" id="btn-bot-test-msg" class="btn-copy" style="background: rgba(145, 70, 255, 0.2); border-color: rgba(145, 70, 255, 0.5); color: #bf94ff; font-weight: 700;">
-                  🧪 Probar en Chat
-                </button>
-                <button type="button" id="btn-bot-trigger-timer" class="btn-copy" style="background: rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.5); color: #fde047; font-weight: 700;">
-                  ⏰ Avisar Ahora
-                </button>
+                <button type="button" id="btn-bot-test-msg" class="btn-copy" style="background: rgba(145,70,255,0.2); border-color: rgba(145,70,255,0.5); color: #bf94ff; font-weight: 700;">🧪 Probar en Chat</button>
+                <button type="button" id="btn-bot-trigger-timer" class="btn-copy" style="background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5); color: #fde047; font-weight: 700;">⏰ Avisar Ahora</button>
               </div>
             </div>
 
-            <!-- Formulario de Configuración del Bot -->
-            <form id="form-twitch-bot-config" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 20px;">
+            <!-- Formulario de credenciales -->
+            <form id="form-twitch-bot-config" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 18px;">
               <div>
-                <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px; font-weight: 700;">
-                  CUENTA / USUARIO DEL BOT
-                </label>
+                <label style="display: block; font-size: 0.72rem; color: #94a3b8; margin-bottom: 5px; font-weight: 700; letter-spacing: 0.05em;">USUARIO DEL BOT</label>
                 <div style="position: relative;">
-                  <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 0.9rem;">@</span>
-                  <input type="text" id="bot-input-username" placeholder="ej: yocapi_bot o tu_cuenta_bot" style="width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.12); color: #fff; border-radius: 10px; padding: 10px 14px 10px 30px; font-size: 0.88rem; box-sizing: border-box;">
+                  <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b;">@</span>
+                  <input type="text" id="bot-input-username" placeholder="ej: yocapibot" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 10px; padding: 10px 14px 10px 28px; font-size: 0.88rem; box-sizing: border-box;">
                 </div>
               </div>
-
               <div>
-                <label style="display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px; font-weight: 700;">
+                <label style="display: flex; align-items: center; justify-content: space-between; font-size: 0.72rem; color: #94a3b8; margin-bottom: 5px; font-weight: 700; letter-spacing: 0.05em;">
                   <span>OAUTH TOKEN</span>
-                  <a href="https://twitchtokengenerator.com/" target="_blank" style="color: #38bdf8; text-decoration: none; font-weight: 600;">
-                    🔑 Generar Token ↗
-                  </a>
+                  <a href="https://twitchtokengenerator.com/" target="_blank" style="color: #38bdf8; text-decoration: none; font-weight: 600; font-size: 0.75rem;">🔑 Generar ↗</a>
                 </label>
-                <div style="position: relative; display: flex;">
-                  <input type="password" id="bot-input-token" placeholder="oauth:xxxxxxxxxxxxxxxxxxxxxx" style="flex: 1; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.12); color: #fff; border-radius: 10px 0 0 10px; padding: 10px 14px; font-size: 0.88rem; box-sizing: border-box;">
-                  <button type="button" id="btn-toggle-token-vis" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-left: none; border-radius: 0 10px 10px 0; padding: 0 14px; color: #94a3b8; cursor: pointer;">
-                    👁️
-                  </button>
+                <div style="display: flex;">
+                  <input type="password" id="bot-input-token" placeholder="oauth:xxxxxxxxxxxxxx" style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 10px 0 0 10px; padding: 10px 14px; font-size: 0.88rem; box-sizing: border-box;">
+                  <button type="button" id="btn-toggle-token-vis" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-left: none; border-radius: 0 10px 10px 0; padding: 0 12px; color: #94a3b8; cursor: pointer;">👁️</button>
                 </div>
               </div>
-
               <div>
-                <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px; font-weight: 700;">
-                  CANAL DE TWITCH (STREAM)
-                </label>
+                <label style="display: block; font-size: 0.72rem; color: #94a3b8; margin-bottom: 5px; font-weight: 700; letter-spacing: 0.05em;">CANAL (STREAM)</label>
                 <div style="position: relative;">
-                  <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 0.9rem;">#</span>
-                  <input type="text" id="bot-input-channel" value="yocapi_pr" style="width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.12); color: #fff; border-radius: 10px; padding: 10px 14px 10px 30px; font-size: 0.88rem; box-sizing: border-box;">
+                  <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b;">#</span>
+                  <input type="text" id="bot-input-channel" value="yocapi_pr" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 10px; padding: 10px 14px 10px 28px; font-size: 0.88rem; box-sizing: border-box;">
                 </div>
               </div>
-
               <div>
-                <label style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px; font-weight: 700;">
-                  INTERVALO DE AVISO AUTOMÁTICO
-                </label>
-                <select id="bot-select-interval" style="width: 100%; background: #120e1e; border: 1px solid rgba(255, 255, 255, 0.12); color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 0.88rem; box-sizing: border-box;">
-                  <option value="10">Cada 10 minutos</option>
-                  <option value="15">Cada 15 minutos</option>
-                  <option value="20" selected>Cada 20 minutos (Recomendado)</option>
-                  <option value="30">Cada 30 minutos</option>
-                  <option value="45">Cada 45 minutos</option>
-                  <option value="60">Cada 1 hora</option>
+                <label style="display: block; font-size: 0.72rem; color: #94a3b8; margin-bottom: 5px; font-weight: 700; letter-spacing: 0.05em;">AVISO AUTOMÁTICO CADA</label>
+                <select id="bot-select-interval" style="width: 100%; background: #120e1e; border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 0.88rem; box-sizing: border-box;">
+                  <option value="10">10 minutos</option>
+                  <option value="15">15 minutos</option>
+                  <option value="20" selected>20 minutos (Recomendado)</option>
+                  <option value="30">30 minutos</option>
+                  <option value="45">45 minutos</option>
+                  <option value="60">1 hora</option>
                 </select>
               </div>
             </form>
@@ -501,358 +477,260 @@
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);">
               <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.85rem; color: #cbd5e1;">
                 <input type="checkbox" id="bot-check-timer-enabled" checked style="accent-color: #9146ff; width: 16px; height: 16px;">
-                <span>Activar Recordatorios Periódicos en Chat (Avisa cumpleaños hoy o próximos en stream)</span>
+                <span>Activar recordatorios automáticos de cumpleaños en el chat</span>
               </label>
               <button type="button" id="btn-save-bot-config" class="btn-primary" style="padding: 9px 22px; font-size: 0.85rem; font-weight: 700; border-radius: 10px;">
                 💾 Guardar Configuración
               </button>
             </div>
 
-            <!-- Ayuda de obtención de Token -->
-            <div style="margin-top: 16px; padding: 12px 16px; background: rgba(56, 189, 248, 0.08); border-left: 3px solid #38bdf8; border-radius: 0 8px 8px 0; font-size: 0.8rem; color: #94a3b8; line-height: 1.45;">
-              <strong style="color: #38bdf8;">¿Cómo conectar tu bot en 1 minuto?</strong><br>
-              1. Inicia sesión en Twitch con la cuenta de tu bot.<br>
-              2. Abre <a href="https://twitchtokengenerator.com/" target="_blank" style="color: #38bdf8; text-decoration: underline;">twitchtokengenerator.com</a> y genera un token seleccionando únicamente los permisos <code>chat:read</code> y <code>chat:edit</code>.<br>
-              3. Copia el token que empieza con <code>oauth:...</code> y pégalo arriba. Haz clic en <strong>Conectar Bot</strong> y ¡listo! Tu bot responderá en vivo en tu chat a <code>!cumple</code>, <code>!proximos</code>, <code>!cumplemes</code>, etc.
+            <!-- Info token -->
+            <div style="margin-top: 14px; padding: 11px 15px; background: rgba(56,189,248,0.07); border-left: 3px solid #38bdf8; border-radius: 0 8px 8px 0; font-size: 0.79rem; color: #94a3b8; line-height: 1.5;">
+              <strong style="color: #38bdf8;">¿Cómo conectar el bot?</strong><br>
+              1. Inicia sesión en Twitch con la cuenta del bot · 2. Abre <a href="https://twitchtokengenerator.com/" target="_blank" style="color: #38bdf8;">twitchtokengenerator.com</a> y genera un token con permisos <code>chat:read</code> y <code>chat:edit</code> · 3. Pega el token que empieza con <code>oauth:</code> arriba y guarda.
             </div>
           </div>
 
-          <!-- SECCIÓN 2: COMANDOS PARA BOTS EXTERNOS (NIGHTBOT & STREAMELEMENTS) -->
-          <div class="nightbot-header-banner">
+          <!-- SECCIÓN: COMANDOS DEL BOT -->
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px;">
+            <span style="font-size: 1.5rem;">⚡</span>
             <div>
-              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap;">
-                <span style="font-size: 2rem;">⚡</span>
-                <h3 style="font-family: var(--font-h); font-size: 1.3rem; font-weight: 800; margin: 0; color: #fff;">
-                  Bots Externos: Nightbot &amp; StreamElements
-                </h3>
-                <span class="nightbot-badge dynamic">● Respuestas en Vivo</span>
-              </div>
-              <p style="color: #cbd5e1; font-size: 0.86rem; margin: 0; max-width: 780px; line-height: 1.5;">
-                Si también utilizas Nightbot o StreamElements en tu stream, copia estos comandos dinámicos para integrarlos con la plataforma.
-              </p>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
-              <button type="button" id="btn-copy-all-commands" class="btn-primary" style="background: linear-gradient(135deg, #10b981, #06b6d4); padding: 10px 18px; font-size: 0.85rem; font-weight: 800; border-radius: 10px; border: none; cursor: pointer; color: #fff; display: inline-flex; align-items: center; gap: 8px;">
-                <span>📋</span>
-                <span id="btn-copy-all-label">Copiar Pack de Comandos (Nightbot)</span>
-              </button>
-              <span style="font-size: 0.75rem; color: #94a3b8;">
-                Servidor detectado: <strong id="nightbot-host-label" style="color: #38bdf8;">cargando...</strong>
-              </span>
+              <h3 style="font-family: var(--font-h); font-size: 1.2rem; font-weight: 800; color: #fff; margin: 0;">Comandos del Bot — Editar Respuestas</h3>
+              <p style="color: #64748b; font-size: 0.82rem; margin: 0;">Haz clic en ✏️ Editar para personalizar el texto que enviará el bot al chat. Los cambios se guardan automáticamente.</p>
             </div>
           </div>
 
-          <!-- Selector de Plataforma: Nightbot vs StreamElements -->
-          <div class="bot-platform-tabs">
-            <button type="button" class="btn-bot-platform active" data-platform="nightbot">
-              <span>🟣</span> Nightbot
-            </button>
-            <button type="button" class="btn-bot-platform" data-platform="streamelements">
-              <span>🔴</span> StreamElements
-            </button>
-          </div>
+          <!-- Grid de comandos -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 20px; margin-bottom: 28px;">
 
-          <!-- Guía Rápida de Instalación -->
-          <div class="glass-card" style="padding: 16px 20px; margin-bottom: 24px; border-left: 4px solid #9146ff; background: rgba(145, 70, 255, 0.06);" id="bot-guide-banner">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 1.5rem;" id="bot-guide-icon">⚡</span>
-              <div style="font-size: 0.84rem; color: #e2e8f0; line-height: 1.4;" id="bot-guide-text">
-                <strong>Instalación con Nightbot:</strong> 
-                <span style="color: #cbd5e1;">(1) Asegúrate que Nightbot sea moderador en tu chat escribiendo <code>/mod nightbot</code> en Twitch. (2) Copia cualquiera de los comandos <code>!addcom</code> de abajo. (3) Pégalo en tu chat de Twitch. ¡Listo!</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Grid de Comandos -->
-          <div class="nightbot-grid">
-
-            <!-- 1. !cumple [usuario] (COMANDO ESTRELLA DINÁMICO) -->
-            <div class="nightbot-card" style="border-color: rgba(145, 70, 255, 0.45); background: linear-gradient(145deg, rgba(22, 16, 42, 0.85), rgba(12, 9, 24, 0.85));">
-              <div class="nightbot-card-top">
-                <div>
-                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                    <span style="font-size: 1.3rem;">🎂</span>
-                    <h4 style="font-family: var(--font-h); font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">!cumple [usuario]</h4>
-                    <span class="nightbot-badge dynamic">🌟 Estrella Dinámico</span>
+            <!-- COMANDO 1: !cumple / !micumple -->
+            <div class="glass-card" style="padding: 20px; border: 1.5px solid rgba(145,70,255,0.4); border-radius: 16px; background: linear-gradient(145deg, rgba(22,16,42,0.9), rgba(12,9,24,0.9));">
+              <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px;">
+                <span style="font-size: 2rem; line-height: 1; flex-shrink: 0;">🎂</span>
+                <div style="flex: 1;">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+                    <h4 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #e879f9; margin: 0;">!cumple</h4>
+                    <code style="background: rgba(145,70,255,0.2); color: #bf94ff; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem;">también: !micumple</code>
+                    <span style="background: rgba(145,70,255,0.15); color: #a78bfa; border: 1px solid rgba(145,70,255,0.3); padding: 2px 9px; border-radius: 10px; font-size: 0.72rem; font-weight: 700;">🌟 Estrella</span>
                   </div>
-                  <p style="color: #94a3b8; font-size: 0.82rem; margin: 0;">
-                    <strong>El comando todo-en-uno:</strong> Si escriben <code>!cumple</code> consulta el propio cumpleaños del viewer. Si escriben <code>!cumple @amigo</code> consulta el de su amigo. Si hoy es el cumpleaños de alguien o está en gracia, invita al chat a festejarlo.
+                  <p style="color: #94a3b8; font-size: 0.82rem; margin: 0; line-height: 1.45;">
+                    El comando más poderoso. Si el viewer escribe <code>!cumple</code> consulta su propio cumpleaños. Si escribe <code>!cumple @amigo</code> consulta el de su amigo. Responde diferente según si es hoy, está en período de gracia, o faltan días.
                   </p>
                 </div>
               </div>
 
-              <div class="nightbot-code-wrap">
-                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;" id="label-code-check">COMANDO DE TWITCH (NIGHTBOT):</span>
-                <code class="nightbot-code-line" id="cmd-code-check" data-nb="!addcom !cumple $(urlfetch {HOST}/api/bot/check?user=$(query)&sender=$(user))" data-se="!cmd add !cumple ${customapi {HOST}/api/bot/check?user=${query}&sender=${user.name}}">
-                  !addcom !cumple $(urlfetch <span class="nb-host-url">https://cumples.onrender.com</span>/api/bot/check?user=$(query)&sender=$(user))
-                </code>
-              </div>
-
-              <div class="nightbot-test-input-row">
-                <input type="text" id="input-test-user" class="nightbot-test-input" placeholder="Escribe un nick para probar (o déjalo vacío para simular !cumple propio)...">
-                <button type="button" id="btn-test-check-custom" class="btn-copy" style="padding: 7px 14px; font-size: 0.8rem; background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #34d399;">
-                  ▶️ Probar Nick
-                </button>
-              </div>
-
-              <div class="nightbot-actions">
-                <button type="button" class="btn-copy btn-copy-cmd" data-target="cmd-code-check" style="padding: 7px 14px; font-size: 0.8rem; background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5); color: #93c5fd;">
-                  📋 Copiar Comando
-                </button>
-                <button type="button" class="btn-copy btn-copy-url" data-url="/api/bot/check?user=$(query)&sender=$(user)" style="padding: 7px 12px; font-size: 0.8rem;">
-                  🔗 Copiar URL
-                </button>
-              </div>
-
-              <!-- Vista previa en vivo -->
-              <div class="nightbot-preview">
-                <div class="nightbot-preview-title">
-                  <span>💬 Respuesta del Bot en el Chat:</span>
-                  <span style="font-size: 0.7rem; color: #64748b;">(En vivo)</span>
+              <div style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 12px; margin-bottom: 12px; border: 1px solid rgba(145,70,255,0.2);">
+                <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; margin-bottom: 6px; letter-spacing: 0.05em;">EJEMPLO DE RESPUESTA DEL BOT:</div>
+                <div style="font-size: 0.82rem; color: #e2e8f0; line-height: 1.5;">
+                  🎂 ¡HOY ES TU CUMPLEAÑOS @<em>usuario</em>! 🎉 ¡Entra y lanza tu alerta con sonido y confeti en directo ahora mismo! 👉 <span style="color: #38bdf8;">https://cumples.onrender.com</span>
                 </div>
-                <div class="nightbot-preview-text" id="preview-check">Escribe un usuario arriba o presiona "Probar Nick" para ver la respuesta que mandará el bot.</div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.78rem;">
+                <div style="background: rgba(0,0,0,0.2); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                  <span style="color: #64748b; display: block; margin-bottom: 2px;">Uso básico</span>
+                  <code style="color: #c084fc;">!cumple</code> → consulta el tuyo
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                  <span style="color: #64748b; display: block; margin-bottom: 2px;">Con argumento</span>
+                  <code style="color: #c084fc;">!cumple @capidieguito1204</code>
+                </div>
               </div>
             </div>
 
-            <!-- 2. ANUNCIO AUTOMÁTICO EN CHAT (TIMERS / TEMPORIZADORES) -->
-            <div class="nightbot-card" style="border-color: rgba(245, 158, 11, 0.45); background: linear-gradient(145deg, rgba(30, 20, 10, 0.75), rgba(16, 12, 8, 0.85));">
-              <div class="nightbot-card-top">
-                <div>
-                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                    <span style="font-size: 1.3rem;">⏰</span>
-                    <h4 style="font-family: var(--font-h); font-size: 1.15rem; font-weight: 800; color: #fde047; margin: 0;">Anuncios Automáticos (Timers)</h4>
-                    <span class="nightbot-badge" style="background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4);">⏰ Modo Automático</span>
+            <!-- COMANDO 2: !proximos -->
+            <div class="glass-card" style="padding: 20px; border: 1.5px solid rgba(59,130,246,0.4); border-radius: 16px;">
+              <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px;">
+                <span style="font-size: 2rem; line-height: 1; flex-shrink: 0;">📅</span>
+                <div style="flex: 1;">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+                    <h4 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #60a5fa; margin: 0;">!proximos</h4>
+                    <span style="background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); padding: 2px 9px; border-radius: 10px; font-size: 0.72rem; font-weight: 700;">📅 Próximos 15 días</span>
                   </div>
-                  <p style="color: #cbd5e1; font-size: 0.82rem; margin: 0;">
-                    <strong>Avisa automáticamente en tu stream:</strong> Programa un Timer en Nightbot o StreamElements (ej: cada 15 min). El bot anunciará en el chat si hoy es el cumpleaños de alguien, si alguien está en período de gracia, o si faltan 1 a 3 días para un cumpleaños cercano.
+                  <p style="color: #94a3b8; font-size: 0.82rem; margin: 0; line-height: 1.45;">
+                    Muestra los cumpleaños que se celebrarán en los próximos 15 días con los días exactos que faltan para cada uno, ordenados de más cercano a más lejano.
                   </p>
                 </div>
               </div>
 
-              <div class="nightbot-code-wrap">
-                <span style="font-size: 0.72rem; color: #fde047; font-weight: 800;" id="label-code-timer">TEXTO PARA EL TIMER (NIGHTBOT):</span>
-                <code class="nightbot-code-line" id="cmd-code-timer" data-nb="$(urlfetch {HOST}/api/bot/timer)" data-se="${customapi {HOST}/api/bot/timer}">
-                  $(urlfetch <span class="nb-host-url">https://cumples.onrender.com</span>/api/bot/timer)
-                </code>
-              </div>
-
-              <div class="nightbot-actions">
-                <button type="button" class="btn-copy btn-copy-cmd" data-target="cmd-code-timer" style="padding: 7px 14px; font-size: 0.8rem; background: rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.5); color: #fde047;">
-                  📋 Copiar Texto del Timer
-                </button>
-                <button type="button" class="btn-copy btn-copy-url" data-url="/api/bot/timer" style="padding: 7px 12px; font-size: 0.8rem;">
-                  🔗 Copiar URL
-                </button>
-                <button type="button" class="btn-copy btn-test-nb" data-endpoint="/api/bot/timer" data-preview="preview-timer" style="padding: 7px 14px; font-size: 0.8rem; background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #34d399; margin-left: auto;">
-                  ▶️ Probar Respuesta
-                </button>
-              </div>
-
-              <!-- Vista previa en vivo -->
-              <div class="nightbot-preview">
-                <div class="nightbot-preview-title">
-                  <span>💬 Lo que dirá el Bot en este momento:</span>
+              <div style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 12px; margin-bottom: 12px; border: 1px solid rgba(59,130,246,0.2);">
+                <div style="font-size: 0.7rem; color: #93c5fd; font-weight: 800; margin-bottom: 6px; letter-spacing: 0.05em;">EJEMPLO DE RESPUESTA:</div>
+                <div style="font-size: 0.82rem; color: #e2e8f0; line-height: 1.5;">
+                  📅 Próximos cumpleaños (15 días): @capidieguito1204 en 2 días · @gcm_mascapito en 7 días · @capi_daniellc_21 en 12 días 🎂
                 </div>
-                <div class="nightbot-preview-text" id="preview-timer">Haz clic en "Probar Respuesta" para consultar qué anunciaría el bot en vivo...</div>
+              </div>
+
+              <div style="font-size: 0.78rem; background: rgba(0,0,0,0.2); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                <span style="color: #64748b;">Comando sin argumentos · Responde en el chat directamente · </span><code style="color: #60a5fa;">!proximos</code>
               </div>
             </div>
 
-            <!-- 3. !proximos -->
-            <div class="nightbot-card">
-              <div class="nightbot-card-top">
-                <div>
-                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                    <span style="font-size: 1.3rem;">📅</span>
-                    <h4 style="font-family: var(--font-h); font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">!proximos</h4>
-                    <span class="nightbot-badge dynamic">Dinámico (15 Días)</span>
+            <!-- COMANDO 3: !cumplemes -->
+            <div class="glass-card" style="padding: 20px; border: 1.5px solid rgba(16,185,129,0.4); border-radius: 16px;">
+              <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px;">
+                <span style="font-size: 2rem; line-height: 1; flex-shrink: 0;">🗓️</span>
+                <div style="flex: 1;">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+                    <h4 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #34d399; margin: 0;">!cumplemes</h4>
+                    <span style="background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); padding: 2px 9px; border-radius: 10px; font-size: 0.72rem; font-weight: 700;">🗓️ Mes Actual</span>
                   </div>
-                  <p style="color: #94a3b8; font-size: 0.82rem; margin: 0;">
-                    Muestra los cumpleaños que se celebrarán en los próximos 15 días con los días faltantes para cada uno.
+                  <p style="color: #94a3b8; font-size: 0.82rem; margin: 0; line-height: 1.45;">
+                    Lista todos los cumpleaños registrados del mes actual, ordenados por día. Ideal para poner en un timer mensual o cuando alguien pregunta quiénes cumplen este mes.
                   </p>
                 </div>
               </div>
 
-              <div class="nightbot-code-wrap">
-                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;" id="label-code-next">COMANDO DE TWITCH (NIGHTBOT):</span>
-                <code class="nightbot-code-line" id="cmd-code-next" data-nb="!addcom !proximos $(urlfetch {HOST}/api/bot/next)" data-se="!cmd add !proximos ${customapi {HOST}/api/bot/next}">
-                  !addcom !proximos $(urlfetch <span class="nb-host-url">https://cumples.onrender.com</span>/api/bot/next)
-                </code>
-              </div>
-
-              <div class="nightbot-actions">
-                <button type="button" class="btn-copy btn-copy-cmd" data-target="cmd-code-next" style="padding: 7px 14px; font-size: 0.8rem; background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5); color: #93c5fd;">
-                  📋 Copiar Comando
-                </button>
-                <button type="button" class="btn-copy btn-copy-url" data-url="/api/bot/next" style="padding: 7px 12px; font-size: 0.8rem;">
-                  🔗 Copiar URL
-                </button>
-                <button type="button" class="btn-copy btn-test-nb" data-endpoint="/api/bot/next" data-preview="preview-next" style="padding: 7px 14px; font-size: 0.8rem; background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #34d399; margin-left: auto;">
-                  ▶️ Probar Respuesta
-                </button>
-              </div>
-
-              <!-- Vista previa en vivo -->
-              <div class="nightbot-preview">
-                <div class="nightbot-preview-title">
-                  <span>💬 Próximos Cumpleaños Detectados:</span>
+              <div style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 12px; margin-bottom: 12px; border: 1px solid rgba(16,185,129,0.2);">
+                <div style="font-size: 0.7rem; color: #6ee7b7; font-weight: 800; margin-bottom: 6px; letter-spacing: 0.05em;">EJEMPLO DE RESPUESTA:</div>
+                <div style="font-size: 0.82rem; color: #e2e8f0; line-height: 1.5;">
+                  🗓️ Cumpleaños de Octubre: día 22 @capiluisxavi · día 25 @capi_daniellc_21 · día 28 @capidieguito1204 🎂
                 </div>
-                <div class="nightbot-preview-text" id="preview-next">Haz clic en "Probar Respuesta" para consultar...</div>
+              </div>
+
+              <div style="font-size: 0.78rem; background: rgba(0,0,0,0.2); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                <code style="color: #34d399;">!cumplemes</code><span style="color: #64748b;"> · Sin argumentos · Muestra el mes actual automáticamente</span>
               </div>
             </div>
 
-            <!-- 4. !cumplemes -->
-            <div class="nightbot-card">
-              <div class="nightbot-card-top">
-                <div>
-                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                    <span style="font-size: 1.3rem;">🗓️</span>
-                    <h4 style="font-family: var(--font-h); font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">!cumplemes</h4>
-                    <span class="nightbot-badge dynamic">Mes Actual</span>
+            <!-- COMANDO 4: Timer Automático -->
+            <div class="glass-card" style="padding: 20px; border: 1.5px solid rgba(245,158,11,0.4); border-radius: 16px; background: linear-gradient(145deg, rgba(30,20,10,0.8), rgba(16,12,8,0.9));">
+              <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px;">
+                <span style="font-size: 2rem; line-height: 1; flex-shrink: 0;">⏰</span>
+                <div style="flex: 1;">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+                    <h4 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #fbbf24; margin: 0;">Timer Automático</h4>
+                    <span style="background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); padding: 2px 9px; border-radius: 10px; font-size: 0.72rem; font-weight: 700;">⏰ Recordatorio Periódico</span>
                   </div>
-                  <p style="color: #94a3b8; font-size: 0.82rem; margin: 0;">
-                    Lista completa de todos los cumpleaños registrados para el mes actual, ordenados por número de día.
+                  <p style="color: #94a3b8; font-size: 0.82rem; margin: 0; line-height: 1.45;">
+                    El bot avisa en el chat de forma automática cada N minutos (configurable arriba). Si hay cumpleaños hoy → los anuncia. Si alguien está en período de gracia → lo recuerda. Si hay cumpleaños en 1-3 días → los anticipa. Si no hay nada urgente → invita a registrarse.
                   </p>
                 </div>
               </div>
 
-              <div class="nightbot-code-wrap">
-                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;" id="label-code-month">COMANDO DE TWITCH (NIGHTBOT):</span>
-                <code class="nightbot-code-line" id="cmd-code-month" data-nb="!addcom !cumplemes $(urlfetch {HOST}/api/bot/month)" data-se="!cmd add !cumplemes ${customapi {HOST}/api/bot/month}">
-                  !addcom !cumplemes $(urlfetch <span class="nb-host-url">https://cumples.onrender.com</span>/api/bot/month)
-                </code>
-              </div>
-
-              <div class="nightbot-actions">
-                <button type="button" class="btn-copy btn-copy-cmd" data-target="cmd-code-month" style="padding: 7px 14px; font-size: 0.8rem; background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5); color: #93c5fd;">
-                  📋 Copiar Comando
-                </button>
-                <button type="button" class="btn-copy btn-copy-url" data-url="/api/bot/month" style="padding: 7px 12px; font-size: 0.8rem;">
-                  🔗 Copiar URL
-                </button>
-                <button type="button" class="btn-copy btn-test-nb" data-endpoint="/api/bot/month" data-preview="preview-month" style="padding: 7px 14px; font-size: 0.8rem; background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #34d399; margin-left: auto;">
-                  ▶️ Probar Respuesta
-                </button>
-              </div>
-
-              <!-- Vista previa en vivo -->
-              <div class="nightbot-preview">
-                <div class="nightbot-preview-title">
-                  <span>💬 Cumpleañeros del Mes:</span>
+              <div style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 12px; margin-bottom: 12px; border: 1px solid rgba(245,158,11,0.2);">
+                <div style="font-size: 0.7rem; color: #fcd34d; font-weight: 800; margin-bottom: 6px; letter-spacing: 0.05em;">LÓGICA DE PRIORIDAD (DE MAYOR A MENOR):</div>
+                <div style="font-size: 0.8rem; color: #e2e8f0; line-height: 1.7; display: flex; flex-direction: column; gap: 2px;">
+                  <span>🥇 <strong style="color: #fbbf24;">Hoy</strong> → anuncia quién cumple años hoy</span>
+                  <span>🥈 <strong style="color: #fbbf24;">Gracia</strong> → recuerda a quienes aún no han lanzado su alerta</span>
+                  <span>🥉 <strong style="color: #fbbf24;">Próximos 1-3 días</strong> → anticipa cumpleaños muy cercanos</span>
+                  <span>📣 <strong style="color: #94a3b8;">Sin eventos</strong> → invita al chat a registrarse</span>
                 </div>
-                <div class="nightbot-preview-text" id="preview-month">Haz clic en "Probar Respuesta" para consultar...</div>
+              </div>
+
+              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <span style="font-size: 0.78rem; color: #64748b;">Configurado actualmente a cada <strong id="timer-interval-display" style="color: #fbbf24;">20 minutos</strong></span>
+                <button type="button" id="btn-bot-trigger-timer-2" class="btn-copy" style="padding: 7px 14px; font-size: 0.8rem; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5); color: #fde047;">⏰ Disparar Ahora</button>
               </div>
             </div>
 
-            <!-- 5. !regcumple -->
-            <div class="nightbot-card">
-              <div class="nightbot-card-top">
-                <div>
-                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                    <span style="font-size: 1.3rem;">📝</span>
-                    <h4 style="font-family: var(--font-h); font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">!regcumple</h4>
-                    <span class="nightbot-badge static">Informativo</span>
+            <!-- COMANDO 5: !regcumple -->
+            <div class="glass-card" style="padding: 20px; border: 1.5px solid rgba(99,102,241,0.4); border-radius: 16px;">
+              <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px;">
+                <span style="font-size: 2rem; line-height: 1; flex-shrink: 0;">📝</span>
+                <div style="flex: 1;">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+                    <h4 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #818cf8; margin: 0;">!regcumple</h4>
+                    <span style="background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); padding: 2px 9px; border-radius: 10px; font-size: 0.72rem; font-weight: 700;">📝 Registro</span>
                   </div>
-                  <p style="color: #94a3b8; font-size: 0.82rem; margin: 0;">
-                    Enlace directo para que los espectadores registren su cumpleaños gratis con su Nick de Twitch y contraseña.
+                  <p style="color: #94a3b8; font-size: 0.82rem; margin: 0; line-height: 1.45;">
+                    Envía al chat el enlace para que los espectadores registren su cumpleaños gratis. Útil para que nuevos viewers se unan a la plataforma.
                   </p>
                 </div>
               </div>
 
-              <div class="nightbot-code-wrap">
-                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;" id="label-code-reg">COMANDO DE TWITCH (NIGHTBOT):</span>
-                <code class="nightbot-code-line" id="cmd-code-reg" data-nb="!addcom !regcumple ¡Registra tu cumpleaños para que te festejemos con alerta en directo en tu día especial! 🎂 Entra gratis aquí 👉 {HOST} 🎈" data-se="!cmd add !regcumple ¡Registra tu cumpleaños para que te festejemos con alerta en directo en tu día especial! 🎂 Entra gratis aquí 👉 {HOST} 🎈">
-                  !addcom !regcumple ¡Registra tu cumpleaños para que te festejemos con alerta en directo en tu día especial! 🎂 Entra gratis aquí 👉 <span class="nb-host-url">https://cumples.onrender.com</span> 🎈
-                </code>
+              <!-- Editor de respuesta -->
+              <div style="margin-bottom: 10px;">
+                <div style="font-size: 0.7rem; color: #a5b4fc; font-weight: 800; margin-bottom: 6px; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: space-between;">
+                  <span>✏️ RESPUESTA EDITABLE DEL BOT:</span>
+                  <button type="button" class="btn-save-cmd-response btn-copy" data-cmd="regcumple" style="padding: 4px 10px; font-size: 0.72rem; background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.4); color: #a5b4fc;">💾 Guardar</button>
+                </div>
+                <textarea id="cmd-response-regcumple" rows="3" style="width: 100%; background: rgba(0,0,0,0.35); border: 1px solid rgba(99,102,241,0.3); color: #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 0.82rem; font-family: monospace; resize: vertical; box-sizing: border-box; line-height: 1.5;">📝 ¡Registra tu cumpleaños GRATIS para que te festejemos con alerta en directo, música y confeti en el stream! 🎂 Entra aquí 👉 https://cumples.onrender.com 🎈</textarea>
               </div>
-
-              <div class="nightbot-actions">
-                <button type="button" class="btn-copy btn-copy-cmd" data-target="cmd-code-reg" style="padding: 7px 14px; font-size: 0.8rem; background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5); color: #93c5fd;">
-                  📋 Copiar Comando
-                </button>
-              </div>
+              <div style="font-size: 0.75rem; color: #64748b;">Puedes usar <code style="color: #a5b4fc;">{URL}</code> — se reemplaza con la URL del sistema automáticamente.</div>
             </div>
 
-            <!-- 6. !felicitar -->
-            <div class="nightbot-card">
-              <div class="nightbot-card-top">
-                <div>
-                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                    <span style="font-size: 1.3rem;">🎊</span>
-                    <h4 style="font-family: var(--font-h); font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">!felicitar</h4>
-                    <span class="nightbot-badge static">Informativo</span>
+            <!-- COMANDO 6: !felicitar -->
+            <div class="glass-card" style="padding: 20px; border: 1.5px solid rgba(236,72,153,0.4); border-radius: 16px;">
+              <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px;">
+                <span style="font-size: 2rem; line-height: 1; flex-shrink: 0;">🎊</span>
+                <div style="flex: 1;">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+                    <h4 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #f472b6; margin: 0;">!felicitar</h4>
+                    <span style="background: rgba(236,72,153,0.15); color: #f9a8d4; border: 1px solid rgba(236,72,153,0.3); padding: 2px 9px; border-radius: 10px; font-size: 0.72rem; font-weight: 700;">🎊 Felicitación</span>
                   </div>
-                  <p style="color: #94a3b8; font-size: 0.82rem; margin: 0;">
-                    Invita a la comunidad a felicitar al cumpleañero en pantalla con lluvia de música y tarjetas de felicitación.
+                  <p style="color: #94a3b8; font-size: 0.82rem; margin: 0; line-height: 1.45;">
+                    Invita al chat a mandar una felicitación en directo al cumpleañero. Cualquier viewer puede enviar una tarjeta que aparece en pantalla con música y confeti.
                   </p>
                 </div>
               </div>
 
-              <div class="nightbot-code-wrap">
-                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;" id="label-code-felic">COMANDO DE TWITCH (NIGHTBOT):</span>
-                <code class="nightbot-code-line" id="cmd-code-felic" data-nb="!addcom !felicitar 🎊 ¡Mándale una felicitación en directo al cumpleañero con música y confeti en pantalla entrando a: {HOST} 🎉" data-se="!cmd add !felicitar 🎊 ¡Mándale una felicitación en directo al cumpleañero con música y confeti en pantalla entrando a: {HOST} 🎉">
-                  !addcom !felicitar 🎊 ¡Mándale una felicitación en directo al cumpleañero con música y confeti en pantalla entrando a: <span class="nb-host-url">https://cumples.onrender.com</span> 🎉
-                </code>
+              <!-- Editor de respuesta -->
+              <div style="margin-bottom: 10px;">
+                <div style="font-size: 0.7rem; color: #f9a8d4; font-weight: 800; margin-bottom: 6px; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: space-between;">
+                  <span>✏️ RESPUESTA EDITABLE DEL BOT:</span>
+                  <button type="button" class="btn-save-cmd-response btn-copy" data-cmd="felicitar" style="padding: 4px 10px; font-size: 0.72rem; background: rgba(236,72,153,0.2); border-color: rgba(236,72,153,0.4); color: #f9a8d4;">💾 Guardar</button>
+                </div>
+                <textarea id="cmd-response-felicitar" rows="3" style="width: 100%; background: rgba(0,0,0,0.35); border: 1px solid rgba(236,72,153,0.3); color: #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 0.82rem; font-family: monospace; resize: vertical; box-sizing: border-box; line-height: 1.5;">🎊 ¡Mándale una felicitación en directo al cumpleañero con música y confeti en pantalla! 🎉 Entra aquí 👉 https://cumples.onrender.com</textarea>
               </div>
-
-              <div class="nightbot-actions">
-                <button type="button" class="btn-copy btn-copy-cmd" data-target="cmd-code-felic" style="padding: 7px 14px; font-size: 0.8rem; background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5); color: #93c5fd;">
-                  📋 Copiar Comando
-                </button>
-              </div>
+              <div style="font-size: 0.75rem; color: #64748b;">Puedes usar <code style="color: #f9a8d4;">{URL}</code> — se reemplaza con la URL del sistema automáticamente.</div>
             </div>
 
-            <!-- 7. !cumpleinfo -->
-            <div class="nightbot-card" style="grid-column: 1 / -1;">
-              <div class="nightbot-card-top">
-                <div>
-                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                    <span style="font-size: 1.3rem;">💡</span>
-                    <h4 style="font-family: var(--font-h); font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">!cumpleinfo / !comandoscumple</h4>
-                    <span class="nightbot-badge static">Menú de Ayuda</span>
+            <!-- COMANDO 7: !cumpleinfo -->
+            <div class="glass-card" style="padding: 20px; border: 1.5px solid rgba(6,182,212,0.4); border-radius: 16px; grid-column: 1 / -1;">
+              <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px;">
+                <span style="font-size: 2rem; line-height: 1; flex-shrink: 0;">💡</span>
+                <div style="flex: 1;">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+                    <h4 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #22d3ee; margin: 0;">!cumpleinfo</h4>
+                    <code style="background: rgba(6,182,212,0.2); color: #67e8f9; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem;">también: !comandoscumple</code>
+                    <span style="background: rgba(6,182,212,0.15); color: #67e8f9; border: 1px solid rgba(6,182,212,0.3); padding: 2px 9px; border-radius: 10px; font-size: 0.72rem; font-weight: 700;">💡 Menú de Ayuda</span>
                   </div>
-                  <p style="color: #94a3b8; font-size: 0.82rem; margin: 0;">
-                    Comando de ayuda con el resumen de todos los comandos disponibles para que tus espectadores sepan cómo usarlos.
+                  <p style="color: #94a3b8; font-size: 0.82rem; margin: 0; line-height: 1.45;">
+                    Muestra en el chat un resumen de todos los comandos disponibles. Útil para que nuevos viewers sepan cómo interactuar con el sistema de cumpleaños.
                   </p>
                 </div>
               </div>
 
-              <div class="nightbot-code-wrap">
-                <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 800;" id="label-code-info">COMANDO DE TWITCH (NIGHTBOT):</span>
-                <code class="nightbot-code-line" id="cmd-code-info" data-nb="!addcom !cumpleinfo 🎂 Comandos de Cumpleaños: !cumple [usuario] · !proximos (en 15 días) · !cumplemes (este mes) · !regcumple (regístrate gratis) · !felicitar (mandar felicitación en vivo) 🎉" data-se="!cmd add !cumpleinfo 🎂 Comandos de Cumpleaños: !cumple [usuario] · !proximos (en 15 días) · !cumplemes (este mes) · !regcumple (regístrate gratis) · !felicitar (mandar felicitación en vivo) 🎉">
-                  !addcom !cumpleinfo 🎂 Comandos de Cumpleaños: !cumple [usuario] · !proximos (en 15 días) · !cumplemes (este mes) · !regcumple (regístrate gratis) · !felicitar (mandar felicitación en vivo) 🎉
-                </code>
-              </div>
-
-              <div class="nightbot-actions">
-                <button type="button" class="btn-copy btn-copy-cmd" data-target="cmd-code-info" style="padding: 7px 14px; font-size: 0.8rem; background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5); color: #93c5fd;">
-                  📋 Copiar Comando
-                </button>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 12px; border: 1px solid rgba(6,182,212,0.2);">
+                  <div style="font-size: 0.7rem; color: #67e8f9; font-weight: 800; margin-bottom: 6px; letter-spacing: 0.05em;">RESPUESTA DEL BOT:</div>
+                  <div style="font-size: 0.82rem; color: #e2e8f0; line-height: 1.6;">
+                    🎂 Comandos de Cumpleaños: <code>!cumple [usuario]</code> · <code>!proximos</code> · <code>!cumplemes</code> · <code>!regcumple</code> · <code>!felicitar</code> 🎉
+                  </div>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); border-radius: 10px; padding: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                  <div style="font-size: 0.7rem; color: #64748b; font-weight: 700; margin-bottom: 8px; letter-spacing: 0.05em;">TODOS LOS COMANDOS DISPONIBLES:</div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 0.78rem;">
+                    <code style="color: #c084fc;">!cumple</code>
+                    <code style="color: #60a5fa;">!proximos</code>
+                    <code style="color: #34d399;">!cumplemes</code>
+                    <code style="color: #818cf8;">!regcumple</code>
+                    <code style="color: #f472b6;">!felicitar</code>
+                    <code style="color: #22d3ee;">!cumpleinfo</code>
+                  </div>
+                </div>
               </div>
             </div>
 
           </div>
 
-          <!-- Consejos Pro y Guía de Timers Automáticos -->
-          <div class="glass-card" style="padding: 24px; margin-bottom: 28px; border: 1px solid rgba(255,255,255,0.08);">
-            <h4 style="font-family: var(--font-h); font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0 0 14px 0; display: flex; align-items: center; gap: 10px;">
-              <span>💡</span>
-              <span id="bot-tips-title">Guía de Configuración &amp; Timers Automáticos</span>
+          <!-- SECCIÓN: Probar Respuesta en Vivo -->
+          <div class="glass-card" style="padding: 22px; margin-bottom: 28px; border: 1px solid rgba(255,255,255,0.08);">
+            <h4 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
+              <span>🔬</span> Probar Respuesta del Bot en Tiempo Real
             </h4>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; font-size: 0.83rem; color: #cbd5e1; line-height: 1.5;">
-              <div style="background: rgba(0,0,0,0.25); padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.04);">
-                <strong style="color: #fbbf24; display: block; margin-bottom: 4px;">⏰ ¿Cómo programar el Timer Automático?</strong>
-                En el panel web de tu bot ve a la sección <strong>Timers / Temporizadores</strong>, crea uno nuevo (ej: nombre "Cumples", cada 15 min y 3 líneas de chat) y en el mensaje pon el código copiado arriba. ¡El bot avisará solo cuando haya cumpleañeros!
-              </div>
-              <div style="background: rgba(0,0,0,0.25); padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.04);">
-                <strong style="color: #38bdf8; display: block; margin-bottom: 4px;">⏱️ Evitar Spam en el Chat (Cooldown):</strong>
-                Puedes añadir un cooldown de 5 segundos al comando <code>!cumple</code> para evitar que saturen el chat. En Nightbot: <code>!editcom !cumple -cd=5</code>. En StreamElements se configura desde el panel web de comandos.
-              </div>
-              <div style="background: rgba(0,0,0,0.25); padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.04);">
-                <strong style="color: #a78bfa; display: block; margin-bottom: 4px;">🔀 Alias como !micumple:</strong>
-                Si tus viewers escriben <code>!micumple</code> o <code>!cumpleaños</code>, puedes redirigirlos al comando principal. En Nightbot: <code>!addcom !micumple -a=!cumple</code>. En StreamElements puedes agregarlo como alias en la configuración del comando.
-              </div>
+            <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap;">
+              <input type="text" id="input-test-user" placeholder="Escribe un nick de Twitch para simular !cumple @usuario (déjalo vacío para tu propio cumple)..." style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; box-sizing: border-box; min-width: 0;">
+              <button type="button" id="btn-test-check-custom" class="btn-copy" style="padding: 10px 16px; font-size: 0.83rem; background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.4); color: #34d399; white-space: nowrap;">▶️ Probar !cumple</button>
+              <button type="button" class="btn-copy btn-test-nb" data-endpoint="/api/bot/timer" data-preview="preview-timer-live" style="padding: 10px 16px; font-size: 0.83rem; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.4); color: #fde047; white-space: nowrap;">⏰ Probar Timer</button>
+            </div>
+            <div style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 14px 16px; border: 1px solid rgba(255,255,255,0.06); min-height: 54px;">
+              <div style="font-size: 0.7rem; color: #64748b; margin-bottom: 6px; font-weight: 700; letter-spacing: 0.04em;">💬 RESPUESTA QUE ENVIARÁ EL BOT AL CHAT:</div>
+              <div id="preview-check" style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.5; font-style: italic;">Ingresa un usuario y presiona "Probar !cumple" para ver la respuesta exacta del bot...</div>
+              <div id="preview-timer-live" style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.5; font-style: italic; display: none;"></div>
             </div>
           </div>
+
         </div>
 
       </div>
