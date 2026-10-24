@@ -241,6 +241,15 @@ async function handleChatMessage(channel, tags, message, self) {
         return; // Silencio total: no responde en chat
     }
 
+    // ─── EASTER EGG: "yocapi condon" exclusivo de capiluisxavi ────────────────
+    // Solo para el usuario capiluisxavi, sin respuesta en chat y sin visual en overlay.
+    if (text.toLowerCase() === 'yocapi condon' && senderLogin === 'capiluisxavi') {
+        if (broadcastToOverlayRef) {
+            broadcastToOverlayRef({ type: 'play_audio', sound: 'condon.mp3' });
+        }
+        return; // Silencio total: no responde en chat
+    }
+
     // ─── DETECCIÓN PASIVA DE CAMBIO DE NOMBRE DE TWITCH ───────────────────────
     // Twitch envía `user-id` en cada mensaje — es permanente aunque el nombre cambie.
     // Si el user-id está en la BD con otro username, renombramos automáticamente en segundo plano.
@@ -336,7 +345,7 @@ async function handleChatMessage(channel, tags, message, self) {
                 `(Ej: !registro 11-06 para el 11 de junio). Para registrar a un compañero: !registro DD-MM usuario (Ej: !registro 11-06 capiluisxavi) 🎉`);
         }
 
-        const regDay   = parseInt(match[1], 10);
+        const regDay = parseInt(match[1], 10);
         const regMonth = parseInt(match[2], 10);
 
         if (regMonth < 1 || regMonth > 12) {
@@ -346,14 +355,14 @@ async function handleChatMessage(channel, tags, message, self) {
             return sendChat(`⚠️ @${sender}, el día debe ser del 1 al 31. Ej: !registro 11-06 = 11 de Junio 📅`);
         }
 
-        const monthName      = MONTH_NAMES[regMonth] || regMonth;
+        const monthName = MONTH_NAMES[regMonth] || regMonth;
         const senderLoginReg = (tags.username || sender).toLowerCase().replace(/[^a-z0-9_]/g, '');
 
-        const cleanTarget   = targetPart.toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '');
-        const isSelf        = !cleanTarget || cleanTarget === senderLoginReg;
-        const targetLogin   = isSelf ? senderLoginReg : cleanTarget;
+        const cleanTarget = targetPart.toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '');
+        const isSelf = !cleanTarget || cleanTarget === senderLoginReg;
+        const targetLogin = isSelf ? senderLoginReg : cleanTarget;
         const targetDisplay = isSelf ? (tags['display-name'] || senderLoginReg) : targetPart.replace(/^@/, '');
-        const twitchId      = isSelf && tags['user-id'] ? String(tags['user-id']).trim() : '';
+        const twitchId = isSelf && tags['user-id'] ? String(tags['user-id']).trim() : '';
 
         try {
             const existing = await dbRef.getUser(targetLogin);
@@ -393,9 +402,9 @@ async function handleChatMessage(channel, tags, message, self) {
                 }
 
                 // Actualizar fecha
-                existing.birth_month  = regMonth;
-                existing.birth_day    = regDay;
-                existing.created_at   = new Date().toISOString();
+                existing.birth_month = regMonth;
+                existing.birth_day = regDay;
+                existing.created_at = new Date().toISOString();
                 existing.birthday_unlocked = false;
                 if (twitchId && !existing.twitch_id) existing.twitch_id = twitchId;
                 await dbRef.saveUser(existing);
@@ -411,19 +420,19 @@ async function handleChatMessage(channel, tags, message, self) {
             // ── Registro NUEVO desde chat ──
             const nowIso = new Date().toISOString();
             await dbRef.saveUser({
-                username:       targetLogin,
-                display_name:   targetDisplay,
-                pin_hash:       '',
-                recovery_hash:  '',
-                profile_image:  '/img/yocapi.png',
-                birth_month:    regMonth,
-                birth_day:      regDay,
+                username: targetLogin,
+                display_name: targetDisplay,
+                pin_hash: '',
+                recovery_hash: '',
+                profile_image: '/img/yocapi.png',
+                birth_month: regMonth,
+                birth_day: regDay,
                 custom_message: '',
                 selected_sound: 'HBSilbato.mp3',
                 birthday_unlocked: false,
-                created_at:     nowIso,
-                registered_at:  nowIso,
-                twitch_id:      twitchId
+                created_at: nowIso,
+                registered_at: nowIso,
+                twitch_id: twitchId
             });
 
             if (isSelf) {
@@ -748,8 +757,8 @@ async function handleChatMessage(channel, tags, message, self) {
                 { file: 'HBVoz.mp3', label: '🎤 Felicitación con Voz' }
             ];
             const musicLock = getMusicLockStatusRef ? getMusicLockStatusRef() : { locked: false };
-            const availableOptions = musicLock.locked 
-                ? soundOptions.filter(s => s.file !== 'MBMusica.mp3') 
+            const availableOptions = musicLock.locked
+                ? soundOptions.filter(s => s.file !== 'MBMusica.mp3')
                 : soundOptions;
             const picked = availableOptions[Math.floor(Math.random() * availableOptions.length)];
             chosenSound = picked.file;
@@ -977,7 +986,7 @@ async function connectBot() {
             try {
                 client.removeAllListeners();
                 await client.disconnect();
-            } catch (_) {}
+            } catch (_) { }
             client = null;
         }
 
@@ -995,7 +1004,7 @@ async function connectBot() {
                 username,
                 password
             },
-            channels: [ channel ]
+            channels: [channel]
         });
 
         client.on('message', handleChatMessage);
@@ -1032,7 +1041,7 @@ async function disconnectBot() {
     if (client) {
         try {
             await client.disconnect();
-        } catch (_) {}
+        } catch (_) { }
         client = null;
     }
     status = 'disconnected';
