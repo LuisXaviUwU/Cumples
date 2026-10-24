@@ -2221,7 +2221,7 @@ document.addEventListener('DOMContentLoaded', () => {
     items: [
       {
         name: '!hoyesmicumple',
-        aliases: '!mialerta · !lanzarmicumple',
+        aliases: '!hoyesmicum · !mialerta · !lanzarmicumple',
         desc: 'Detona tu alerta VIP en directo: despliega tarjeta en OBS con foto, confeti 3D y tu música seleccionada.',
         tag: '👑 EN OBS',
         color: '#f59e0b'
