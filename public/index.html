@@ -75,7 +75,7 @@
         <!-- Pestañas Registro / Login -->
         <div class="auth-nav-tabs">
           <button type="button" id="tab-btn-register" class="auth-tab-btn active">🎂 Registrarme</button>
-          <button type="button" id="tab-btn-login" class="auth-tab-btn">🔑 Ya tengo Cuenta</button>
+          <button type="button" id="tab-btn-login" class="auth-tab-btn">🔑 Ya tengo cuenta</button>
         </div>
 
         <!-- FORMULARIO 1: REGISTRO NUEVO -->
@@ -93,15 +93,6 @@
             <label class="input-label" for="reg-username">Tu Nombre en Twitch</label>
             <input type="text" id="reg-username" class="custom-input" placeholder="Ej: yocapi_pr" autocomplete="off"
               required>
-          </div>
-
-          <div class="input-group">
-            <label class="input-label" for="reg-pin">
-              <span>Crea tu Contraseña</span>
-              <span style="font-size: 0.7rem; color: var(--text-dim);">6 a 15 caracteres</span>
-            </label>
-            <input type="password" id="reg-pin" class="custom-input" placeholder="Mínimo 6 caracteres" minlength="6"
-              maxlength="15" required>
           </div>
 
           <div class="form-row-grid">
@@ -132,20 +123,11 @@
             </div>
           </div>
 
-          <div class="input-group">
-            <label class="input-label" for="reg-secret">
-              <span>Palabra Secreta</span>
-              <span style="font-size: 0.7rem; color: var(--text-dim);">Para recuperar tu contraseña</span>
-            </label>
-            <input type="text" id="reg-secret" class="custom-input"
-              placeholder="Ej: nombre de tu mascota o comida favorita" required>
-          </div>
           <button type="submit" id="btn-submit-register" class="btn-primary" style="margin-top: 14px;">
             🎉 Registrar Mi Cumpleaños
           </button>
         </form>
 
-        <!-- FORMULARIO 2: INICIO DE SESIÓN -->
         <form id="form-login" style="display: none;">
           <div class="input-group">
             <label class="input-label" for="login-username">Tu Nombre en Twitch</label>
@@ -153,60 +135,15 @@
               autocomplete="off" required>
           </div>
 
-          <div class="input-group">
-            <label class="input-label" for="login-pin">Tu Contraseña</label>
-            <input type="password" id="login-pin" class="custom-input" placeholder="Tu contraseña" minlength="6"
-              maxlength="15" required>
-          </div>
-
           <button type="submit" id="btn-submit-login" class="btn-primary">
-            🔓 Iniciar Sesión
+            🔓 Entrar
           </button>
-
-          <div style="text-align: center; margin-top: 14px;">
-            <a href="#" id="link-forgot-pin"
-              style="color: var(--twitch-light); font-size: 0.8rem; text-decoration: none; font-weight: 600;">¿Olvidaste
-              tu contraseña? Recupérala aquí →</a>
-          </div>
-        </form>
-
-        <!-- FORMULARIO 3: RESTABLECER CONTRASEÑA CON PALABRA SECRETA -->
-        <form id="form-reset-pin" style="display: none;">
-          <h4 style="font-family: var(--font-heading); font-size: 1.1rem; margin-bottom: 14px; text-align: center;">🔑
-            Recuperar Mi Contraseña</h4>
-
-          <div class="input-group">
-            <label class="input-label" for="reset-username">Tu Nombre en Twitch</label>
-            <input type="text" id="reset-username" class="custom-input" placeholder="Tu usuario registrado"
-              autocomplete="off" required>
-          </div>
-
-          <div class="input-group">
-            <label class="input-label" for="reset-secret">Tu Palabra Secreta</label>
-            <input type="text" id="reset-secret" class="custom-input"
-              placeholder="La palabra que pusiste al registrarte" required>
-          </div>
-
-          <div class="input-group">
-            <label class="input-label" for="reset-new-pin">Crea tu Nueva Contraseña (6 a 15 caracteres)</label>
-            <input type="password" id="reset-new-pin" class="custom-input"
-              placeholder="Nueva contraseña (6-15 caracteres)" minlength="6" maxlength="15" required>
-          </div>
-
-          <button type="submit" id="btn-submit-reset" class="btn-primary">
-            ✅ Restablecer Contraseña y Entrar
-          </button>
-
-          <div style="text-align: center; margin-top: 14px;">
-            <a href="#" id="link-back-login"
-              style="color: var(--text-dim); font-size: 0.8rem; text-decoration: none; font-weight: 600;">← Volver a
-              Iniciar Sesión</a>
-          </div>
         </form>
       </div>
     </div>
 
     <!-- ESTADO: LOGUEADO -->
+
     <div id="state-user" style="display: none;">
       <!-- Perfil del usuario -->
       <div class="profile-pill">
