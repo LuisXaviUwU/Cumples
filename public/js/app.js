@@ -292,24 +292,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   formReg.addEventListener('submit', (e) => {
     e.preventDefault();
     const username = regUserInput.value.trim();
-    const pin = document.getElementById('reg-pin').value.trim();
-    const secret = document.getElementById('reg-secret').value.trim();
     const month = parseInt(regMonth.value, 10);
     const day = parseInt(regDay.value, 10);
 
-    if (pin.length < 6 || pin.length > 15) {
-      showToast('La contraseña debe tener entre 6 y 15 caracteres', 'error');
+    if (!username || username.length < 2) {
+      showToast('Ingresa tu nombre de Twitch válido', 'error');
       return;
     }
-    if (!secret || secret.length < 2) {
-      showToast('Ingresa tu palabra secreta para poder recuperar tu cuenta si lo necesitas', 'error');
+    if (!month || !day) {
+      showToast('Selecciona tu mes y día de cumpleaños', 'error');
       return;
     }
 
     pendingRegistrationPayload = {
       username,
-      pin,
-      secret_word: secret,
       birth_month: month,
       birth_day: day
     };
@@ -371,7 +367,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   formLog.addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = document.getElementById('login-username').value.trim();
-    const pin = document.getElementById('login-pin').value.trim();
+
+    if (!username) {
+      showToast('Ingresa tu nombre de Twitch', 'error');
+      return;
+    }
 
     const submitBtn = document.getElementById('btn-submit-login');
     submitBtn.disabled = true;
@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, pin })
+        body: JSON.stringify({ username })
       });
       const data = await res.json();
       if (data.success) {
@@ -395,73 +395,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       showToast('Error conectando con el servidor', 'error');
     } finally {
       submitBtn.disabled = false;
-      submitBtn.textContent = '🔓 Iniciar Sesión';
+      submitBtn.textContent = '🔓 Entrar';
     }
   });
-
-  // Flujo de Olvido / Recuperación de PIN
-  const formReset = document.getElementById('form-reset-pin');
-  const linkForgotPin = document.getElementById('link-forgot-pin');
-  const linkBackLogin = document.getElementById('link-back-login');
-
-  if (linkForgotPin) {
-    linkForgotPin.addEventListener('click', (e) => {
-      e.preventDefault();
-      formLog.style.display = 'none';
-      formReg.style.display = 'none';
-      formReset.style.display = 'block';
-    });
-  }
-
-  if (linkBackLogin) {
-    linkBackLogin.addEventListener('click', (e) => {
-      e.preventDefault();
-      formReset.style.display = 'none';
-      formLog.style.display = 'block';
-    });
-  }
-
-  if (formReset) {
-    formReset.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const username = document.getElementById('reset-username').value.trim();
-      const secret_word = document.getElementById('reset-secret').value.trim();
-      const new_pin = document.getElementById('reset-new-pin').value.trim();
-
-      if (new_pin.length < 6 || new_pin.length > 15) {
-        showToast('La nueva contraseña debe tener entre 6 y 15 caracteres', 'error');
-        return;
-      }
-
-      const resetBtn = document.getElementById('btn-submit-reset');
-
-      resetBtn.disabled = true;
-      resetBtn.textContent = 'Verificando...';
-
-      try {
-        const res = await fetch('/api/auth/reset-pin', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, secret_word, new_pin })
-        });
-        const data = await res.json();
-        if (data.success) {
-          showToast(data.message, 'success');
-          formReset.style.display = 'none';
-          formLog.style.display = 'block';
-          document.getElementById('login-username').value = username;
-          document.getElementById('login-pin').value = new_pin;
-        } else {
-          showToast(data.error || 'Error al restablecer contraseña', 'error');
-        }
-      } catch {
-        showToast('Error de conexión con el servidor', 'error');
-      } finally {
-        resetBtn.disabled = false;
-        resetBtn.textContent = '✅ Restablecer PIN y Entrar';
-      }
-    });
-  }
 
   // Comprobar sesión activa
   async function checkUserSession() {

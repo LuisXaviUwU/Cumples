@@ -2180,3 +2180,452 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCardScale(simState.scale);
   refreshAnimHint();
 })();
+
+// ============================================================================
+// GENERADOR DE IMÁGENES DE COMANDOS (CANVAS EXPORTER HD)
+// ============================================================================
+(function() {
+  const COMMUNITY_COMMANDS = [
+    {
+      name: '!registro DD-MM',
+      aliases: '!registrarme DD-MM',
+      desc: 'Registra o actualiza tu fecha de cumpleaños directo desde el chat sin contraseña (Ej: !registro 11-06 para el 11 de Junio).',
+      tag: '✨ NUEVO',
+      color: '#10b981'
+    },
+    {
+      name: '!hoyesmicumple',
+      aliases: '!mialerta · !lanzarmicumple',
+      desc: 'Detona tu alerta VIP en directo: despliega tarjeta en OBS con foto, confeti 3D y tu música seleccionada.',
+      tag: '👑 EN OBS',
+      color: '#f59e0b'
+    },
+    {
+      name: '!felicitar [usuario]',
+      aliases: '!hbfelicitar · !felicitaciones',
+      desc: 'Envía felicitaciones con lluvia de confeti en pantalla al cumpleañero festejado hoy en stream.',
+      tag: '🎉 EN VIVO',
+      color: '#ec4899'
+    },
+    {
+      name: '!hbcambio <frase>',
+      aliases: '!hbfrase · !micumplefrase',
+      desc: 'Personaliza la frase o dedicatoria que se mostrará en pantalla al detonar tu alerta (máx. 60 letras).',
+      tag: '💬 FRASE OBS',
+      color: '#8b5cf6'
+    },
+    {
+      name: '!hbsonido [1|2|3]',
+      aliases: '!misonido · !cambiarsonido',
+      desc: 'Selecciona el efecto de sonido que sonará en tu alerta de cumpleaños (Silbato, Campana, Trompeta, etc.).',
+      tag: '🎵 AUDIO',
+      color: '#a855f7'
+    },
+    {
+      name: '!cumple [@usuario]',
+      aliases: '!micumple',
+      desc: 'Consulta cuándo es tu cumpleaños o el de cualquier compañero del canal con días restantes.',
+      tag: '📅 CONSULTA',
+      color: '#3b82f6'
+    },
+    {
+      name: '!proximos',
+      aliases: '',
+      desc: 'Muestra en el chat la lista de los próximos 5 cumpleaños que están por celebrarse.',
+      tag: '🌟 PRÓXIMOS',
+      color: '#06b6d4'
+    },
+    {
+      name: '!cumplemes [mes]',
+      aliases: '',
+      desc: 'Consulta todos los miembros de la comunidad que cumplen años en el mes actual o especificado.',
+      tag: '📆 MENSUAL',
+      color: '#6366f1'
+    },
+    {
+      name: '!cumpleinfo',
+      aliases: '',
+      desc: 'Verifica el estado de tu cuenta, tu fecha registrada y el enlace al panel interactivo.',
+      tag: 'ℹ️ PERFIL',
+      color: '#14b8a6'
+    },
+    {
+      name: '!ayudacumple',
+      aliases: '',
+      desc: 'Despliega en el chat de Twitch la guía rápida con todos los comandos y su forma de uso.',
+      tag: '💡 AYUDA',
+      color: '#f97316'
+    }
+  ];
+
+  const MODS_COMMANDS = [
+    {
+      name: '!hbgrabacion [on|off]',
+      aliases: '!hbmodovideo · !hbcine · !hbpausa',
+      desc: 'Modo Grabación: Pausa las alertas en pantalla para evitar interrupciones al grabar videos o momentos serios.',
+      tag: '🛡️ MODO VIDEO',
+      color: '#ef4444'
+    },
+    {
+      name: '!hbalertas [on|off]',
+      aliases: '!cumplealertas · !alertascumple',
+      desc: 'Habilita o deshabilita la alerta visual de !hoyesmicumple en la pantalla de OBS Studio.',
+      tag: '🛡️ ALERTAS OBS',
+      color: '#f43f5e'
+    },
+    {
+      name: '!hbfelicitaciones [on|off]',
+      aliases: '!hbfelicitar on|off',
+      desc: 'Activa o desactiva que los espectadores envíen felicitaciones y confeti en pantalla.',
+      tag: '🛡️ FELICITACIONES',
+      color: '#e11d48'
+    },
+    {
+      name: '!hbmod [on|off]',
+      aliases: '!hbadmin',
+      desc: 'Interruptor maestro para habilitar o deshabilitar todos los sistemas de alertas del bot a la vez.',
+      tag: '🛡️ MASTER SWITCH',
+      color: '#dc2626'
+    },
+    {
+      name: '!hbestado',
+      aliases: '',
+      desc: 'Muestra en el chat el estado actual de las alertas, modo grabación y timers automáticos.',
+      tag: '🛡️ ESTADO BOT',
+      color: '#b91c1c'
+    }
+  ];
+
+  function drawRoundRect(ctx, x, y, width, height, radius, fill, stroke) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    if (fill) ctx.fill();
+    if (stroke) ctx.stroke();
+  }
+
+  function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+    const words = text.split(' ');
+    let line = '';
+    let currentY = y;
+    for (let n = 0; n < words.length; n++) {
+      const testLine = line + words[n] + ' ';
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > maxWidth && n > 0) {
+        ctx.fillText(line.trim(), x, currentY);
+        line = words[n] + ' ';
+        currentY += lineHeight;
+      } else {
+        line = testLine;
+      }
+    }
+    ctx.fillText(line.trim(), x, currentY);
+    return currentY + lineHeight;
+  }
+
+  function renderCommandsCanvas(type) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const width = 1320;
+    const padding = 50;
+    const gap = 20;
+    const cardW = (width - (padding * 2) - gap) / 2;
+    const cardH = 126;
+
+    let title = '';
+    let subtitle = '';
+    let icon = '';
+    let sections = [];
+    let accentGradient = ['#8b5cf6', '#ec4899'];
+
+    if (type === 'community') {
+      title = 'COMANDOS DE CUMPLEAÑOS · COMUNIDAD & CHAT';
+      subtitle = 'Escribe estos comandos directamente en el chat durante el stream para festejar y personalizar tu alerta';
+      icon = '🎉';
+      accentGradient = ['#8b5cf6', '#3b82f6'];
+      sections.push({ title: 'Comandos para el Chat de Twitch', items: COMMUNITY_COMMANDS });
+    } else if (type === 'mods') {
+      title = 'COMANDOS DE CONTROL · STREAMER & MODS';
+      subtitle = 'Comandos protegidos exclusivos para @yocapi_pr y moderadores para pausar o activar alertas en directo';
+      icon = '🛡️';
+      accentGradient = ['#ef4444', '#f97316'];
+      sections.push({ title: 'Control de Alertas y Grabación', items: MODS_COMMANDS });
+    } else {
+      title = 'LISTA MAESTRA DE COMANDOS DEL BOT DE CUMPLEAÑOS';
+      subtitle = 'Todos los comandos del bot organizados por permisos · Canal de Twitch @yocapi_pr';
+      icon = '⚡';
+      accentGradient = ['#9333ea', '#ef4444'];
+      sections.push({ title: 'Comandos para el Chat y Comunidad', items: COMMUNITY_COMMANDS });
+      sections.push({ title: 'Control Exclusivo para Streamer (@yocapi_pr) y Moderadores', items: MODS_COMMANDS });
+    }
+
+    // Calcular altura total
+    let totalHeight = 180; // Header
+    sections.forEach(sec => {
+      totalHeight += 50; // Section title
+      const rows = Math.ceil(sec.items.length / 2);
+      totalHeight += rows * (cardH + gap) + 20;
+    });
+    totalHeight += 75; // Footer
+
+    canvas.width = width;
+    canvas.height = totalHeight;
+
+    // 1. Fondo elegante con degradado espacial
+    const bgGrad = ctx.createLinearGradient(0, 0, width, totalHeight);
+    bgGrad.addColorStop(0, '#0c0817');
+    bgGrad.addColorStop(0.5, '#120d24');
+    bgGrad.addColorStop(1, '#07050d');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, totalHeight);
+
+    // Resplandor de fondo en esquinas
+    const radial1 = ctx.createRadialGradient(200, 100, 10, 200, 100, 500);
+    radial1.addColorStop(0, type === 'mods' ? 'rgba(239,68,68,0.18)' : 'rgba(147,51,234,0.22)');
+    radial1.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = radial1;
+    ctx.fillRect(0, 0, width, totalHeight);
+
+    const radial2 = ctx.createRadialGradient(width - 200, totalHeight - 150, 10, width - 200, totalHeight - 150, 550);
+    radial2.addColorStop(0, type === 'mods' ? 'rgba(185,28,28,0.15)' : 'rgba(59,130,246,0.18)');
+    radial2.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = radial2;
+    ctx.fillRect(0, 0, width, totalHeight);
+
+    // Marco exterior con brillo sutil
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.lineWidth = 2;
+    drawRoundRect(ctx, 16, 16, width - 32, totalHeight - 32, 20, null, true);
+
+    // 2. Header
+    // Badge de canal
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+    ctx.lineWidth = 1;
+    drawRoundRect(ctx, padding, 36, 320, 28, 14, true, true);
+
+    ctx.font = 'bold 12px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = '#c084fc';
+    ctx.fillText('🟣 CANAL TWITCH: twitch.tv/yocapi_pr', padding + 16, 54);
+
+    // Título Principal
+    ctx.font = '800 28px "Outfit", sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(`${icon} ${title}`, padding, 98);
+
+    // Subtítulo
+    ctx.font = '14px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillText(subtitle, padding, 126);
+
+    // Línea divisora con degradado
+    const lineGrad = ctx.createLinearGradient(padding, 0, width - padding, 0);
+    lineGrad.addColorStop(0, accentGradient[0]);
+    lineGrad.addColorStop(0.5, accentGradient[1]);
+    lineGrad.addColorStop(1, 'rgba(255,255,255,0.05)');
+    ctx.fillStyle = lineGrad;
+    ctx.fillRect(padding, 148, width - (padding * 2), 2);
+
+    // 3. Renderizar Secciones y Tarjetas
+    let currentY = 175;
+
+    sections.forEach(sec => {
+      // Título de sección si hay más de 1 o para dar estructura
+      ctx.font = 'bold 18px "Outfit", sans-serif';
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillText(sec.title, padding, currentY + 22);
+
+      currentY += 40;
+
+      for (let i = 0; i < sec.items.length; i++) {
+        const item = sec.items[i];
+        const col = i % 2;
+        const row = Math.floor(i / 2);
+
+        const cardX = padding + col * (cardW + gap);
+        const cardY = currentY + row * (cardH + gap);
+
+        // Fondo de tarjeta (Glassmorphism oscuro)
+        ctx.fillStyle = 'rgba(18, 14, 28, 0.72)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.09)';
+        ctx.lineWidth = 1;
+        drawRoundRect(ctx, cardX, cardY, cardW, cardH, 12, true, true);
+
+        // Acento lateral izquierdo con color del comando
+        ctx.fillStyle = item.color || '#8b5cf6';
+        drawRoundRect(ctx, cardX, cardY, 5, cardH, 3, true, false);
+
+        // Badge con nombre del comando
+        ctx.font = 'bold 16px "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace';
+        const nameMetrics = ctx.measureText(item.name);
+        const badgeW = nameMetrics.width + 20;
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.strokeStyle = item.color || '#8b5cf6';
+        ctx.lineWidth = 1;
+        drawRoundRect(ctx, cardX + 16, cardY + 12, badgeW, 26, 6, true, true);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(item.name, cardX + 26, cardY + 30);
+
+        // Pill con el Tag (a la derecha)
+        if (item.tag) {
+          ctx.font = 'bold 11px "Plus Jakarta Sans", sans-serif';
+          const tagMetrics = ctx.measureText(item.tag);
+          const tagW = tagMetrics.width + 16;
+          const tagX = cardX + cardW - tagW - 14;
+
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+          drawRoundRect(ctx, tagX, cardY + 12, tagW, 24, 6, true, true);
+
+          ctx.fillStyle = item.color || '#c084fc';
+          ctx.fillText(item.tag, tagX + 8, cardY + 28);
+        }
+
+        // Aliases (si tiene)
+        let textStartY = cardY + 54;
+        if (item.aliases) {
+          ctx.font = 'italic 11px "Plus Jakarta Sans", sans-serif';
+          ctx.fillStyle = '#a78bfa';
+          ctx.fillText(`Aliases: ${item.aliases}`, cardX + 18, textStartY);
+          textStartY += 16;
+        }
+
+        // Descripción con ajuste de línea
+        ctx.font = '13px "Plus Jakarta Sans", sans-serif';
+        ctx.fillStyle = '#cbd5e1';
+        wrapText(ctx, item.desc, cardX + 18, textStartY, cardW - 36, 17);
+      }
+
+      const rowsCount = Math.ceil(sec.items.length / 2);
+      currentY += rowsCount * (cardH + gap) + 16;
+    });
+
+    // 4. Footer
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padding, totalHeight - 50);
+    ctx.lineTo(width - padding, totalHeight - 50);
+    ctx.stroke();
+
+    ctx.font = '12px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = '#64748b';
+    ctx.fillText('🎂 Sistema de Cumpleaños para Streamers · Creado para @yocapi_pr · twitch.tv/yocapi_pr', padding, totalHeight - 26);
+
+    ctx.font = 'bold 12px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = '#94a3b8';
+    const tagRight = '¡Escribe en el chat durante el directo! ✨';
+    const tagRightW = ctx.measureText(tagRight).width;
+    ctx.fillText(tagRight, width - padding - tagRightW, totalHeight - 26);
+
+    return canvas.toDataURL('image/png');
+  }
+
+  // Elementos del Modal
+  const modalPreview = document.getElementById('modal-cmd-image-preview');
+  const imgPreviewTag = document.getElementById('cmd-img-preview-tag');
+  const modalTitle = document.getElementById('cmd-img-modal-title');
+  const modalSub = document.getElementById('cmd-img-modal-sub');
+  const modalIcon = document.getElementById('cmd-img-modal-icon');
+  const btnDownload = document.getElementById('btn-download-cmd-img');
+  const btnCloseX = document.getElementById('btn-close-cmd-img-modal');
+  const btnCloseBtn = document.getElementById('btn-close-cmd-img-modal-btn');
+
+  let currentImageDataUrl = '';
+  let currentDownloadFileName = 'comandos-twitch.png';
+
+  function openImagePreviewModal(type) {
+    if (!modalPreview || !imgPreviewTag) return;
+
+    if (type === 'community') {
+      modalIcon.textContent = '📸';
+      modalTitle.textContent = 'Comandos de la Comunidad y Chat (PNG)';
+      modalSub.textContent = 'Infografía con los comandos que pueden usar todos los espectadores en el chat (registro, alertas, consultas).';
+      currentDownloadFileName = 'comandos-comunidad-yocapi.png';
+    } else if (type === 'mods') {
+      modalIcon.textContent = '🛡️';
+      modalTitle.textContent = 'Comandos de Streamer y Moderadores (PNG)';
+      modalSub.textContent = 'Infografía con los comandos protegidos para @yocapi_pr y mods (modo grabación, control de alertas).';
+      currentDownloadFileName = 'comandos-mods-yocapi.png';
+    } else {
+      modalIcon.textContent = '🖼️';
+      modalTitle.textContent = 'Lista Maestra Completa de Comandos (Banner HD)';
+      modalSub.textContent = 'Infografía completa con ambas categorías separadas (Comunidad y Moderación).';
+      currentDownloadFileName = 'comandos-twitch-yocapi-completo.png';
+    }
+
+    // Renderizar Canvas
+    currentImageDataUrl = renderCommandsCanvas(type);
+    imgPreviewTag.src = currentImageDataUrl;
+
+    modalPreview.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    if (typeof showToast === 'function') {
+      showToast('🎨 Imagen generada en alta resolución', 'success');
+    }
+  }
+
+  function closeImagePreviewModal() {
+    if (!modalPreview) return;
+    modalPreview.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function triggerDownload() {
+    if (!currentImageDataUrl) return;
+    const link = document.createElement('a');
+    link.download = currentDownloadFileName;
+    link.href = currentImageDataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    if (typeof showToast === 'function') {
+      showToast('📥 ¡Descarga iniciada: ' + currentDownloadFileName + '!', 'success');
+    }
+  }
+
+  // Event Listeners para los botones del header
+  const btnExportChat = document.getElementById('btn-export-cmd-img-chat');
+  if (btnExportChat) {
+    btnExportChat.addEventListener('click', () => openImagePreviewModal('community'));
+  }
+
+  const btnExportMods = document.getElementById('btn-export-cmd-img-mods');
+  if (btnExportMods) {
+    btnExportMods.addEventListener('click', () => openImagePreviewModal('mods'));
+  }
+
+  const btnExportAll = document.getElementById('btn-export-cmd-img-all');
+  if (btnExportAll) {
+    btnExportAll.addEventListener('click', () => openImagePreviewModal('all'));
+  }
+
+  // Event Listeners del Modal
+  if (btnDownload) {
+    btnDownload.addEventListener('click', triggerDownload);
+  }
+  if (btnCloseX) {
+    btnCloseX.addEventListener('click', closeImagePreviewModal);
+  }
+  if (btnCloseBtn) {
+    btnCloseBtn.addEventListener('click', closeImagePreviewModal);
+  }
+  if (modalPreview) {
+    modalPreview.addEventListener('click', (e) => {
+      if (e.target === modalPreview) closeImagePreviewModal();
+    });
+  }
+})();
+
