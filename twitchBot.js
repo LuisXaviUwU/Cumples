@@ -85,6 +85,40 @@ function formatOauthToken(token) {
     return clean.startsWith('oauth:') ? clean : `oauth:${clean}`;
 }
 
+// ─── VERIFICADOR DE PERMISOS: STREAMER (@yocapi_pr) O MODERADOR DE TWITCH ──────
+function isStreamerOrMod(tags, channel) {
+    if (!tags) return false;
+    const username = (tags.username || '').toLowerCase().trim();
+    const cleanChannel = (channel || botConfig.channel || 'yocapi_pr').replace(/^#/, '').toLowerCase().trim();
+
+    // 1. Es la streamer oficial (dueña del canal o yocapi_pr)
+    if (username === cleanChannel || username === 'yocapi_pr') {
+        return true;
+    }
+
+    // 2. Mod flag nativo de Twitch
+    if (tags.mod === true || tags.mod === '1' || tags.mod === 1) {
+        return true;
+    }
+
+    // 3. Badges del usuario (broadcaster o moderator)
+    if (tags.badges) {
+        if (tags.badges.broadcaster || tags.badges.moderator) return true;
+        if (typeof tags.badges === 'string' && (tags.badges.includes('broadcaster') || tags.badges.includes('moderator'))) {
+            return true;
+        }
+    }
+
+    // 4. Badges raw de IRC
+    if (tags['badges-raw'] && typeof tags['badges-raw'] === 'string') {
+        if (tags['badges-raw'].includes('broadcaster') || tags['badges-raw'].includes('moderator')) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 async function sendChat(message) {
     if (!client || status !== 'connected') {
         throw new Error('El bot de Twitch no está conectado al chat');
@@ -196,6 +230,17 @@ function stopTimer() {
 async function handleChatMessage(channel, tags, message, self) {
     if (self) return; // Ignorar mensajes del propio bot
     const text = (message || '').trim();
+
+    // ─── EASTER EGG: "bang" exclusivo de capiluisxavi ─────────────────────────
+    // Solo para el usuario capiluisxavi, sin respuesta en chat y sin visual en overlay.
+    const senderLogin = (tags.username || '').toLowerCase();
+    if (text.toLowerCase() === 'bang' && senderLogin === 'capiluisxavi') {
+        if (broadcastToOverlayRef) {
+            broadcastToOverlayRef({ type: 'play_audio', sound: 'bang.mp3' });
+        }
+        return; // Silencio total: no responde en chat
+    }
+
     if (!text.startsWith('!')) return;
 
     // 1. DEDUPLICACIÓN DE MENSAJES (Evita que el mismo mensaje se procese dos veces)
@@ -215,7 +260,11 @@ async function handleChatMessage(channel, tags, message, self) {
         '!felicidades', '!felicidades1', '!felicidades2', '!felicidades3',
         '!felicitar', '!felicitar1', '!felicitar2', '!felicitar3',
         '!hbcambio', '!hbfrase', '!micumplefrase',
-        '!hbsonido', '!cambiarsonido', '!misonido'
+        '!hbsonido', '!cambiarsonido', '!misonido',
+        '!hbalertas', '!cumplealertas', '!alertascumple',
+        '!hbfelicitar', '!hbfelicitaciones', '!felicitaciones',
+        '!hbgrabacion', '!hbmodovideo', '!hbcine', '!hbpausa',
+        '!hbmod', '!hbadmin', '!hbestado'
     ];
     if (KNOWN_COMMANDS.includes(command)) {
         if (isCommandRateLimited(sender, command)) {
@@ -360,6 +409,13 @@ async function handleChatMessage(channel, tags, message, self) {
     // ─── COMANDO 5: !hoyesmicumple (Lanzar la alerta del cumpleañero en directo) ───
     if (command === '!hoyesmicumple' || command === '!mialerta' || command === '!lanzarmicumple') {
         if (!dbRef || !getBirthdayStatusRef) return;
+        const appSettings = getAppSettingsRef ? getAppSettingsRef() : {};
+
+        // 1. SEGURIDAD: ¿Alertas del cumpleañero permitidas por la streamer / mods?
+        if (appSettings.birthday_alerts_enabled === false) {
+            return sendChat(`🎬🤫 @${sender}, las alertas de cumpleaños en directo están temporalmente desactivadas por Yocapi (grabación o momento especial en stream). ¡No te preocupes, tu festejo no se pierde! Podrás activarlo en cuanto se reanuden 🎂✨`);
+        }
+
         const senderLogin = sender.toLowerCase().replace(/[^a-z0-9_]/g, '');
         const user = await dbRef.getUser(senderLogin);
 
@@ -410,8 +466,6 @@ async function handleChatMessage(channel, tags, message, self) {
             theme: 'purple',
             timestamp: Date.now()
         };
-
-        const appSettings = getAppSettingsRef ? getAppSettingsRef() : {};
 
         if (appSettings.alerts_paused && pausedAlertsQueueRef) {
             pausedAlertsQueueRef.push({
@@ -635,6 +689,100 @@ async function handleChatMessage(channel, tags, message, self) {
     // ─── COMANDO 9: !cumpleinfo o !ayudacumple ────────────────────────────────
     if (command === '!cumpleinfo' || command === '!ayudacumple') {
         return sendChat(`🎉 Comandos de Fiesta: !hoyesmicumple (lanza tu alerta) · !felicidades [mensaje] (!felicidades1/2/3) · !hbcambio <frase> · !hbsonido <1/2/3> · !cumple · !proximos · !cumplemes · !regcumple 🎂✨`);
+    }
+
+    // ─── COMANDOS EXCLUSIVOS DE MODERACIÓN Y CONTROL (STREAMER & MODS) ─────────
+
+    // COMANDO MOD 1: !hbalertas [on|off] (Activar/Desactivar Alertas del Cumpleañero)
+    if (command === '!hbalertas' || command === '!cumplealertas' || command === '!alertascumple') {
+        if (!isStreamerOrMod(tags, channel)) {
+            return sendChat(`⛔ @${sender}, este comando de control es exclusivo para la streamer (@yocapi_pr) y los moderadores del canal 🛡️`);
+        }
+
+        const appSettings = getAppSettingsRef ? getAppSettingsRef() : {};
+        const subAction = (parts[1] || '').toLowerCase().trim();
+
+        if (subAction === 'on' || subAction === 'activar' || subAction === 'habilitar' || subAction === '1') {
+            appSettings.birthday_alerts_enabled = true;
+            if (saveSettingsCallback) saveSettingsCallback({ birthday_alerts_enabled: true });
+            if (broadcastToOverlayRef) broadcastToOverlayRef({ type: 'birthday_alerts_status', enabled: true });
+            return sendChat(`✅👑 @${sender}, ¡Alertas de cumpleaños del cumpleañero ACTIVADAS! Ya pueden detonar su festejo en directo con !hoyesmicumple 🎂🎉`);
+        } else if (subAction === 'off' || subAction === 'desactivar' || subAction === 'pausar' || subAction === 'bloquear' || subAction === '0') {
+            appSettings.birthday_alerts_enabled = false;
+            if (saveSettingsCallback) saveSettingsCallback({ birthday_alerts_enabled: false });
+            if (broadcastToOverlayRef) broadcastToOverlayRef({ type: 'birthday_alerts_status', enabled: false });
+            return sendChat(`🔒🎬 @${sender}, ¡Alertas de cumpleaños del cumpleañero DESACTIVADAS! Nadie podrá interrumpir en directo con !hoyesmicumple hasta que se reactiven 🤫🎥`);
+        } else {
+            const isEnabled = appSettings.birthday_alerts_enabled !== false;
+            return sendChat(`🛡️ @${sender}, las alertas del cumpleañero en pantalla están actualmente: ${isEnabled ? '✅ ACTIVADAS' : '🔒 DESACTIVADAS'}. Usa "!hbalertas on" para activar o "!hbalertas off" para desactivar 🎬`);
+        }
+    }
+
+    // COMANDO MOD 2: !hbfelicitar [on|off] o !felicitaciones [on|off] (Control de Felicitaciones)
+    if (command === '!hbfelicitar' || command === '!hbfelicitaciones' || ((command === '!felicitar' || command === '!felicitaciones') && (parts[1] === 'on' || parts[1] === 'off'))) {
+        if (!isStreamerOrMod(tags, channel)) {
+            return sendChat(`⛔ @${sender}, este comando de control es exclusivo para la streamer (@yocapi_pr) y los moderadores del canal 🛡️`);
+        }
+
+        const appSettings = getAppSettingsRef ? getAppSettingsRef() : {};
+        const subAction = (parts[1] || '').toLowerCase().trim();
+
+        if (subAction === 'on' || subAction === 'activar' || subAction === 'habilitar' || subAction === '1') {
+            appSettings.felicitations_enabled = true;
+            if (saveSettingsCallback) saveSettingsCallback({ felicitations_enabled: true });
+            if (broadcastToOverlayRef) broadcastToOverlayRef({ type: 'felicitations_status', enabled: true });
+            return sendChat(`✅💌 @${sender}, ¡Felicitaciones de la comunidad ACTIVADAS! Los espectadores ya pueden enviar tarjetas flotantes al stream con !felicidades 🥳🎈`);
+        } else if (subAction === 'off' || subAction === 'desactivar' || subAction === 'pausar' || subAction === 'bloquear' || subAction === '0') {
+            appSettings.felicitations_enabled = false;
+            if (saveSettingsCallback) saveSettingsCallback({ felicitations_enabled: false });
+            if (broadcastToOverlayRef) broadcastToOverlayRef({ type: 'felicitations_status', enabled: false });
+            return sendChat(`🔒💌 @${sender}, ¡Felicitaciones de la comunidad DESACTIVADAS! No saldrán tarjetas flotantes en pantalla hasta que se reactiven 🤫📺`);
+        } else {
+            const isEnabled = !!appSettings.felicitations_enabled;
+            return sendChat(`🛡️ @${sender}, las felicitaciones de los espectadores están actualmente: ${isEnabled ? '✅ ACTIVADAS' : '🔒 DESACTIVADAS'}. Usa "!hbfelicitar on" o "!hbfelicitar off" 💌`);
+        }
+    }
+
+    // COMANDO MOD 3: !hbgrabacion [on|off] (Modo Cero Interrupciones para Grabación de Videos)
+    if (command === '!hbgrabacion' || command === '!hbmodovideo' || command === '!hbcine' || command === '!hbpausa') {
+        if (!isStreamerOrMod(tags, channel)) {
+            return sendChat(`⛔ @${sender}, este comando de grabación es exclusivo para la streamer (@yocapi_pr) y los moderadores del canal 🛡️`);
+        }
+
+        const appSettings = getAppSettingsRef ? getAppSettingsRef() : {};
+        const subAction = (parts[1] || '').toLowerCase().trim();
+
+        if (subAction === 'on' || subAction === 'activar' || subAction === '1' || subAction === 'iniciar') {
+            appSettings.birthday_alerts_enabled = false;
+            appSettings.felicitations_enabled = false;
+            if (saveSettingsCallback) saveSettingsCallback({ birthday_alerts_enabled: false, felicitations_enabled: false });
+            if (broadcastToOverlayRef) broadcastToOverlayRef({ type: 'recording_mode', active: true });
+            return sendChat(`🎬🤫 @${sender}, ¡MODO GRABACIÓN ACTIVADO! Alertas del cumpleañero y felicitaciones del chat desactivadas. Cero interrupciones garantizadas en video. Escribe "!hbgrabacion off" al terminar 🎥✨`);
+        } else if (subAction === 'off' || subAction === 'desactivar' || subAction === '0' || subAction === 'terminar') {
+            appSettings.birthday_alerts_enabled = true;
+            appSettings.felicitations_enabled = true;
+            if (saveSettingsCallback) saveSettingsCallback({ birthday_alerts_enabled: true, felicitations_enabled: true });
+            if (broadcastToOverlayRef) broadcastToOverlayRef({ type: 'recording_mode', active: false });
+            return sendChat(`🎉🎬 @${sender}, ¡MODO GRABACIÓN FINALIZADO! Se reactivaron las alertas de cumpleaños y las felicitaciones en directo para toda la comunidad 🎂🥳`);
+        } else {
+            const isRecording = (appSettings.birthday_alerts_enabled === false && !appSettings.felicitations_enabled);
+            return sendChat(`🎬 @${sender}, Modo Grabación está: ${isRecording ? '🔴 ACTIVADO (Silencio Total)' : '⚪ DESACTIVADO (Normal)'}. Usa "!hbgrabacion on" para grabar sin alertas o "!hbgrabacion off" para reactivar 🎥`);
+        }
+    }
+
+    // COMANDO MOD 4: !hbmod (Panel de Estado Rápido para Mods en Chat)
+    if (command === '!hbmod' || command === '!hbadmin' || command === '!hbestado') {
+        if (!isStreamerOrMod(tags, channel)) {
+            return sendChat(`⛔ @${sender}, este panel de estado es exclusivo para la streamer (@yocapi_pr) y moderadores 🛡️`);
+        }
+
+        const appSettings = getAppSettingsRef ? getAppSettingsRef() : {};
+        const bdayAct = appSettings.birthday_alerts_enabled !== false ? '✅ ACTIVO' : '🔒 PAUSADO';
+        const felicAct = appSettings.felicitations_enabled ? '✅ ACTIVO' : '🔒 PAUSADO';
+        const recMode = (appSettings.birthday_alerts_enabled === false && !appSettings.felicitations_enabled) ? '🔴 EN GRABACIÓN' : '🟢 NORMAL';
+        const mins = botConfig.timer_minutes || 60;
+
+        return sendChat(`🛡️ [Panel Mod Yocapi] Estado: ${recMode} · 👑 Alertas cumpleañero: ${bdayAct} · 💌 Felicitaciones: ${felicAct} · ⏰ Timer: ${mins}m · Comandos: !hbalertas on/off · !hbfelicitar on/off · !hbgrabacion on/off ✨`);
     }
 }
 

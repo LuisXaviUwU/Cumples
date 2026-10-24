@@ -42,6 +42,7 @@ const DEFAULT_OVERLAY_CONFIG = {
 const _botAutoEnabled = !!(process.env.TWITCH_BOT_USERNAME && process.env.TWITCH_BOT_TOKEN);
 
 let appSettings = { 
+    birthday_alerts_enabled: true,
     felicitations_enabled: false,
     alerts_paused: false,
     overlay_config: { ...DEFAULT_OVERLAY_CONFIG },
@@ -1368,7 +1369,6 @@ app.post('/api/dashboard/bot/cmd-response', authenticateDashboard, (req, res) =>
 });
 
 // Obtener estado de felicitaciones en directo
-
 app.get('/api/dashboard/felicitations-status', authenticateDashboard, (req, res) => {
     res.json({ enabled: !!appSettings.felicitations_enabled });
 });
@@ -1381,10 +1381,40 @@ app.post('/api/dashboard/felicitations-toggle', authenticateDashboard, (req, res
         appSettings.felicitations_enabled = !appSettings.felicitations_enabled;
     }
     saveAppSettings();
+    broadcastToOverlay({
+        type: 'felicitations_status',
+        enabled: !!appSettings.felicitations_enabled
+    });
     res.json({
         success: true,
         enabled: appSettings.felicitations_enabled,
         message: appSettings.felicitations_enabled ? '¡Felicitaciones en directo activadas!' : 'Felicitaciones en directo desactivadas.'
+    });
+});
+
+// Obtener estado de alertas del cumpleañero (!hoyesmicumple)
+app.get('/api/dashboard/birthday-alerts-status', authenticateDashboard, (req, res) => {
+    res.json({ enabled: appSettings.birthday_alerts_enabled !== false });
+});
+
+// Habilitar / Desactivar alertas del cumpleañero (!hoyesmicumple)
+app.post('/api/dashboard/birthday-alerts-toggle', authenticateDashboard, (req, res) => {
+    if (typeof req.body.enabled === 'boolean') {
+        appSettings.birthday_alerts_enabled = req.body.enabled;
+    } else {
+        appSettings.birthday_alerts_enabled = (appSettings.birthday_alerts_enabled === false) ? true : false;
+    }
+    saveAppSettings();
+    broadcastToOverlay({
+        type: 'birthday_alerts_status',
+        enabled: appSettings.birthday_alerts_enabled !== false
+    });
+    res.json({
+        success: true,
+        enabled: appSettings.birthday_alerts_enabled !== false,
+        message: appSettings.birthday_alerts_enabled !== false 
+            ? '¡Alertas de cumpleaños del cumpleañero activadas!' 
+            : 'Alertas de cumpleaños desactivadas (Modo Cero Interrupciones).'
     });
 });
 
