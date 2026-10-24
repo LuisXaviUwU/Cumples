@@ -338,7 +338,7 @@ async function authenticateUser(req, res, next) {
     }
 }
 
-// ─── API DE AUTENTICACIÓN (NICK + PIN) ──────────────────────────────────────
+// ─── API DE AUTENTICACIÓN (SOLO NICK DE TWITCH) ─────────────────────────────
 
 // Vista previa de avatar en tiempo real
 app.get('/api/avatar/:username', async (req, res) => {
@@ -346,26 +346,19 @@ app.get('/api/avatar/:username', async (req, res) => {
     res.json({ avatar });
 });
 
-// Registro de usuario nuevo
+// Registro de usuario nuevo (solo nick + fecha de cumpleaños)
 app.post('/api/auth/register', async (req, res) => {
     try {
-        const { username, pin, secret_word, birth_month, birth_day, custom_message, selected_sound } = req.body;
+        const { username, birth_month, birth_day, custom_message, selected_sound } = req.body;
 
         if (!username || username.trim().length < 2) {
             return res.status(400).json({ error: 'Ingresa tu nombre de Twitch válido' });
-        }
-        const cleanPassword = (pin || req.body.password) ? String(pin || req.body.password).trim() : '';
-        if (!cleanPassword || cleanPassword.length < 6 || cleanPassword.length > 15) {
-            return res.status(400).json({ error: 'La contraseña debe tener entre 6 y 15 caracteres' });
-        }
-        if (!secret_word || secret_word.trim().length < 2) {
-            return res.status(400).json({ error: 'Ingresa tu palabra secreta para recuperar tu cuenta si olvidas la contraseña' });
         }
 
         const cleanName = username.trim();
         const existing = await db.getUser(cleanName);
         if (existing) {
-            return res.status(400).json({ error: 'Este usuario ya está registrado. Por favor inicia sesión con tu contraseña.' });
+            return res.status(400).json({ error: 'Este usuario ya está registrado. Usa la pestaña "Ya tengo cuenta" e ingresa tu usuario.' });
         }
 
         const month = parseInt(birth_month, 10);
@@ -385,8 +378,8 @@ app.post('/api/auth/register', async (req, res) => {
         const newUser = await db.saveUser({
             username: cleanName,
             display_name: cleanName,
-            pin_hash: db.hashPin(cleanPassword),
-            recovery_hash: db.hashSecret(secret_word),
+            pin_hash: '',  // Ya no se usa
+            recovery_hash: '', // Ya no se usa
             profile_image: avatarUrl,
             birth_month: month,
             birth_day: day,
@@ -395,7 +388,7 @@ app.post('/api/auth/register', async (req, res) => {
             birthday_unlocked: false,
             created_at: nowIso,
             registered_at: nowIso,
-            twitch_id: req.body.twitch_id || '' // Se rellena automáticamente desde el bot al primer mensaje en chat
+            twitch_id: req.body.twitch_id || ''
         });
 
         const token = crypto.randomBytes(32).toString('hex');
@@ -415,57 +408,22 @@ app.post('/api/auth/register', async (req, res) => {
     }
 });
 
-// Recuperar / Restablecer Contraseña con palabra secreta
+// Recuperación de contraseña — ya no aplica, ruta deprecada
 app.post('/api/auth/reset-pin', async (req, res) => {
-    try {
-        const { username, secret_word, new_pin, new_password } = req.body;
-        const passToReset = new_password || new_pin;
-        if (!username || !secret_word || !passToReset) {
-            return res.status(400).json({ error: 'Completa todos los campos' });
-        }
-        const cleanNewPass = String(passToReset).trim();
-        if (cleanNewPass.length < 6 || cleanNewPass.length > 15) {
-            return res.status(400).json({ error: 'La nueva contraseña debe tener entre 6 y 15 caracteres' });
-        }
-
-        const user = await db.getUser(username);
-        if (!user) {
-            return res.status(404).json({ error: 'Usuario no encontrado' });
-        }
-
-        if (!user.recovery_hash) {
-            return res.status(400).json({ error: 'No tienes una palabra secreta registrada. Pide a yocapi_pr que restablezca tu contraseña desde su panel.' });
-        }
-
-        if (user.recovery_hash !== db.hashSecret(secret_word)) {
-            return res.status(401).json({ error: 'La palabra secreta es incorrecta' });
-        }
-
-        await db.updatePin(user.username, cleanNewPass);
-        res.json({ success: true, message: '¡Contraseña restablecida con éxito! Ya puedes iniciar sesión con tu nueva contraseña.' });
-    } catch (err) {
-        console.error('Error al resetear contraseña:', err);
-        res.status(500).json({ error: 'Error del servidor al restablecer contraseña' });
-    }
+    res.status(410).json({ error: 'Esta función ya no está disponible. Ahora solo necesitas tu nombre de Twitch para acceder.' });
 });
 
-// Inicio de sesión con Nick + Contraseña
+// Inicio de sesión — solo con el nombre de Twitch (sin contraseña)
 app.post('/api/auth/login', async (req, res) => {
     try {
-        const { username, pin, password } = req.body;
-        const pass = password || pin;
-        if (!username || !pass) {
-            return res.status(400).json({ error: 'Ingresa tu usuario y tu contraseña' });
+        const { username } = req.body;
+        if (!username || !username.trim()) {
+            return res.status(400).json({ error: 'Ingresa tu nombre de Twitch' });
         }
 
-        const user = await db.getUser(username);
+        const user = await db.getUser(username.trim());
         if (!user) {
-            return res.status(404).json({ error: 'Usuario no encontrado. Regístrate primero.' });
-        }
-
-        const hash = db.hashPin(pass);
-        if (user.pin_hash !== hash) {
-            return res.status(401).json({ error: 'Contraseña incorrecta' });
+            return res.status(404).json({ error: 'Usuario no encontrado. ¿Aún no estás registrado? Usa la pestaña "Registrarme".' });
         }
 
         const token = crypto.randomBytes(32).toString('hex');
@@ -602,19 +560,8 @@ app.post('/api/birthday/update', authenticateUser, async (req, res) => {
             user.selected_sound = selected_sound;
         }
 
-        const newPass = req.body.new_password || new_pin;
-        if (newPass && String(newPass).trim().length > 0) {
-            const cleanPass = String(newPass).trim();
-            if (cleanPass.length < 6 || cleanPass.length > 15) {
-                return res.status(400).json({ error: 'La nueva contraseña debe tener entre 6 y 15 caracteres' });
-            }
-            user.pin_hash = db.hashPin(cleanPass);
-        }
         if (req.body.display_name && typeof req.body.display_name === 'string' && req.body.display_name.trim().length >= 2) {
             user.display_name = req.body.display_name.trim().slice(0, 30);
-        }
-        if (req.body.new_secret && req.body.new_secret.trim().length >= 2) {
-            user.recovery_hash = db.hashSecret(req.body.new_secret);
         }
 
         // Refrescar avatar de Twitch por si cambió (sin sobreescribir si la API falla)
