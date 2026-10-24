@@ -538,10 +538,21 @@
                 <p style="color: #94a3b8; font-size: 0.82rem; margin: 2px 0 0 0;">Comandos activos en Twitch clasificados por función. Puedes editar respuestas personalizadas y probar su funcionamiento en directo.</p>
               </div>
             </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <span class="badge" style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); font-size: 0.75rem; padding: 4px 10px; border-radius: 8px;">🛡️ Streamer & Mods OK</span>
-              <span class="badge" style="background: rgba(145,70,255,0.18); color: #c084fc; border: 1px solid rgba(145,70,255,0.3); font-size: 0.75rem; padding: 4px 10px; border-radius: 8px;">15 Comandos Activos</span>
-              <span class="badge" style="background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); font-size: 0.75rem; padding: 4px 10px; border-radius: 8px;">Deduplicación & Cooldown OK</span>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+              <span class="badge" style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); font-size: 0.75rem; padding: 4px 10px; border-radius: 8px;">🛡️ Streamer &amp; Mods OK</span>
+              <span class="badge" style="background: rgba(145,70,255,0.18); color: #c084fc; border: 1px solid rgba(145,70,255,0.3); font-size: 0.75rem; padding: 4px 10px; border-radius: 8px;">16 Comandos Activos</span>
+              
+              <div style="display: flex; gap: 6px; margin-left: 6px; flex-wrap: wrap;">
+                <button type="button" id="btn-export-cmd-img-chat" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); font-size: 0.76rem; padding: 5px 12px; border-radius: 8px; border: none; cursor: pointer; color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 3px 10px rgba(109,40,217,0.35); transition: transform 0.15s ease;" title="Generar y descargar imagen para el Chat / Comunidad">
+                  <span>📸</span> Comandos Chat (PNG)
+                </button>
+                <button type="button" id="btn-export-cmd-img-mods" style="background: linear-gradient(135deg, #ef4444, #b91c1c); font-size: 0.76rem; padding: 5px 12px; border-radius: 8px; border: none; cursor: pointer; color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 3px 10px rgba(239,68,68,0.35); transition: transform 0.15s ease;" title="Generar y descargar imagen para Mods y Streamer">
+                  <span>🛡️</span> Comandos Mods (PNG)
+                </button>
+                <button type="button" id="btn-export-cmd-img-all" style="background: rgba(255,255,255,0.08); font-size: 0.76rem; padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; color: #e2e8f0; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; transition: transform 0.15s ease;" title="Generar banner completo con ambas secciones">
+                  <span>🖼️</span> Ambos (Banner HD)
+                </button>
+              </div>
             </div>
           </div>
 
@@ -713,6 +724,27 @@
             </div>
 
             <div class="cmd-list">
+              <!-- Item 2.0: !registro DD-MM -->
+              <div class="cmd-item" style="border-left: 3px solid #10b981;">
+                <div>
+                  <span class="cmd-badge-code" style="color: #6ee7b7; background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.4);" onclick="navigator.clipboard.writeText('!registro 11-06')" title="Clic para copiar">!registro DD-MM</span>
+                  <div class="cmd-item-aliases">
+                    <span>Aliases: <code>!registrarme DD-MM</code></span>
+                  </div>
+                </div>
+                <div class="cmd-desc">
+                  <strong>Registra la fecha de cumpleaños del espectador directamente desde el chat de Twitch sin contraseñas ni formularios.</strong>
+                  <div class="cmd-example-box">
+                    <span>💬 <strong>Ejemplo en chat:</strong> <code>!registro 11-06</code> (para el 11 de Junio)</span><br>
+                    <span style="color: #cbd5e1; margin-top: 4px; display: inline-block;">🎉 <strong>Bot responde:</strong> ¡@usuario YA ESTÁ EN LA LISTA VIP DE CUMPLEAÑEROS! Fecha guardada: 11 de Junio 🥳</span>
+                  </div>
+                  <small>✨ Protección de 1 año: una vez registrada la fecha, solo se puede modificar 1 vez al año para evitar abusos.</small>
+                </div>
+                <div>
+                  <span class="cmd-scope-pill" style="background: rgba(16,185,129,0.18); color: #a7f3d0; border: 1px solid rgba(16,185,129,0.4);">✨ Registro Chat</span>
+                </div>
+              </div>
+
               <!-- Item 2.1: !hbcambio -->
               <div class="cmd-item" style="border-left: 3px solid #a855f7;">
                 <div>
@@ -946,6 +978,43 @@
 
       </div>
     </main>
+  </div>
+
+  <!-- MODAL: PREVISUALIZADOR Y DESCARGA DE IMAGEN DE COMANDOS -->
+  <div id="modal-cmd-image-preview" class="sim-modal-overlay" style="display: none;">
+    <div class="sim-modal-dialog" style="max-width: 960px; width: 95%;">
+      <!-- Header -->
+      <div class="sim-modal-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 1.8rem;" id="cmd-img-modal-icon">📸</span>
+          <div>
+            <h2 id="cmd-img-modal-title" style="font-family: var(--font-h); font-size: 1.25rem; font-weight: 800; margin: 0; color: #fff;">
+              Imagen de Comandos Generada
+            </h2>
+            <p id="cmd-img-modal-sub" style="color: #94a3b8; font-size: 0.82rem; margin: 2px 0 0 0;">
+              Vista previa en alta resolución optimizada para paneles de Twitch, Discord o compartir en stream.
+            </p>
+          </div>
+        </div>
+        <button type="button" id="btn-close-cmd-img-modal" class="sim-close-btn" title="Cerrar ventana">✖</button>
+      </div>
+
+      <!-- Body -->
+      <div style="padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 16px; max-height: calc(85vh - 120px); overflow-y: auto;">
+        <div style="width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 10px 30px rgba(0,0,0,0.6); background: #0b0813; text-align: center;">
+          <img id="cmd-img-preview-tag" src="" alt="Comandos Bot Twitch" style="max-width: 100%; height: auto; display: block; margin: 0 auto;" />
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: flex-end; width: 100%; flex-wrap: wrap; align-items: center;">
+          <span id="cmd-img-info-text" style="font-size: 0.82rem; color: #94a3b8; margin-right: auto;">Resolución HD optimizada para PNG</span>
+          <button type="button" id="btn-download-cmd-img" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 700; padding: 10px 22px; font-size: 0.92rem; border-radius: 10px; border: none; cursor: pointer; color: white; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(16,185,129,0.4); transition: transform 0.15s ease;">
+            📥 Descargar Imagen PNG
+          </button>
+          <button type="button" id="btn-close-cmd-img-modal-btn" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); padding: 10px 18px; font-size: 0.9rem; border-radius: 10px; cursor: pointer; color: #cbd5e1;">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- MODAL: SIMULADOR Y DISEÑADOR VISUAL DE OBS (1920x1080) -->
