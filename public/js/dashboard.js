@@ -118,10 +118,57 @@ async function loadStats() {
     baseObsToken = data.overlayToken;
     updateObsUrlDisplay();
 
-    // Estado de felicitaciones
+    // Estado de felicitaciones y alertas del cumpleañero
     loadFelicitationStatus();
+    loadBirthdayAlertsStatus();
   } catch (err) {
     console.error('Error cargando estadísticas:', err);
+  }
+}
+
+// Cargar y gestionar estado de alertas del cumpleañero (!hoyesmicumple)
+async function loadBirthdayAlertsStatus() {
+  try {
+    const res = await authFetch('/api/dashboard/birthday-alerts-status');
+    const data = await res.json();
+    updateBirthdayAlertsUI(data.enabled);
+  } catch (err) {
+    console.error('Error cargando estado de alertas de cumpleaños:', err);
+  }
+}
+
+function updateBirthdayAlertsUI(enabled) {
+  const badge = document.getElementById('bday-alerts-status-badge');
+  const btn = document.getElementById('btn-toggle-bday-alerts');
+  const btnRec = document.getElementById('btn-quick-rec-mode');
+  if (!badge || !btn) return;
+
+  if (enabled) {
+    badge.textContent = '🟢 Permitidas';
+    badge.style.background = 'rgba(16, 185, 129, 0.2)';
+    badge.style.color = '#34d399';
+    badge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+    btn.textContent = '🔒 Bloquear Alertas';
+    btn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+    btn.style.boxShadow = '0 4px 15px rgba(239, 68, 68, 0.3)';
+    if (btnRec) {
+      btnRec.textContent = '🎬 Modo Grabación';
+      btnRec.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+      btnRec.style.color = '#fca5a5';
+    }
+  } else {
+    badge.textContent = '🔒 Bloqueadas';
+    badge.style.background = 'rgba(239, 68, 68, 0.2)';
+    badge.style.color = '#f87171';
+    badge.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+    btn.textContent = '👑 Permitir Alertas';
+    btn.style.background = 'linear-gradient(135deg, var(--c-purple), var(--c-pink))';
+    btn.style.boxShadow = '0 4px 15px rgba(145, 70, 255, 0.3)';
+    if (btnRec) {
+      btnRec.textContent = '🟢 Terminar Grabación';
+      btnRec.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+      btnRec.style.color = '#34d399';
+    }
   }
 }
 
@@ -927,6 +974,73 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Error conectando con el servidor', 'error');
       } finally {
         btnToggleFelic.disabled = false;
+      }
+    });
+  }
+
+  // Toggle Alertas del Cumpleañero (!hoyesmicumple)
+  const btnToggleBdayAlerts = document.getElementById('btn-toggle-bday-alerts');
+  if (btnToggleBdayAlerts) {
+    btnToggleBdayAlerts.addEventListener('click', async () => {
+      btnToggleBdayAlerts.disabled = true;
+      try {
+        const res = await authFetch('/api/dashboard/birthday-alerts-toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success) {
+          updateBirthdayAlertsUI(data.enabled);
+          showToast(data.message, data.enabled ? 'success' : 'warning');
+        } else {
+          showToast('Error al cambiar estado de alertas', 'error');
+        }
+      } catch {
+        showToast('Error conectando con el servidor', 'error');
+      } finally {
+        btnToggleBdayAlerts.disabled = false;
+      }
+    });
+  }
+
+  // Botón Rápido Modo Grabación (Cero Interrupciones para Videos)
+  const btnQuickRec = document.getElementById('btn-quick-rec-mode');
+  if (btnQuickRec) {
+    btnQuickRec.addEventListener('click', async () => {
+      btnQuickRec.disabled = true;
+      try {
+        const resAlerts = await authFetch('/api/dashboard/birthday-alerts-status');
+        const dataAlerts = await resAlerts.json();
+        const targetAlerts = !dataAlerts.enabled;
+
+        const [r1, r2] = await Promise.all([
+          authFetch('/api/dashboard/birthday-alerts-toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled: targetAlerts })
+          }),
+          authFetch('/api/dashboard/felicitations-toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled: targetAlerts })
+          })
+        ]);
+
+        const d1 = await r1.json();
+        const d2 = await r2.json();
+
+        updateBirthdayAlertsUI(d1.enabled);
+        updateFelicitationUI(d2.enabled);
+
+        if (!targetAlerts) {
+          showToast('🎬 Modo Grabación ACTIVADO: Alertas y felicitaciones bloqueadas para video sin interrupciones.', 'warning');
+        } else {
+          showToast('🎉 Modo Grabación FINALIZADO: Alertas y felicitaciones reactivadas para el stream.', 'success');
+        }
+      } catch {
+        showToast('Error conectando con el servidor', 'error');
+      } finally {
+        btnQuickRec.disabled = false;
       }
     });
   }

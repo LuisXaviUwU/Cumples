@@ -317,6 +317,16 @@ function connectSSE() {
       if (data.type === 'felicitation') {
         showFelicitation(data);
       }
+      // Audio silencioso sin visual (e.g., easter eggs como 'bang')
+      if (data.type === 'play_audio' && data.sound) {
+        try {
+          const silentAudio = new Audio(`/music/${data.sound}`);
+          silentAudio.volume = currentOverlayVolume;
+          silentAudio.play().catch(e => console.warn('[Overlay] play_audio error:', e));
+        } catch (e) {
+          console.warn('[Overlay] play_audio excepción:', e);
+        }
+      }
     } catch (e) {
       console.error('Error parseando evento SSE:', e);
     }
