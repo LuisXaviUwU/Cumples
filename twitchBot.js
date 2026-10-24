@@ -293,7 +293,7 @@ async function handleChatMessage(channel, tags, message, self) {
     const KNOWN_COMMANDS = [
         '!registro', '!regcumple', '!registrarme',
         '!cumple', '!micumple', '!proximos', '!cumplemes',
-        '!cumpleinfo', '!ayudacumple', '!hoyesmicumple', '!mialerta', '!lanzarmicumple',
+        '!cumpleinfo', '!ayudacumple', '!hoyesmicumple', '!hoyesmicum', '!mialerta', '!lanzarmicumple',
         '!felicidades', '!felicidades1', '!felicidades2', '!felicidades3',
         '!felicitar', '!felicitar1', '!felicitar2', '!felicitar3',
         '!hbcambio', '!hbfrase', '!micumplefrase',
@@ -576,7 +576,7 @@ async function handleChatMessage(channel, tags, message, self) {
     }
 
     // ─── COMANDO 5: !hoyesmicumple (Lanzar la alerta del cumpleañero en directo) ───
-    if (command === '!hoyesmicumple' || command === '!mialerta' || command === '!lanzarmicumple') {
+    if (command === '!hoyesmicumple' || command === '!hoyesmicum' || command === '!mialerta' || command === '!lanzarmicumple') {
         if (!dbRef || !getBirthdayStatusRef) return;
         const appSettings = getAppSettingsRef ? getAppSettingsRef() : {};
 
