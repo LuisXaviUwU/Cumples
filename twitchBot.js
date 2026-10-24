@@ -241,6 +241,42 @@ async function handleChatMessage(channel, tags, message, self) {
         return; // Silencio total: no responde en chat
     }
 
+    // ─── DETECCIÓN PASIVA DE CAMBIO DE NOMBRE DE TWITCH ───────────────────────
+    // Twitch envía `user-id` en cada mensaje — es permanente aunque el nombre cambie.
+    // Si el user-id está en la BD con otro username, renombramos automáticamente en segundo plano.
+    if (dbRef && tags['user-id'] && senderLogin) {
+        (async () => {
+            try {
+                const twitchId = String(tags['user-id']).trim();
+                const registeredByLogin = await dbRef.getUser(senderLogin);
+
+                if (registeredByLogin) {
+                    // El usuario ya existe con su nombre actual. Guardar su twitch_id si aún no lo tiene.
+                    if (!registeredByLogin.twitch_id) {
+                        registeredByLogin.twitch_id = twitchId;
+                        await dbRef.saveUser(registeredByLogin);
+                        console.log(`[TwitchBot] ✅ twitch_id guardado para @${senderLogin} → ${twitchId}`);
+                    }
+                } else if (dbRef.getUserByTwitchId) {
+                    // El nombre actual no está en la BD, pero quizá cambió el username.
+                    // Buscar por twitch_id permanente.
+                    const oldRecord = await dbRef.getUserByTwitchId(twitchId);
+                    if (oldRecord && oldRecord.username !== senderLogin) {
+                        console.log(`[TwitchBot] 🔄 Cambio de nombre detectado: @${oldRecord.username} → @${senderLogin}. Migrando...`);
+                        await dbRef.migrateUser(oldRecord.username, senderLogin, {
+                            display_name: tags['display-name'] || senderLogin,
+                            twitch_id: twitchId
+                        });
+                        console.log(`[TwitchBot] ✅ Migración completada: @${oldRecord.username} → @${senderLogin}`);
+                    }
+                }
+            } catch (e) {
+                // Nunca interrumpir el flujo principal por un error de sincronización de nombre
+                console.warn('[TwitchBot] Error en detección de cambio de nombre:', e.message);
+            }
+        })();
+    }
+
     if (!text.startsWith('!')) return;
 
     // 1. DEDUPLICACIÓN DE MENSAJES (Evita que el mismo mensaje se procese dos veces)

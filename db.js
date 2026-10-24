@@ -94,7 +94,8 @@ function initDatabase() {
             registered_at   TEXT NOT NULL,
             last_changed_at TEXT,
             last_activated  TEXT,
-            last_played_date TEXT
+            last_played_date TEXT,
+            twitch_id       TEXT DEFAULT ''
         );
 
         CREATE TABLE IF NOT EXISTS sessions (
@@ -128,6 +129,9 @@ function initDatabase() {
     try {
         sqliteDb.exec("ALTER TABLE users ADD COLUMN last_celebrated_year INTEGER DEFAULT 0;");
     } catch (e) {}
+    try {
+        sqliteDb.exec("ALTER TABLE users ADD COLUMN twitch_id TEXT DEFAULT '';");
+    } catch (e) {}
 
     mode = 'sqlite';
     console.log('💾 [DB] Conectado a SQLite local (data/birthdays.db)');
@@ -154,6 +158,20 @@ const db = {
         }
     },
 
+    // Buscar usuario por su Twitch ID permanente (útil para detectar cambios de nombre)
+    async getUserByTwitchId(twitchId) {
+        if (!twitchId) return null;
+        const id = String(twitchId).trim();
+        if (mode === 'firestore') {
+            const snap = await firestoreDb.collection('users').where('twitch_id', '==', id).limit(1).get();
+            if (snap.empty) return null;
+            return snap.docs[0].data();
+        } else {
+            const stmt = sqliteDb.prepare('SELECT * FROM users WHERE twitch_id = ? LIMIT 1');
+            return stmt.get(id) || null;
+        }
+    },
+
     async saveUser(data) {
         const username = data.username.toLowerCase().trim();
         const record = {
@@ -172,7 +190,8 @@ const db = {
             last_played_date: data.last_played_date || null,
             last_celebrated_year: parseInt(data.last_celebrated_year, 10) || 0,
             birthday_unlocked: (data.birthday_unlocked === true || data.birthday_unlocked === 1) ? 1 : 0,
-            created_at: data.created_at || data.registered_at || new Date().toISOString()
+            created_at: data.created_at || data.registered_at || new Date().toISOString(),
+            twitch_id: data.twitch_id || ''
         };
 
         if (mode === 'firestore') {
@@ -188,8 +207,8 @@ const db = {
                     username, display_name, pin_hash, recovery_hash, profile_image,
                     birth_month, birth_day, custom_message, selected_sound,
                     registered_at, last_changed_at, last_activated, last_played_date,
-                    last_celebrated_year, birthday_unlocked, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    last_celebrated_year, birthday_unlocked, created_at, twitch_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(username) DO UPDATE SET
                     display_name = excluded.display_name,
                     pin_hash = excluded.pin_hash,
@@ -204,13 +223,14 @@ const db = {
                     last_played_date = excluded.last_played_date,
                     last_celebrated_year = excluded.last_celebrated_year,
                     birthday_unlocked = excluded.birthday_unlocked,
-                    created_at = CASE WHEN excluded.created_at != '' THEN excluded.created_at ELSE users.created_at END
+                    created_at = CASE WHEN excluded.created_at != '' THEN excluded.created_at ELSE users.created_at END,
+                    twitch_id = CASE WHEN excluded.twitch_id != '' THEN excluded.twitch_id ELSE users.twitch_id END
             `);
             stmt.run(
                 record.username, record.display_name, record.pin_hash, record.recovery_hash, record.profile_image,
                 record.birth_month, record.birth_day, record.custom_message, record.selected_sound,
                 record.registered_at, record.last_changed_at, record.last_activated, record.last_played_date,
-                record.last_celebrated_year, record.birthday_unlocked, record.created_at
+                record.last_celebrated_year, record.birthday_unlocked, record.created_at, record.twitch_id
             );
         }
         return record;

@@ -394,7 +394,8 @@ app.post('/api/auth/register', async (req, res) => {
             selected_sound: selected_sound || 'HBSilbato.mp3',
             birthday_unlocked: false,
             created_at: nowIso,
-            registered_at: nowIso
+            registered_at: nowIso,
+            twitch_id: req.body.twitch_id || '' // Se rellena automáticamente desde el bot al primer mensaje en chat
         });
 
         const token = crypto.randomBytes(32).toString('hex');
@@ -1251,6 +1252,23 @@ app.post('/api/dashboard/users/:username/change-name', authenticateDashboard, as
     } catch (err) {
         console.error('Error al actualizar usuario:', err);
         res.status(500).json({ error: 'Error al cambiar datos del usuario' });
+    }
+});
+
+// Estado de sincronización de Twitch ID (detección de cambios de nombre)
+app.get('/api/dashboard/twitch-sync-status', authenticateDashboard, async (req, res) => {
+    try {
+        const allUsers = await db.getAllUsers();
+        const withId = allUsers.filter(u => u.twitch_id && u.twitch_id.trim() !== '');
+        const withoutId = allUsers.filter(u => !u.twitch_id || u.twitch_id.trim() === '');
+        res.json({
+            total: allUsers.length,
+            synced: withId.length,
+            unsynced: withoutId.length,
+            unsynced_users: withoutId.map(u => ({ username: u.username, display_name: u.display_name }))
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Error al obtener estado de sincronización' });
     }
 });
 
