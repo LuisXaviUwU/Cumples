@@ -160,31 +160,68 @@
             <div id="paused-queue-items" style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px;"></div>
           </div>
 
-          <!-- Control de Felicitaciones en Directo para Espectadores -->
-          <div class="glass-card" style="padding: 20px 24px; margin-bottom: 24px; border: 1.5px solid rgba(244, 63, 94, 0.4); background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(145, 70, 255, 0.08));">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
-              <div style="display: flex; align-items: center; gap: 16px;">
-                <span style="font-size: 2.4rem;">🎊</span>
-                <div>
-                  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
-                    <h3 style="font-family: var(--font-h); font-size: 1.15rem; font-weight: 800; margin: 0;">
-                      Lluvia de Felicitaciones en Directo
+          <!-- Controles Rápidos en Directo: Alertas del Cumpleañero y Felicitaciones -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; margin-bottom: 24px;">
+
+            <!-- Control 1: Alertas del Cumpleañero (!hoyesmicumple) & Modo Grabación -->
+            <div class="glass-card" style="padding: 20px 22px; border: 1.5px solid rgba(234, 179, 8, 0.4); background: linear-gradient(135deg, rgba(234, 179, 8, 0.1), rgba(30, 20, 10, 0.5)); border-radius: 16px;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 12px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span style="font-size: 2.2rem; line-height: 1;">👑</span>
+                  <div>
+                    <h3 style="font-family: var(--font-h); font-size: 1.12rem; font-weight: 800; margin: 0; color: #fff;">
+                      Alertas del Cumpleañero en Pantalla
                     </h3>
-                    <span id="felic-status-badge" style="padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);">
-                      🔴 Desactivadas
-                    </span>
+                    <div style="font-size: 0.78rem; color: #cbd5e1; margin-top: 2px;">
+                      Comando chat: <code>!hoyesmicumple</code>
+                    </div>
                   </div>
-                  <p style="color: #94a3b8; font-size: 0.85rem; margin: 0; line-height: 1.4;">
-                    Permite que los seguidores manden sonidos y tarjetas flotantes de felicitación en pantalla. Al terminar el momento, apágalo para no recibir más.
-                  </p>
                 </div>
+                <span id="bday-alerts-status-badge" style="padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">
+                  🟢 Permitidas
+                </span>
               </div>
-              <div>
-                <button id="btn-toggle-felic" class="btn-primary" style="padding: 12px 24px; font-size: 0.92rem; font-weight: 800; border-radius: 12px; cursor: pointer; transition: all 0.2s;">
-                  Activar Felicitaciones
+              <p style="color: #94a3b8; font-size: 0.83rem; margin: 0 0 14px 0; line-height: 1.45;">
+                Desactívalo temporalmente si vas a grabar un video de YouTube/TikTok o en momentos serios para evitar interrupciones no deseadas.
+              </p>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="button" id="btn-toggle-bday-alerts" class="btn-primary" style="padding: 9px 18px; font-size: 0.85rem; font-weight: 800; border-radius: 10px; flex: 1; white-space: nowrap;">
+                  🔒 Bloquear Alertas
+                </button>
+                <button type="button" id="btn-quick-rec-mode" class="btn-copy" style="padding: 9px 16px; font-size: 0.84rem; font-weight: 800; border-radius: 10px; background: rgba(239, 68, 68, 0.16); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; white-space: nowrap;" title="Activa silencio total para videos de YouTube/TikTok">
+                  🎬 Modo Grabación
                 </button>
               </div>
             </div>
+
+            <!-- Control 2: Felicitaciones en Directo para Espectadores (!felicidades) -->
+            <div class="glass-card" style="padding: 20px 22px; border: 1.5px solid rgba(244, 63, 94, 0.4); background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(145, 70, 255, 0.08)); border-radius: 16px;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 12px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span style="font-size: 2.2rem; line-height: 1;">🎊</span>
+                  <div>
+                    <h3 style="font-family: var(--font-h); font-size: 1.12rem; font-weight: 800; margin: 0; color: #fff;">
+                      Lluvia de Felicitaciones en Directo
+                    </h3>
+                    <div style="font-size: 0.78rem; color: #cbd5e1; margin-top: 2px;">
+                      Comando chat: <code>!felicidades [mensaje]</code>
+                    </div>
+                  </div>
+                </div>
+                <span id="felic-status-badge" style="padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);">
+                  🔴 Desactivadas
+                </span>
+              </div>
+              <p style="color: #94a3b8; font-size: 0.83rem; margin: 0 0 14px 0; line-height: 1.45;">
+                Permite a los espectadores mandar tarjetas flotantes y sonidos al cumpleañero en directo. Apágalo al terminar el momento.
+              </p>
+              <div>
+                <button type="button" id="btn-toggle-felic" class="btn-primary" style="padding: 9px 20px; font-size: 0.85rem; font-weight: 800; border-radius: 10px; width: 100%;">
+                  🎊 Activar Felicitaciones
+                </button>
+              </div>
+            </div>
+
           </div>
 
           <!-- OBS Quick Setup Card -->
@@ -502,8 +539,101 @@
               </div>
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <span class="badge" style="background: rgba(145,70,255,0.18); color: #c084fc; border: 1px solid rgba(145,70,255,0.3); font-size: 0.75rem; padding: 4px 10px; border-radius: 8px;">11 Comandos Activos</span>
+              <span class="badge" style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); font-size: 0.75rem; padding: 4px 10px; border-radius: 8px;">🛡️ Streamer & Mods OK</span>
+              <span class="badge" style="background: rgba(145,70,255,0.18); color: #c084fc; border: 1px solid rgba(145,70,255,0.3); font-size: 0.75rem; padding: 4px 10px; border-radius: 8px;">15 Comandos Activos</span>
               <span class="badge" style="background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); font-size: 0.75rem; padding: 4px 10px; border-radius: 8px;">Deduplicación & Cooldown OK</span>
+            </div>
+          </div>
+
+          <!-- CATEGORÍA 0: COMANDOS DE CONTROL (STREAMER Y MODERADORES) -->
+          <div class="cmd-category" style="border-color: rgba(239,68,68,0.45); background: linear-gradient(160deg, rgba(38,12,18,0.8), rgba(18,6,10,0.92));">
+            <div class="cmd-cat-header">
+              <div class="cmd-cat-title-wrap">
+                <span style="font-size: 1.4rem;">🛡️</span>
+                <div>
+                  <h4 class="cmd-cat-title" style="color: #f87171;">0. Control Exclusivo para Streamer (@yocapi_pr) y Moderadores</h4>
+                  <div style="font-size: 0.78rem; color: #94a3b8;">Comandos protegidos para activar/desactivar alertas en directo y evitar interrupciones al grabar videos.</div>
+                </div>
+              </div>
+              <span class="cmd-cat-badge" style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.5);">🛡️ Streamer & Mods Only</span>
+            </div>
+
+            <div class="cmd-list">
+              <!-- Item 0.1: !hbgrabacion -->
+              <div class="cmd-item" style="border-left: 3px solid #ef4444;">
+                <div>
+                  <span class="cmd-badge-code" style="color: #fca5a5; background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.5);" onclick="navigator.clipboard.writeText('!hbgrabacion on')" title="Clic para copiar">!hbgrabacion [on|off]</span>
+                  <div class="cmd-item-aliases">
+                    <span>Aliases: <code>!hbmodovideo</code> · <code>!hbcine</code> · <code>!hbpausa</code></span>
+                  </div>
+                </div>
+                <div class="cmd-desc">
+                  <strong>Modo Maestro Cero Interrupciones para grabación de videos o momentos importantes.</strong>
+                  <div class="cmd-example-box">
+                    <span>🔴 <code>!hbgrabacion on</code> → Desactiva de un solo golpe las alertas del cumpleañero y las felicitaciones del chat para silencio absoluto en pantalla.</span><br>
+                    <span style="display: inline-block; margin-top: 4px;">🟢 <code>!hbgrabacion off</code> → Reactiva las alertas y felicitaciones cuando termines de grabar para seguir con la fiesta.</span>
+                  </div>
+                  <small>🔒 Máxima seguridad: si alguien que no es mod o la streamer lo intenta, el bot le deniega el permiso educadamente.</small>
+                </div>
+                <div>
+                  <span class="cmd-scope-pill" style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.5);">🎬 Modo Video</span>
+                </div>
+              </div>
+
+              <!-- Item 0.2: !hbalertas -->
+              <div class="cmd-item" style="border-left: 3px solid #f59e0b;">
+                <div>
+                  <span class="cmd-badge-code" style="color: #fde68a; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5);" onclick="navigator.clipboard.writeText('!hbalertas on')" title="Clic para copiar">!hbalertas [on|off]</span>
+                  <div class="cmd-item-aliases">
+                    <span>Aliases: <code>!cumplealertas</code> · <code>!alertascumple</code></span>
+                  </div>
+                </div>
+                <div class="cmd-desc">
+                  <strong>Activa o desactiva que el cumpleañero pueda detonar su alerta en directo con <code>!hoyesmicumple</code>.</strong>
+                  <div class="cmd-example-box">
+                    <span>🔒 Si está desactivado y el cumpleañero escribe <code>!hoyesmicumple</code>, el bot le avisa que las alertas están en pausa por grabación y <strong>NO pierde su oportunidad del año</strong>.</span>
+                  </div>
+                  <small>💡 Si escribes <code>!hbalertas</code> a secas, el bot te responde indicando el estado actual (activado o desactivado).</small>
+                </div>
+                <div>
+                  <span class="cmd-scope-pill" style="background: rgba(245,158,11,0.2); color: #fde68a; border: 1px solid rgba(245,158,11,0.5);">👑 Alertas VIP</span>
+                </div>
+              </div>
+
+              <!-- Item 0.3: !hbfelicitar -->
+              <div class="cmd-item" style="border-left: 3px solid #ec4899;">
+                <div>
+                  <span class="cmd-badge-code" style="color: #fbcfe8; background: rgba(236,72,153,0.2); border-color: rgba(236,72,153,0.5);" onclick="navigator.clipboard.writeText('!hbfelicitar on')" title="Clic para copiar">!hbfelicitar [on|off]</span>
+                  <div class="cmd-item-aliases">
+                    <span>Aliases: <code>!hbfelicitaciones</code> · <code>!felicitaciones on/off</code></span>
+                  </div>
+                </div>
+                <div class="cmd-desc">
+                  <strong>Abre o cierra la lluvia de felicitaciones flotantes en directo para los espectadores con <code>!felicidades</code>.</strong>
+                  <div class="cmd-example-box">
+                    <span>Permite abrir las felicitaciones 5-10 minutos durante el festejo y cerrarlas después sin tener que abrir el panel de control.</span>
+                  </div>
+                </div>
+                <div>
+                  <span class="cmd-scope-pill" style="background: rgba(236,72,153,0.2); color: #fbcfe8; border: 1px solid rgba(236,72,153,0.5);">💌 Felicitaciones</span>
+                </div>
+              </div>
+
+              <!-- Item 0.4: !hbmod -->
+              <div class="cmd-item" style="border-left: 3px solid #3b82f6;">
+                <div>
+                  <span class="cmd-badge-code" style="color: #93c5fd; background: rgba(59,130,246,0.2); border-color: rgba(59,130,246,0.5);" onclick="navigator.clipboard.writeText('!hbmod')" title="Clic para copiar">!hbmod</span>
+                  <div class="cmd-item-aliases">
+                    <span>Aliases: <code>!hbadmin</code> · <code>!hbestado</code></span>
+                  </div>
+                </div>
+                <div class="cmd-desc">
+                  <strong>Muestra en el chat un resumen del estado de seguridad y controles</strong> (Modo Grabación, Alertas de Cumpleañero, Felicitaciones de Comunidad, Frecuencia del Timer).
+                </div>
+                <div>
+                  <span class="cmd-scope-pill" style="background: rgba(59,130,246,0.2); color: #93c5fd; border: 1px solid rgba(59,130,246,0.5);">📋 Panel Mod</span>
+                </div>
+              </div>
             </div>
           </div>
 
