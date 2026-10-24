@@ -309,21 +309,31 @@ async function handleChatMessage(channel, tags, message, self) {
         }
     }
 
-    // ─── COMANDO 0: !registro DD-MM (Registrarse o actualizar cumpleaños desde el chat) ─────────
+    // ─── COMANDO 0: !registro DD-MM [usuario] (Registrarse o registrar a un compañero) ─────────
     if (command === '!registro' || command === '!registrarme') {
         if (!dbRef) return;
 
-        const datePart = (parts[1] || '').trim();
-        if (!datePart) {
-            return sendChat(`🎂 @${sender}, para registrar tu cumpleaños escribe: !registro DD-MM ` +
-                `(Ej: !registro 11-06 para el 11 de junio). ¡Es gratis y sin contraseña! 🎉`);
+        // Detectar si la fecha está en parts[1] o parts[2], y si hay un usuario objetivo
+        const arg1 = (parts[1] || '').trim();
+        const arg2 = (parts[2] || '').trim();
+
+        const match1 = arg1.match(/^(\d{1,2})[-\/](\d{1,2})$/);
+        const match2 = arg2.match(/^(\d{1,2})[-\/](\d{1,2})$/);
+
+        let match = null;
+        let targetPart = '';
+
+        if (match1) {
+            match = match1;
+            targetPart = arg2;
+        } else if (match2) {
+            match = match2;
+            targetPart = arg1;
         }
 
-        // Acepta DD-MM, DD/MM, D-M, D/M
-        const match = datePart.match(/^(\d{1,2})[-\/](\d{1,2})$/);
         if (!match) {
-            return sendChat(`⚠️ @${sender}, formato incorrecto. Usa: !registro DD-MM ` +
-                `(Ej: !registro 11-06 para el 11 de junio) 📅`);
+            return sendChat(`🎂 @${sender}, para registrar tu cumpleaños escribe: !registro DD-MM ` +
+                `(Ej: !registro 11-06 para el 11 de junio). Para registrar a un compañero: !registro DD-MM usuario (Ej: !registro 11-06 capiluisxavi) 🎉`);
         }
 
         const regDay   = parseInt(match[1], 10);
@@ -336,15 +346,20 @@ async function handleChatMessage(channel, tags, message, self) {
             return sendChat(`⚠️ @${sender}, el día debe ser del 1 al 31. Ej: !registro 11-06 = 11 de Junio 📅`);
         }
 
-        const monthName     = MONTH_NAMES[regMonth] || regMonth;
+        const monthName      = MONTH_NAMES[regMonth] || regMonth;
         const senderLoginReg = (tags.username || sender).toLowerCase().replace(/[^a-z0-9_]/g, '');
-        const twitchId      = tags['user-id'] ? String(tags['user-id']).trim() : '';
+
+        const cleanTarget   = targetPart.toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '');
+        const isSelf        = !cleanTarget || cleanTarget === senderLoginReg;
+        const targetLogin   = isSelf ? senderLoginReg : cleanTarget;
+        const targetDisplay = isSelf ? (tags['display-name'] || senderLoginReg) : targetPart.replace(/^@/, '');
+        const twitchId      = isSelf && tags['user-id'] ? String(tags['user-id']).trim() : '';
 
         try {
-            const existing = await dbRef.getUser(senderLoginReg);
+            const existing = await dbRef.getUser(targetLogin);
 
             if (existing) {
-                if (existing.birthday_unlocked) {
+                if (existing.birthday_unlocked && isSelf) {
                     return sendChat(`⚠️ @${sender}, tu cuenta está desbloqueada por el dashboard — ` +
                         `actualiza tu fecha desde ${appUrlRef} 🎂`);
                 }
@@ -356,15 +371,25 @@ async function handleChatMessage(channel, tags, message, self) {
                     : false;
 
                 if (isLocked && (existing.birth_month !== regMonth || existing.birth_day !== regDay)) {
-                    return sendChat(`🔒 @${sender}, tu fecha ya está registrada como el ` +
-                        `${existing.birth_day} de ${MONTH_NAMES[existing.birth_month] || existing.birth_month}. ` +
-                        `Solo puedes cambiarla una vez al año. Si hay un error, pide ayuda a la streamer 🎂`);
+                    if (isSelf) {
+                        return sendChat(`🔒 @${sender}, tu fecha ya está registrada como el ` +
+                            `${existing.birth_day} de ${MONTH_NAMES[existing.birth_month] || existing.birth_month}. ` +
+                            `Solo puedes cambiarla una vez al año. Si hay un error, pide ayuda a la streamer 🎂`);
+                    } else {
+                        return sendChat(`🔒 @${sender}, @${targetLogin} ya tiene fecha registrada como el ` +
+                            `${existing.birth_day} de ${MONTH_NAMES[existing.birth_month] || existing.birth_month}. ` +
+                            `Solo se puede cambiar una vez al año 🎂`);
+                    }
                 }
 
                 // Misma fecha — confirmar que ya está registrado
                 if (existing.birth_month === regMonth && existing.birth_day === regDay) {
-                    return sendChat(`✅ @${sender}, ¡ya tienes el ${regDay} de ${monthName} registrado! ` +
-                        `Cuando llegue tu día escribe !hoyesmicumple para lanzar tu alerta 🎉`);
+                    if (isSelf) {
+                        return sendChat(`✅ @${sender}, ¡ya tienes el ${regDay} de ${monthName} registrado! ` +
+                            `Cuando llegue tu día escribe !hoyesmicumple para lanzar tu alerta 🎉`);
+                    } else {
+                        return sendChat(`✅ @${sender}, ¡@${targetLogin} ya tenía registrado el ${regDay} de ${monthName}! 🎉🎂`);
+                    }
                 }
 
                 // Actualizar fecha
@@ -374,15 +399,20 @@ async function handleChatMessage(channel, tags, message, self) {
                 existing.birthday_unlocked = false;
                 if (twitchId && !existing.twitch_id) existing.twitch_id = twitchId;
                 await dbRef.saveUser(existing);
-                return sendChat(`✅ @${sender}, ¡fecha de cumpleaños actualizada al ${regDay} de ${monthName}! ` +
-                    `🎉 El sistema ya te tiene en el radar para tu día especial en stream 🎂✨`);
+
+                if (isSelf) {
+                    return sendChat(`✅ @${sender}, ¡fecha de cumpleaños actualizada al ${regDay} de ${monthName}! ` +
+                        `🎉 El sistema ya te tiene en el radar para tu día especial en stream 🎂✨`);
+                } else {
+                    return sendChat(`✅ @${sender}, ¡has actualizado la fecha de cumpleaños de @${targetLogin} al ${regDay} de ${monthName}! 🎉🎂✨`);
+                }
             }
 
             // ── Registro NUEVO desde chat ──
             const nowIso = new Date().toISOString();
             await dbRef.saveUser({
-                username:       senderLoginReg,
-                display_name:   tags['display-name'] || senderLoginReg,
+                username:       targetLogin,
+                display_name:   targetDisplay,
                 pin_hash:       '',
                 recovery_hash:  '',
                 profile_image:  '/img/yocapi.png',
@@ -396,9 +426,13 @@ async function handleChatMessage(channel, tags, message, self) {
                 twitch_id:      twitchId
             });
 
-            return sendChat(`🎉🎂 ¡@${sender} YA ESTÁ EN LA LISTA VIP DE CUMPLEAÑEROS! ` +
-                `Fecha guardada: ${regDay} de ${monthName} 🥳 ` +
-                `Cuando llegue tu día escribe !hoyesmicumple para lanzar tu alerta en pantalla con música 🎈`);
+            if (isSelf) {
+                return sendChat(`🎉🎂 ¡@${sender} YA ESTÁ EN LA LISTA VIP DE CUMPLEAÑEROS! ` +
+                    `Fecha guardada: ${regDay} de ${monthName} 🥳 ` +
+                    `Cuando llegue tu día escribe !hoyesmicumple para lanzar tu alerta en pantalla con música 🎈`);
+            } else {
+                return sendChat(`🎉🎂 ¡@${sender} ha registrado a @${targetLogin} en la lista VIP de cumpleañeros para el ${regDay} de ${monthName}! 🥳🎈 ¡Gracias por festejar a la comunidad!`);
+            }
 
         } catch (e) {
             console.error('[TwitchBot] Error en !registro:', e);
