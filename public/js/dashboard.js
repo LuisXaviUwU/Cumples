@@ -610,7 +610,7 @@ function showChangeDateModal(username, displayName, currentMonth, currentDay) {
       <div>
         <label style="display:block;font-size:0.75rem;color:#94a3b8;margin-bottom:6px;">MES</label>
         <select id="modal-change-month" style="width:100%;background:#120e1e;border:1px solid rgba(145,70,255,0.3);color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:0.9rem;">
-          ${MONTH_NAMES_ES.slice(1).map((m, i) => `<option value="${i+1}" ${(i+1) === currentMonth ? 'selected' : ''}>${m}</option>`).join('')}
+          ${MONTH_NAMES_ES.slice(1).map((m, i) => `<option value="${i + 1}" ${(i + 1) === currentMonth ? 'selected' : ''}>${m}</option>`).join('')}
         </select>
       </div>
       <div>
@@ -1810,25 +1810,25 @@ document.addEventListener('DOMContentLoaded', () => {
 // SIMULADOR Y DISEÑADOR VISUAL DE OBS (1920x1080)
 // =============================================================================
 (function initSimModal() {
-  const modal       = document.getElementById('obs-sim-modal');
-  const btnOpen     = document.getElementById('btn-open-sim-modal');
-  const btnClose    = document.getElementById('btn-close-sim-modal');
-  const canvas      = document.getElementById('sim-canvas');
+  const modal = document.getElementById('obs-sim-modal');
+  const btnOpen = document.getElementById('btn-open-sim-modal');
+  const btnClose = document.getElementById('btn-close-sim-modal');
+  const canvas = document.getElementById('sim-canvas');
   const cardWrapper = document.getElementById('sim-card-wrapper');
   const coordsBadge = document.getElementById('sim-coords-badge');
   const cardPosText = document.getElementById('sim-card-pos-text');
   const scaleSlider = document.getElementById('sim-scale-slider');
-  const scaleVal    = document.getElementById('sim-scale-val');
-  const animHint    = document.getElementById('sim-anim-hint');
-  const webcamToggle= document.getElementById('sim-toggle-webcam');
-  const webcamBox   = document.getElementById('sim-webcam-box');
+  const scaleVal = document.getElementById('sim-scale-val');
+  const animHint = document.getElementById('sim-anim-hint');
+  const webcamToggle = document.getElementById('sim-toggle-webcam');
+  const webcamBox = document.getElementById('sim-webcam-box');
 
   if (!modal || !btnOpen) return;
 
   // State
   let simState = { posX: 50, posY: 85, scale: 0.85, animation: 'slide-up', volume: 0.85 };
-  const volSlider   = document.getElementById('sim-vol-slider');
-  const volVal      = document.getElementById('sim-vol-val');
+  const volSlider = document.getElementById('sim-vol-slider');
+  const volVal = document.getElementById('sim-vol-val');
 
   // ─── Animación Dinámica de la Tarjeta ──────────────────────────────────────
   function updateCardScale(val) {
@@ -1840,10 +1840,10 @@ document.addEventListener('DOMContentLoaded', () => {
     simState.posX = Math.round(Math.max(5, Math.min(95, pctX)) * 10) / 10;
     simState.posY = Math.round(Math.max(5, Math.min(95, pctY)) * 10) / 10;
     cardWrapper.style.left = `${simState.posX}%`;
-    cardWrapper.style.top  = `${simState.posY}%`;
+    cardWrapper.style.top = `${simState.posY}%`;
     const coordText = `X: ${simState.posX}% | Y: ${simState.posY}%`;
     if (coordsBadge) coordsBadge.textContent = coordText;
-    if (cardPosText) cardPosText.textContent  = `${simState.posX}%, ${simState.posY}%`;
+    if (cardPosText) cardPosText.textContent = `${simState.posX}%, ${simState.posY}%`;
     // Actualizar botón "snap" activo
     document.querySelectorAll('.btn-snap').forEach(b => {
       const bx = parseFloat(b.dataset.x);
@@ -1854,13 +1854,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function refreshAnimHint() {
     const hints = {
-      'slide-up':    '⬆️  La tarjeta entrará subiendo desde abajo',
-      'slide-down':  '⬇️  La tarjeta entrará bajando desde arriba',
+      'slide-up': '⬆️  La tarjeta entrará subiendo desde abajo',
+      'slide-down': '⬇️  La tarjeta entrará bajando desde arriba',
       'slide-right': '➡️  La tarjeta entrará desde la izquierda',
-      'slide-left':  '⬅️  La tarjeta entrará desde la derecha',
-      'pop-zoom':    '💥 La tarjeta aparecerá con zoom en el centro',
+      'slide-left': '⬅️  La tarjeta entrará desde la derecha',
+      'pop-zoom': '💥 La tarjeta aparecerá con zoom en el centro',
       'bounce-drop': '🎪 La tarjeta caerá con rebote elástico festivo',
-      'fade-glow':   '✨ La tarjeta se fundirá con resplandor suave',
+      'fade-glow': '✨ La tarjeta se fundirá con resplandor suave',
     };
     if (animHint) animHint.textContent = hints[simState.animation] || '';
   }
@@ -1942,7 +1942,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isDragging) return;
     const pt = e.touches ? e.touches[0] : e;
     const rect = getCanvasRect();
-    const dx = ((pt.clientX - dragStartX) / rect.width)  * 100;
+    const dx = ((pt.clientX - dragStartX) / rect.width) * 100;
     const dy = ((pt.clientY - dragStartY) / rect.height) * 100;
     moveCardTo(dragStartPctX + dx, dragStartPctY + dy);
   }
@@ -2026,25 +2026,25 @@ document.addEventListener('DOMContentLoaded', () => {
       cardWrapper.style.opacity = '0';
 
       const directionOffsets = {
-        'slide-up':    { x: 0, y: 60 },
-        'slide-down':  { x: 0, y: -60 },
+        'slide-up': { x: 0, y: 60 },
+        'slide-down': { x: 0, y: -60 },
         'slide-right': { x: -80, y: 0 },
-        'slide-left':  { x: 80,  y: 0 },
-        'pop-zoom':    { x: 0, y: 0 },
+        'slide-left': { x: 80, y: 0 },
+        'pop-zoom': { x: 0, y: 0 },
         'bounce-drop': { x: 0, y: -80 },
-        'fade-glow':   { x: 0, y: 0 },
+        'fade-glow': { x: 0, y: 0 },
       };
 
       const offset = directionOffsets[simState.animation] || { x: 0, y: 0 };
       const origLeft = `${simState.posX}%`;
-      const origTop  = `${simState.posY}%`;
+      const origTop = `${simState.posY}%`;
 
       // Inicializar en posición fuera de pantalla
       const rect = getCanvasRect();
-      const offX = (offset.x / rect.width)  * 100;
+      const offX = (offset.x / rect.width) * 100;
       const offY = (offset.y / rect.height) * 100;
       cardWrapper.style.left = `${simState.posX + offX}%`;
-      cardWrapper.style.top  = `${simState.posY + offY}%`;
+      cardWrapper.style.top = `${simState.posY + offY}%`;
 
       const isZoom = simState.animation === 'pop-zoom' || simState.animation === 'fade-glow';
       if (isZoom) {
@@ -2061,7 +2061,7 @@ document.addEventListener('DOMContentLoaded', () => {
         cardWrapper.style.transition = `left 0.75s ${easing}, top 0.75s ${easing}, transform 0.75s ${easing}, opacity 0.45s ease`;
         cardWrapper.style.opacity = '1';
         cardWrapper.style.left = origLeft;
-        cardWrapper.style.top  = origTop;
+        cardWrapper.style.top = origTop;
         cardWrapper.style.transform = `translate(-50%, -50%) scale(${simState.scale})`;
 
         // Limpiar transition después
@@ -2184,117 +2184,143 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============================================================================
 // GENERADOR DE IMÁGENES DE COMANDOS (CANVAS EXPORTER HD)
 // ============================================================================
-(function() {
-  const COMMUNITY_COMMANDS = [
-    {
-      name: '!registro DD-MM',
-      aliases: '!registrarme DD-MM',
-      desc: 'Registra o actualiza tu fecha de cumpleaños directo desde el chat sin contraseña (Ej: !registro 11-06 para el 11 de Junio).',
-      tag: '✨ NUEVO',
-      color: '#10b981'
-    },
-    {
-      name: '!hoyesmicumple',
-      aliases: '!mialerta · !lanzarmicumple',
-      desc: 'Detona tu alerta VIP en directo: despliega tarjeta en OBS con foto, confeti 3D y tu música seleccionada.',
-      tag: '👑 EN OBS',
-      color: '#f59e0b'
-    },
-    {
-      name: '!felicitar [usuario]',
-      aliases: '!hbfelicitar · !felicitaciones',
-      desc: 'Envía felicitaciones con lluvia de confeti en pantalla al cumpleañero festejado hoy en stream.',
-      tag: '🎉 EN VIVO',
-      color: '#ec4899'
-    },
-    {
-      name: '!hbcambio <frase>',
-      aliases: '!hbfrase · !micumplefrase',
-      desc: 'Personaliza la frase o dedicatoria que se mostrará en pantalla al detonar tu alerta (máx. 60 letras).',
-      tag: '💬 FRASE OBS',
-      color: '#8b5cf6'
-    },
-    {
-      name: '!hbsonido [1|2|3]',
-      aliases: '!misonido · !cambiarsonido',
-      desc: 'Selecciona el efecto de sonido que sonará en tu alerta de cumpleaños (Silbato, Campana, Trompeta, etc.).',
-      tag: '🎵 AUDIO',
-      color: '#a855f7'
-    },
-    {
-      name: '!cumple [@usuario]',
-      aliases: '!micumple',
-      desc: 'Consulta cuándo es tu cumpleaños o el de cualquier compañero del canal con días restantes.',
-      tag: '📅 CONSULTA',
-      color: '#3b82f6'
-    },
-    {
-      name: '!proximos',
-      aliases: '',
-      desc: 'Muestra en el chat la lista de los próximos 5 cumpleaños que están por celebrarse.',
-      tag: '🌟 PRÓXIMOS',
-      color: '#06b6d4'
-    },
-    {
-      name: '!cumplemes [mes]',
-      aliases: '',
-      desc: 'Consulta todos los miembros de la comunidad que cumplen años en el mes actual o especificado.',
-      tag: '📆 MENSUAL',
-      color: '#6366f1'
-    },
-    {
-      name: '!cumpleinfo',
-      aliases: '',
-      desc: 'Verifica el estado de tu cuenta, tu fecha registrada y el enlace al panel interactivo.',
-      tag: 'ℹ️ PERFIL',
-      color: '#14b8a6'
-    },
-    {
-      name: '!ayudacumple',
-      aliases: '',
-      desc: 'Despliega en el chat de Twitch la guía rápida con todos los comandos y su forma de uso.',
-      tag: '💡 AYUDA',
-      color: '#f97316'
-    }
-  ];
+(function () {
+  const COMMUNITY_SECTION_REGISTRATION = {
+    title: '1. Registro y Personalización (Antes del Cumpleaños)',
+    icon: '✍️',
+    color: '#10b981',
+    items: [
+      {
+        name: '!registro DD-MM [usuario]',
+        aliases: '!registrarme DD-MM [user]',
+        desc: 'Registra tu cumpleaños o el de un compañero (Ej: !registro 11-06 o !registro 11-06 @amigo). ¡Sin contraseñas!',
+        tag: '✨ REGISTRO',
+        color: '#10b981'
+      },
+      {
+        name: '!hbcambio <frase>',
+        aliases: '!hbfrase · !micumplefrase',
+        desc: 'Personaliza la dedicatoria o frase que se mostrará en pantalla al detonar tu alerta (máx. 60 letras).',
+        tag: '💬 FRASE OBS',
+        color: '#8b5cf6'
+      },
+      {
+        name: '!hbsonido [1|2|3]',
+        aliases: '!misonido · !cambiarsonido',
+        desc: 'Selecciona el efecto de sonido que sonará en tu alerta festiva (Silbato, Campana, Trompeta, etc.).',
+        tag: '🎵 AUDIO OBS',
+        color: '#a855f7'
+      }
+    ]
+  };
 
-  const MODS_COMMANDS = [
-    {
-      name: '!hbgrabacion [on|off]',
-      aliases: '!hbmodovideo · !hbcine · !hbpausa',
-      desc: 'Modo Grabación: Pausa las alertas en pantalla para evitar interrupciones al grabar videos o momentos serios.',
-      tag: '🛡️ MODO VIDEO',
-      color: '#ef4444'
-    },
-    {
-      name: '!hbalertas [on|off]',
-      aliases: '!cumplealertas · !alertascumple',
-      desc: 'Habilita o deshabilita la alerta visual de !hoyesmicumple en la pantalla de OBS Studio.',
-      tag: '🛡️ ALERTAS OBS',
-      color: '#f43f5e'
-    },
-    {
-      name: '!hbfelicitaciones [on|off]',
-      aliases: '!hbfelicitar on|off',
-      desc: 'Activa o desactiva que los espectadores envíen felicitaciones y confeti en pantalla.',
-      tag: '🛡️ FELICITACIONES',
-      color: '#e11d48'
-    },
-    {
-      name: '!hbmod [on|off]',
-      aliases: '!hbadmin',
-      desc: 'Interruptor maestro para habilitar o deshabilitar todos los sistemas de alertas del bot a la vez.',
-      tag: '🛡️ MASTER SWITCH',
-      color: '#dc2626'
-    },
-    {
-      name: '!hbestado',
-      aliases: '',
-      desc: 'Muestra en el chat el estado actual de las alertas, modo grabación y timers automáticos.',
-      tag: '🛡️ ESTADO BOT',
-      color: '#b91c1c'
-    }
-  ];
+  const COMMUNITY_SECTION_ALERT = {
+    title: '2. Cuando ya es tu Cumpleaños (¡Festejo en Directo!)',
+    icon: '🎉',
+    color: '#f59e0b',
+    items: [
+      {
+        name: '!hoyesmicumple',
+        aliases: '!mialerta · !lanzarmicumple',
+        desc: 'Detona tu alerta VIP en directo: despliega tarjeta en OBS con foto, confeti 3D y tu música seleccionada.',
+        tag: '👑 EN OBS',
+        color: '#f59e0b'
+      },
+      {
+        name: '!felicitar [usuario]',
+        aliases: '!hbfelicitar · !felicitaciones',
+        desc: 'Envía felicitaciones con lluvia de confeti en pantalla al cumpleañero festejado hoy en stream.',
+        tag: '🎉 EN VIVO',
+        color: '#ec4899'
+      }
+    ]
+  };
+
+  const COMMUNITY_SECTION_INFO = {
+    title: '3. Comandos de Información y Consultas',
+    icon: '📊',
+    color: '#3b82f6',
+    items: [
+      {
+        name: '!cumple [@usuario]',
+        aliases: '!micumple',
+        desc: 'Consulta cuándo es tu cumpleaños o el de cualquier compañero del canal con días restantes.',
+        tag: '📅 CONSULTA',
+        color: '#3b82f6'
+      },
+      {
+        name: '!proximos',
+        aliases: '',
+        desc: 'Muestra en el chat la lista de los próximos 5 cumpleaños que están por celebrarse.',
+        tag: '🌟 PRÓXIMOS',
+        color: '#06b6d4'
+      },
+      {
+        name: '!cumplemes [mes]',
+        aliases: '',
+        desc: 'Consulta todos los miembros de la comunidad que cumplen años en el mes actual o especificado.',
+        tag: '📆 MENSUAL',
+        color: '#6366f1'
+      },
+      {
+        name: '!cumpleinfo',
+        aliases: '',
+        desc: 'Verifica el estado de tu cuenta, tu fecha registrada y el enlace al panel interactivo.',
+        tag: 'ℹ️ PERFIL',
+        color: '#14b8a6'
+      },
+      {
+        name: '!ayudacumple',
+        aliases: '',
+        desc: 'Despliega en el chat de Twitch la guía rápida con todos los comandos y su forma de uso.',
+        tag: '💡 GUÍA',
+        color: '#f97316'
+      }
+    ]
+  };
+
+  const MODS_SECTION = {
+    title: 'Control Exclusivo para Streamer (@yocapi_pr) y Moderadores',
+    icon: '🛡️',
+    color: '#ef4444',
+    items: [
+      {
+        name: '!hbgrabacion [on|off]',
+        aliases: '!hbmodovideo · !hbcine · !hbpausa',
+        desc: 'Modo Grabación: Pausa las alertas en pantalla para evitar interrupciones al grabar videos o momentos serios.',
+        tag: '🛡️ MODO VIDEO',
+        color: '#ef4444'
+      },
+      {
+        name: '!hbalertas [on|off]',
+        aliases: '!cumplealertas · !alertascumple',
+        desc: 'Habilita o deshabilita la alerta visual de !hoyesmicumple en la pantalla de OBS Studio.',
+        tag: '🛡️ ALERTAS OBS',
+        color: '#f43f5e'
+      },
+      {
+        name: '!hbfelicitaciones [on|off]',
+        aliases: '!hbfelicitar on|off',
+        desc: 'Activa o desactiva que los espectadores envíen felicitaciones y confeti en pantalla.',
+        tag: '🛡️ FELICITACIONES',
+        color: '#e11d48'
+      },
+      {
+        name: '!hbmod [on|off]',
+        aliases: '!hbadmin',
+        desc: 'Interruptor maestro para habilitar o deshabilitar todos los sistemas de alertas del bot a la vez.',
+        tag: '🛡️ MASTER SWITCH',
+        color: '#dc2626'
+      },
+      {
+        name: '!hbestado',
+        aliases: '',
+        desc: 'Muestra en el chat el estado actual de las alertas, modo grabación y timers automáticos.',
+        tag: '🛡️ ESTADO BOT',
+        color: '#b91c1c'
+      }
+    ]
+  };
 
   function drawRoundRect(ctx, x, y, width, height, radius, fill, stroke) {
     ctx.beginPath();
@@ -2337,9 +2363,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const width = 1320;
     const padding = 50;
-    const gap = 20;
+    const gap = 18;
     const cardW = (width - (padding * 2) - gap) / 2;
-    const cardH = 126;
+    const cardH = 130;
 
     let title = '';
     let subtitle = '';
@@ -2349,31 +2375,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (type === 'community') {
       title = 'COMANDOS DE CUMPLEAÑOS · COMUNIDAD & CHAT';
-      subtitle = 'Escribe estos comandos directamente en el chat durante el stream para festejar y personalizar tu alerta';
+      subtitle = 'Comandos organizados por fase: Registro previo, Festejo el gran día, y Consultas generales';
       icon = '🎉';
       accentGradient = ['#8b5cf6', '#3b82f6'];
-      sections.push({ title: 'Comandos para el Chat de Twitch', items: COMMUNITY_COMMANDS });
+      sections = [COMMUNITY_SECTION_REGISTRATION, COMMUNITY_SECTION_ALERT, COMMUNITY_SECTION_INFO];
     } else if (type === 'mods') {
       title = 'COMANDOS DE CONTROL · STREAMER & MODS';
       subtitle = 'Comandos protegidos exclusivos para @yocapi_pr y moderadores para pausar o activar alertas en directo';
       icon = '🛡️';
       accentGradient = ['#ef4444', '#f97316'];
-      sections.push({ title: 'Control de Alertas y Grabación', items: MODS_COMMANDS });
+      sections = [MODS_SECTION];
     } else {
       title = 'LISTA MAESTRA DE COMANDOS DEL BOT DE CUMPLEAÑOS';
-      subtitle = 'Todos los comandos del bot organizados por permisos · Canal de Twitch @yocapi_pr';
+      subtitle = 'Todos los comandos del bot organizados por secciones y permisos · Canal de Twitch @yocapi_pr';
       icon = '⚡';
       accentGradient = ['#9333ea', '#ef4444'];
-      sections.push({ title: 'Comandos para el Chat y Comunidad', items: COMMUNITY_COMMANDS });
-      sections.push({ title: 'Control Exclusivo para Streamer (@yocapi_pr) y Moderadores', items: MODS_COMMANDS });
+      sections = [COMMUNITY_SECTION_REGISTRATION, COMMUNITY_SECTION_ALERT, COMMUNITY_SECTION_INFO, MODS_SECTION];
     }
 
-    // Calcular altura total
+    // Calcular altura total precisa
     let totalHeight = 180; // Header
     sections.forEach(sec => {
-      totalHeight += 50; // Section title
+      totalHeight += 48; // Section title badge
       const rows = Math.ceil(sec.items.length / 2);
-      totalHeight += rows * (cardH + gap) + 20;
+      totalHeight += rows * (cardH + gap) + 22;
     });
     totalHeight += 75; // Footer
 
@@ -2439,12 +2464,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentY = 175;
 
     sections.forEach(sec => {
-      // Título de sección si hay más de 1 o para dar estructura
-      ctx.font = 'bold 18px "Outfit", sans-serif';
-      ctx.fillStyle = '#e2e8f0';
-      ctx.fillText(sec.title, padding, currentY + 22);
+      // Título de sección con insignia visual destacada
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+      ctx.strokeStyle = sec.color ? (sec.color + '55') : 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 1;
+      drawRoundRect(ctx, padding, currentY, width - (padding * 2), 34, 8, true, true);
 
-      currentY += 40;
+      // Acento lateral izquierdo del título
+      ctx.fillStyle = sec.color || '#a855f7';
+      drawRoundRect(ctx, padding, currentY, 6, 34, 3, true, false);
+
+      ctx.font = 'bold 15px "Outfit", sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(`${sec.icon || '📌'} ${sec.title}`, padding + 18, currentY + 22);
+
+      currentY += 46;
 
       for (let i = 0; i < sec.items.length; i++) {
         const item = sec.items[i];
@@ -2465,17 +2499,17 @@ document.addEventListener('DOMContentLoaded', () => {
         drawRoundRect(ctx, cardX, cardY, 5, cardH, 3, true, false);
 
         // Badge con nombre del comando
-        ctx.font = 'bold 16px "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace';
+        ctx.font = 'bold 15px "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace';
         const nameMetrics = ctx.measureText(item.name);
-        const badgeW = nameMetrics.width + 20;
+        const badgeW = nameMetrics.width + 18;
 
         ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
         ctx.strokeStyle = item.color || '#8b5cf6';
         ctx.lineWidth = 1;
-        drawRoundRect(ctx, cardX + 16, cardY + 12, badgeW, 26, 6, true, true);
+        drawRoundRect(ctx, cardX + 14, cardY + 12, badgeW, 26, 6, true, true);
 
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(item.name, cardX + 26, cardY + 30);
+        ctx.fillText(item.name, cardX + 23, cardY + 29);
 
         // Pill con el Tag (a la derecha)
         if (item.tag) {
@@ -2497,14 +2531,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (item.aliases) {
           ctx.font = 'italic 11px "Plus Jakarta Sans", sans-serif';
           ctx.fillStyle = '#a78bfa';
-          ctx.fillText(`Aliases: ${item.aliases}`, cardX + 18, textStartY);
+          ctx.fillText(`Aliases: ${item.aliases}`, cardX + 16, textStartY);
           textStartY += 16;
         }
 
         // Descripción con ajuste de línea
         ctx.font = '13px "Plus Jakarta Sans", sans-serif';
         ctx.fillStyle = '#cbd5e1';
-        wrapText(ctx, item.desc, cardX + 18, textStartY, cardW - 36, 17);
+        wrapText(ctx, item.desc, cardX + 16, textStartY, cardW - 32, 17);
       }
 
       const rowsCount = Math.ceil(sec.items.length / 2);
@@ -2521,7 +2555,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     ctx.font = '12px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#64748b';
-    ctx.fillText('🎂 Sistema de Cumpleaños para Streamers · Creado para @yocapi_pr · twitch.tv/yocapi_pr', padding, totalHeight - 26);
+    ctx.fillText('🎂 Sistema de Cumpleaños de CapiLuisXavi · Creado para @yocapi_pr · twitch.tv/yocapi_pr', padding, totalHeight - 26);
 
     ctx.font = 'bold 12px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#94a3b8';
