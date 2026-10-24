@@ -724,19 +724,20 @@
             </div>
 
             <div class="cmd-list">
-              <!-- Item 2.0: !registro DD-MM -->
+              <!-- Item 2.0: !registro DD-MM [usuario] -->
               <div class="cmd-item" style="border-left: 3px solid #10b981;">
                 <div>
-                  <span class="cmd-badge-code" style="color: #6ee7b7; background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.4);" onclick="navigator.clipboard.writeText('!registro 11-06')" title="Clic para copiar">!registro DD-MM</span>
+                  <span class="cmd-badge-code" style="color: #6ee7b7; background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.4);" onclick="navigator.clipboard.writeText('!registro 11-06')" title="Clic para copiar">!registro DD-MM [usuario]</span>
                   <div class="cmd-item-aliases">
-                    <span>Aliases: <code>!registrarme DD-MM</code></span>
+                    <span>Aliases: <code>!registrarme DD-MM [user]</code></span>
                   </div>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Registra la fecha de cumpleaños del espectador directamente desde el chat de Twitch sin contraseñas ni formularios.</strong>
+                  <strong>Registra tu cumpleaños o el de un compañero directamente desde el chat sin contraseñas ni formularios.</strong>
                   <div class="cmd-example-box">
-                    <span>💬 <strong>Ejemplo en chat:</strong> <code>!registro 11-06</code> (para el 11 de Junio)</span><br>
-                    <span style="color: #cbd5e1; margin-top: 4px; display: inline-block;">🎉 <strong>Bot responde:</strong> ¡@usuario YA ESTÁ EN LA LISTA VIP DE CUMPLEAÑEROS! Fecha guardada: 11 de Junio 🥳</span>
+                    <span>💬 <strong>Propio:</strong> <code>!registro 11-06</code> (11 de Junio)</span><br>
+                    <span>👥 <strong>Para un amigo:</strong> <code>!registro 11-06 capiluisxavi</code> (o <code>!registro 11-06 @amigo</code>)</span><br>
+                    <span style="color: #cbd5e1; margin-top: 4px; display: inline-block;">🎉 <strong>Bot responde:</strong> ¡@sender ha registrado a @usuario en la lista VIP de cumpleañeros para el 11 de Junio! 🥳🎈</span>
                   </div>
                   <small>✨ Protección de 1 año: una vez registrada la fecha, solo se puede modificar 1 vez al año para evitar abusos.</small>
                 </div>
