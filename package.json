@@ -27,6 +27,8 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "firebase-admin": "^13.1.0",
+    "jpeg-js": "^0.4.4",
+    "pngjs": "^7.0.0",
     "tmi.js": "^1.8.5"
   }
 }
