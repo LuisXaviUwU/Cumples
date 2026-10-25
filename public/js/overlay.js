@@ -317,6 +317,22 @@ function connectSSE() {
       if (data.type === 'felicitation') {
         showFelicitation(data);
       }
+      // Minijuego: Piñata de Capibara
+      if (data.type === 'pinata_start') {
+        startPinataUI(data);
+      }
+      if (data.type === 'pinata_hit') {
+        hitPinataUI(data);
+      }
+      if (data.type === 'pinata_broken') {
+        brokenPinataUI(data);
+      }
+      if (data.type === 'pinata_timeout') {
+        timeoutPinataUI(data);
+      }
+      if (data.type === 'pinata_cancel') {
+        cancelPinataUI();
+      }
       // Audio silencioso sin visual (e.g., easter eggs como 'bang')
       if (data.type === 'play_audio' && data.sound) {
         try {
@@ -453,4 +469,403 @@ function showFelicitation(data) {
   }, 4500);
 }
 
+// ─── MINIJUEGO: PIÑATA COMUNITARIA DE CAPIBARA (CONTROLLER) ───────────────
+
+const pinataWrapper = document.getElementById('pinata-wrapper');
+const pinataTargetName = document.getElementById('pinata-target-name');
+const pinataHpFill = document.getElementById('pinata-hp-fill');
+const pinataHpText = document.getElementById('pinata-hp-text');
+const pinataTimer = document.getElementById('pinata-timer');
+const pinataBody = document.getElementById('pinata-body-container');
+const pinataBat = document.getElementById('pinata-bat');
+const pinataImpactStar = document.getElementById('pinata-impact-star');
+const pinataHitsFeed = document.getElementById('pinata-hits-feed');
+const pinataResultCard = document.getElementById('pinata-result-card');
+const pinataTimeoutCard = document.getElementById('pinata-timeout-card');
+const pinataImg = document.getElementById('pinata-img');
+
+let pinataTimerInterval = null;
+let pinataAudioCtx = null;
+
+function getPinataAudioContext() {
+  if (!pinataAudioCtx) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) pinataAudioCtx = new AudioCtx();
+  }
+  if (pinataAudioCtx && pinataAudioCtx.state === 'suspended') {
+    pinataAudioCtx.resume().catch(() => {});
+  }
+  return pinataAudioCtx;
+}
+
+// Síntesis de Sonido Web Audio API (Cero dependencias de archivos externos)
+function playPinataSound(type) {
+  try {
+    const ctx = getPinataAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const masterGain = ctx.createGain();
+    masterGain.gain.setValueAtTime(currentOverlayVolume * 0.9, now);
+    masterGain.connect(ctx.destination);
+
+    if (type === 'hit') {
+      // Impacto de palo de madera festivo (Oscilador con bajada de tono rápida + pop)
+      const osc = ctx.createOscillator();
+      const oscGain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(260, now);
+      osc.frequency.exponentialRampToValueAtTime(45, now + 0.12);
+
+      oscGain.gain.setValueAtTime(1, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+      osc.connect(oscGain);
+      oscGain.connect(masterGain);
+      osc.start(now);
+      osc.stop(now + 0.16);
+
+      // Mini chasquido de crujido
+      const clickOsc = ctx.createOscillator();
+      const clickGain = ctx.createGain();
+      clickOsc.type = 'square';
+      clickOsc.frequency.setValueAtTime(800, now);
+      clickOsc.frequency.exponentialRampToValueAtTime(80, now + 0.04);
+      clickGain.gain.setValueAtTime(0.4, now);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+      clickOsc.connect(clickGain);
+      clickGain.connect(masterGain);
+      clickOsc.start(now);
+      clickOsc.stop(now + 0.06);
+
+    } else if (type === 'broken') {
+      // Fanfarria triunfal de fiesta: C5 - E5 - G5 - C6
+      const notes = [523.25, 659.25, 783.99, 1046.50];
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.11);
+        g.gain.setValueAtTime(0, now + idx * 0.11);
+        g.gain.linearRampToValueAtTime(0.8, now + idx * 0.11 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.11 + 0.45);
+
+        osc.connect(g);
+        g.connect(masterGain);
+        osc.start(now + idx * 0.11);
+        osc.stop(now + idx * 0.11 + 0.5);
+      });
+
+    } else if (type === 'timeout') {
+      // Silbato cómico deslizante hacia abajo
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(480, now);
+      osc.frequency.exponentialRampToValueAtTime(140, now + 0.6);
+      g.gain.setValueAtTime(0.7, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+
+      osc.connect(g);
+      g.connect(masterGain);
+      osc.start(now);
+      osc.stop(now + 0.7);
+    }
+  } catch (e) {
+    console.warn('[Overlay Audio] Error en síntesis:', e);
+  }
+}
+
+// Limpieza de Fondo Blanco a Transparente con BFS Flood-Fill
+function prepareTransparentPinata() {
+  if (!pinataImg) return;
+  const tempImg = new Image();
+  tempImg.crossOrigin = 'anonymous';
+  tempImg.onload = () => {
+    try {
+      const c = document.createElement('canvas');
+      c.width = tempImg.naturalWidth;
+      c.height = tempImg.naturalHeight;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(tempImg, 0, 0);
+      const imgData = ctx.getImageData(0, 0, c.width, c.height);
+      const d = imgData.data;
+      const w = c.width;
+      const h = c.height;
+
+      const visited = new Uint8Array(w * h);
+      const queue = [];
+
+      function checkAndEnqueue(x, y) {
+        const idx = y * w + x;
+        if (visited[idx]) return;
+        visited[idx] = 1;
+        const pIdx = idx * 4;
+        // Píxeles casi blancos del fondo de estudio
+        if (d[pIdx] > 225 && d[pIdx + 1] > 225 && d[pIdx + 2] > 225) {
+          queue.push(x, y);
+        }
+      }
+
+      // Encolar bordes exteriores
+      for (let x = 0; x < w; x++) {
+        checkAndEnqueue(x, 0);
+        checkAndEnqueue(x, h - 1);
+      }
+      for (let y = 0; y < h; y++) {
+        checkAndEnqueue(0, y);
+        checkAndEnqueue(w - 1, y);
+      }
+
+      let qHead = 0;
+      while (qHead < queue.length) {
+        const cx = queue[qHead++];
+        const cy = queue[qHead++];
+        const pIdx = (cy * w + cx) * 4;
+        d[pIdx + 3] = 0; // Hacer transparente
+
+        if (cx > 0) checkAndEnqueue(cx - 1, cy);
+        if (cx < w - 1) checkAndEnqueue(cx + 1, cy);
+        if (cy > 0) checkAndEnqueue(cx, cy - 1);
+        if (cy < h - 1) checkAndEnqueue(cx, cy + 1);
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+      pinataImg.src = c.toDataURL('image/png');
+      console.log('[OBS Overlay] 🪅 Piñata de Capibara procesada con transparencia exitosamente');
+    } catch (e) {
+      console.warn('Canvas flood fill fallback:', e);
+    }
+  };
+  tempImg.src = '/img/pinata_capi.jpg';
+}
+
+prepareTransparentPinata();
+
+function startPinataUI(data) {
+  if (!pinataWrapper) return;
+
+  if (pinataTimerInterval) {
+    clearInterval(pinataTimerInterval);
+    pinataTimerInterval = null;
+  }
+
+  // Ocultar tarjetas de fin de juego anteriores
+  if (pinataResultCard) pinataResultCard.style.display = 'none';
+  if (pinataTimeoutCard) pinataTimeoutCard.style.display = 'none';
+  if (pinataBody) pinataBody.style.opacity = '1';
+  if (pinataHitsFeed) pinataHitsFeed.innerHTML = '';
+
+  const target = data.targetUser || 'la Comunidad';
+  if (pinataTargetName) pinataTargetName.textContent = `Cumpleaños de @${target}`;
+
+  // Reset barra HP
+  if (pinataHpFill) {
+    pinataHpFill.style.width = '100%';
+    pinataHpFill.style.background = 'linear-gradient(90deg, #10b981 0%, #fbbf24 50%, #f43f5e 100%)';
+  }
+  if (pinataHpText) pinataHpText.textContent = `${data.maxHp} / ${data.maxHp} HP`;
+
+  // Timer regresivo
+  let secondsLeft = data.durationSec || 35;
+  if (pinataTimer) pinataTimer.textContent = `⏳ ${secondsLeft}s`;
+
+  pinataTimerInterval = setInterval(() => {
+    secondsLeft--;
+    if (secondsLeft < 0) {
+      clearInterval(pinataTimerInterval);
+      pinataTimerInterval = null;
+    } else {
+      if (pinataTimer) pinataTimer.textContent = `⏳ ${secondsLeft}s`;
+    }
+  }, 1000);
+
+  // Desplegar piñata en pantalla
+  pinataWrapper.classList.add('active');
+
+  // Mini disparo de confeti inicial de bienvenida
+  if (typeof confetti === 'function') {
+    confetti({
+      particleCount: 45,
+      spread: 70,
+      origin: { y: 0.35 },
+      colors: ['#fbbf24', '#f43f5e', '#06b6d4', '#10b981']
+    });
+  }
+}
+
+function hitPinataUI(data) {
+  playPinataSound('hit');
+
+  // Actualizar Barra de HP
+  const pct = Math.max(0, data.percentage !== undefined ? data.percentage : 100);
+  if (pinataHpFill) {
+    pinataHpFill.style.width = `${pct}%`;
+    if (pct < 30) {
+      pinataHpFill.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+    } else if (pct < 60) {
+      pinataHpFill.style.background = 'linear-gradient(90deg, #f59e0b, #ea580c)';
+    }
+  }
+  if (pinataHpText) pinataHpText.textContent = `${data.currentHp} / ${data.maxHp} HP`;
+
+  // Animación del palo/bate
+  if (pinataBat) {
+    pinataBat.classList.remove('is-swinging');
+    void pinataBat.offsetWidth; // Reflow para reiniciar animación
+    pinataBat.classList.add('is-swinging');
+  }
+
+  // Animación de estrella de impacto
+  if (pinataImpactStar) {
+    pinataImpactStar.classList.remove('is-popping');
+    void pinataImpactStar.offsetWidth;
+    pinataImpactStar.classList.add('is-popping');
+  }
+
+  // Sacudida de la piñata
+  if (pinataBody) {
+    pinataBody.classList.remove('is-hit');
+    void pinataBody.offsetWidth;
+    pinataBody.classList.add('is-hit');
+  }
+
+  // Chispas de confeti desde el impacto
+  if (typeof confetti === 'function') {
+    confetti({
+      particleCount: 15,
+      spread: 45,
+      origin: { x: 0.52 + (Math.random() - 0.5) * 0.05, y: 0.38 + (Math.random() - 0.5) * 0.05 },
+      colors: ['#fbbf24', '#f43f5e', '#06b6d4'],
+      scalar: 0.8,
+      ticks: 70
+    });
+  }
+
+  // Badge flotante del bateador (+1 @usuario)
+  if (pinataHitsFeed) {
+    const badge = document.createElement('div');
+    badge.className = 'pinata-hit-badge';
+    const avatarSrc = (data.avatar && data.avatar.startsWith('http')) ? data.avatar : '/img/yocapi.png';
+    badge.innerHTML = `<img src="${avatarSrc}" onerror="this.src='/img/yocapi.png'" alt=""> <span>+1 @${data.user || 'Amigo'}</span>`;
+
+    const rndX = 140 + Math.random() * 80;
+    const rndY = 160 + (Math.random() - 0.5) * 60;
+    badge.style.left = `${rndX}px`;
+    badge.style.top = `${rndY}px`;
+
+    pinataHitsFeed.appendChild(badge);
+    setTimeout(() => badge.remove(), 1300);
+  }
+}
+
+function brokenPinataUI(data) {
+  if (pinataTimerInterval) {
+    clearInterval(pinataTimerInterval);
+    pinataTimerInterval = null;
+  }
+
+  playPinataSound('broken');
+
+  // Ocultar cuerpo de piñata para dar paso a la explosión
+  if (pinataBody) pinataBody.style.opacity = '0';
+  if (pinataHpFill) pinataHpFill.style.width = '0%';
+  if (pinataHpText) pinataHpText.textContent = '0 / ' + (data.totalHits || 30) + ' HP (¡ROTA!)';
+
+  // Mega Explosión de Confeti y Dulces
+  if (typeof confetti === 'function') {
+    // Ola 1: Disparo central masivo
+    confetti({
+      particleCount: 150,
+      spread: 120,
+      origin: { y: 0.45 },
+      shapes: ['star', 'circle'],
+      colors: ['#fbbf24', '#f43f5e', '#06b6d4', '#10b981', '#ec4899', '#ffffff']
+    });
+
+    // Ola 2: Cañones cruzados
+    setTimeout(() => {
+      confetti({
+        particleCount: 80,
+        angle: 60,
+        spread: 70,
+        origin: { x: 0.1, y: 0.5 },
+        colors: ['#ffd700', '#ff69b4', '#00ffff']
+      });
+      confetti({
+        particleCount: 80,
+        angle: 120,
+        spread: 70,
+        origin: { x: 0.9, y: 0.5 },
+        colors: ['#ffd700', '#ff69b4', '#00ffff']
+      });
+    }, 250);
+  }
+
+  // Mostrar tarjeta de victoria con podio
+  if (pinataResultCard) {
+    const titleEl = document.getElementById('result-celebration-title');
+    const lastEl = document.getElementById('result-last-hitter');
+    const topEl = document.getElementById('result-top-hitter');
+
+    if (titleEl) titleEl.textContent = `¡Felicidades @${data.targetUser || 'Comunidad'}! 🎂`;
+    if (lastEl) lastEl.textContent = `@${data.lastHitter || 'Alguien'}`;
+
+    if (topEl) {
+      if (data.topHitters && data.topHitters.length > 0) {
+        const top1 = data.topHitters[0];
+        topEl.textContent = `@${top1.displayName} (${top1.count} golpes)`;
+      } else {
+        topEl.textContent = `@${data.lastHitter || 'El Chat'}`;
+      }
+    }
+
+    pinataResultCard.style.display = 'block';
+  }
+
+  // Mantener en pantalla para el festejo y luego retirar con gracia tras 9.5s
+  setTimeout(() => {
+    if (pinataWrapper) pinataWrapper.classList.remove('active');
+    setTimeout(() => {
+      if (pinataResultCard) pinataResultCard.style.display = 'none';
+      if (pinataBody) pinataBody.style.opacity = '1';
+    }, 900);
+  }, 9500);
+}
+
+function timeoutPinataUI(data) {
+  if (pinataTimerInterval) {
+    clearInterval(pinataTimerInterval);
+    pinataTimerInterval = null;
+  }
+
+  playPinataSound('timeout');
+
+  if (pinataTimeoutCard) {
+    const hpLeftEl = document.getElementById('timeout-hp-left');
+    if (hpLeftEl) {
+      hpLeftEl.textContent = `Le quedaron ${data.remainingHp || 0} de vida. ¡Estuvo muy cerca, chat!`;
+    }
+    pinataTimeoutCard.style.display = 'block';
+  }
+
+  setTimeout(() => {
+    if (pinataWrapper) pinataWrapper.classList.remove('active');
+    setTimeout(() => {
+      if (pinataTimeoutCard) pinataTimeoutCard.style.display = 'none';
+    }, 900);
+  }, 6500);
+}
+
+function cancelPinataUI() {
+  if (pinataTimerInterval) {
+    clearInterval(pinataTimerInterval);
+    pinataTimerInterval = null;
+  }
+  if (pinataWrapper) pinataWrapper.classList.remove('active');
+  if (pinataResultCard) pinataResultCard.style.display = 'none';
+  if (pinataTimeoutCard) pinataTimeoutCard.style.display = 'none';
+}
+
 connectSSE();
+

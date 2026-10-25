@@ -121,8 +121,40 @@ async function loadStats() {
     // Estado de felicitaciones y alertas del cumpleañero
     loadFelicitationStatus();
     loadBirthdayAlertsStatus();
+    loadPinataStatus();
   } catch (err) {
     console.error('Error cargando estadísticas:', err);
+  }
+}
+
+// Cargar y gestionar estado de la piñata de capibara
+async function loadPinataStatus() {
+  try {
+    const res = await authFetch('/api/dashboard/pinata/status');
+    const data = await res.json();
+    updatePinataUI(data);
+  } catch (err) {
+    console.error('Error cargando estado de piñata:', err);
+  }
+}
+
+function updatePinataUI(status) {
+  const badge = document.getElementById('pinata-status-badge');
+  const btnStart = document.getElementById('btn-start-pinata');
+  if (!badge) return;
+
+  if (status && status.active) {
+    badge.textContent = `🟢 Activa (${status.currentHp}/${status.maxHp} HP - ${status.remainingSec}s)`;
+    badge.style.background = 'rgba(16, 185, 129, 0.2)';
+    badge.style.color = '#34d399';
+    badge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+    if (btnStart) btnStart.textContent = '🔄 Reiniciar Piñata';
+  } else {
+    badge.textContent = '⚪ Inactiva';
+    badge.style.background = 'rgba(148, 163, 184, 0.2)';
+    badge.style.color = '#94a3b8';
+    badge.style.borderColor = 'rgba(148, 163, 184, 0.4)';
+    if (btnStart) btnStart.textContent = '🪅 Iniciar Piñata';
   }
 }
 
@@ -1041,6 +1073,90 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Error conectando con el servidor', 'error');
       } finally {
         btnQuickRec.disabled = false;
+      }
+    });
+  }
+
+  // ─── Minijuego Piñata Comunitaria de Capibara ──────────────────────────────
+  const btnStartPinata = document.getElementById('btn-start-pinata');
+  const btnStopPinata = document.getElementById('btn-stop-pinata');
+  const btnTestHitPinata = document.getElementById('btn-test-hit-pinata');
+  const inputPinataTarget = document.getElementById('dash-pinata-target');
+  const selectPinataHp = document.getElementById('dash-pinata-hp');
+
+  if (btnStartPinata) {
+    btnStartPinata.addEventListener('click', async () => {
+      btnStartPinata.disabled = true;
+      try {
+        const target = (inputPinataTarget?.value || '').trim() || 'la Comunidad';
+        const hp = parseInt(selectPinataHp?.value, 10) || 35;
+        const res = await authFetch('/api/dashboard/pinata/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            targetUser: target,
+            maxHp: hp,
+            durationSec: 35
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          updatePinataUI(data.status);
+          showToast(`🪅 ¡Piñata de Capibara iniciada en directo para @${target} (${hp} HP)!`, 'success');
+        } else {
+          showToast(data.error || 'Error iniciando piñata', 'error');
+        }
+      } catch {
+        showToast('Error conectando con el servidor', 'error');
+      } finally {
+        btnStartPinata.disabled = false;
+      }
+    });
+  }
+
+  if (btnStopPinata) {
+    btnStopPinata.addEventListener('click', async () => {
+      btnStopPinata.disabled = true;
+      try {
+        const res = await authFetch('/api/dashboard/pinata/stop', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          updatePinataUI({ active: false });
+          showToast('🛑 Piñata de Capibara detenida y retirada de OBS.', 'warning');
+        }
+      } catch {
+        showToast('Error conectando con el servidor', 'error');
+      } finally {
+        btnStopPinata.disabled = false;
+      }
+    });
+  }
+
+  if (btnTestHitPinata) {
+    btnTestHitPinata.addEventListener('click', async () => {
+      try {
+        const res = await authFetch('/api/dashboard/pinata/hit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user: 'Yocapi (Streamer)' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          if (data.broken) {
+            showToast('💥 ¡Golpe asestado! ¡La piñata se rompió!', 'success');
+          } else {
+            showToast(`🏏 ¡Golpe asestado! Le quedan ${data.currentHp} HP`, 'info');
+          }
+          loadPinataStatus();
+        } else {
+          if (data.reason === 'no_active') {
+            showToast('⚠️ No hay ninguna piñata activa. Presiona "Iniciar Piñata" primero.', 'warning');
+          } else {
+            showToast('Espera un instante antes de volver a batear.', 'info');
+          }
+        }
+      } catch {
+        showToast('Error de conexión', 'error');
       }
     });
   }
