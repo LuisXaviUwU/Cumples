@@ -61,34 +61,65 @@
 
   <!-- Minijuego: Piñata Comunitaria de Capibara -->
   <div id="pinata-wrapper" class="pinata-wrapper">
-    <div class="pinata-rope"></div>
+    <!-- Guirnalda decorativa superior -->
+    <div class="pinata-garland">
+      <span class="flag f1">🚩</span>
+      <span class="flag f2">🎉</span>
+      <span class="flag f3">✨</span>
+      <span class="flag f4">🎈</span>
+      <span class="flag f5">🪅</span>
+      <span class="flag f6">✨</span>
+      <span class="flag f7">🎊</span>
+      <span class="flag f8">🚩</span>
+    </div>
 
     <!-- HUD Superior: Título, Barra de HP, Cuenta regresiva -->
     <div class="pinata-hud">
+      <div class="pinata-ambient-glow"></div>
       <div class="pinata-title-badge">
         <span class="pinata-badge-icon">🪅</span>
-        <span>¡PIÑATA DE CAPIBARA!</span>
+        <span>¡LA GRAN PIÑATA DE CAPIBARA!</span>
         <span class="pinata-badge-icon">✨</span>
       </div>
       <div class="pinata-target-name" id="pinata-target-name">Cumpleaños de @Comunidad</div>
 
       <div class="pinata-bar-container">
         <div class="pinata-hp-fill" id="pinata-hp-fill" style="width: 100%;"></div>
-        <div class="pinata-hp-text" id="pinata-hp-text">30 / 30 HP</div>
+        <div class="pinata-hp-text" id="pinata-hp-text">35 / 35 HP</div>
       </div>
 
       <div class="pinata-meta-row">
-        <div class="pinata-timer" id="pinata-timer">⏳ 35s</div>
-        <div class="pinata-chat-callout">¡Escribe <span class="kbd">!dale</span> o <span class="kbd">!pegar</span> en el chat!</div>
+        <div class="pinata-timer-badge" id="pinata-timer">⏳ 35s</div>
+        <div class="pinata-chat-callout">
+          ¡Escribe <span class="kbd">!dale</span> o <span class="kbd">!pegar</span> en el chat!
+        </div>
       </div>
     </div>
 
-    <!-- Contenedor del Personaje de la Piñata -->
-    <div class="pinata-body-container" id="pinata-body-container">
-      <div class="pinata-bat" id="pinata-bat">🏏</div>
-      <img id="pinata-img" src="/img/pinata_capi.jpg" class="pinata-img" alt="Piñata Capibara">
-      <div class="pinata-impact-star" id="pinata-impact-star">💥</div>
-      <div class="pinata-crack-overlay" id="pinata-crack-overlay"></div>
+    <!-- Cuerda que cuelga del HUD a la piñata -->
+    <div class="pinata-rope"></div>
+
+    <!-- Zona Central de la Piñata y Capibaras Animadas -->
+    <div class="pinata-stage-row">
+      <!-- Capibara animada porrista izquierda (con bate) -->
+      <div class="pinata-cheerleader cheer-left">
+        <div class="cheerleader-bubble">¡DALE DALE! 🏏</div>
+        <img src="img/capi_cheer_bat.png" class="cheerleader-img" alt="Capibara con Bate">
+      </div>
+
+      <!-- Contenedor del Personaje Principal: Piñata de Capibara -->
+      <div class="pinata-body-container" id="pinata-body-container">
+        <div class="pinata-bat" id="pinata-bat">🏏</div>
+        <img id="pinata-img" src="img/pinata_capi.png" class="pinata-img" alt="Piñata Capibara">
+        <div class="pinata-impact-star" id="pinata-impact-star">💥</div>
+        <div class="pinata-crack-overlay" id="pinata-crack-overlay"></div>
+      </div>
+
+      <!-- Capibara animada porrista derecha (con corneta y globo) -->
+      <div class="pinata-cheerleader cheer-right">
+        <div class="cheerleader-bubble">¡FIESTÓN! 🎺</div>
+        <img src="img/capi_cheer_horn.png" class="cheerleader-img" alt="Capibara con Corneta">
+      </div>
     </div>
 
     <!-- Contenedor de badges de bateadores flotantes (+1 @usuario) -->
