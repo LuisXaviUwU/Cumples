@@ -576,71 +576,13 @@ function playPinataSound(type) {
   }
 }
 
-// Limpieza de Fondo Blanco a Transparente con BFS Flood-Fill
-function prepareTransparentPinata() {
-  if (!pinataImg) return;
-  const tempImg = new Image();
-  tempImg.crossOrigin = 'anonymous';
-  tempImg.onload = () => {
-    try {
-      const c = document.createElement('canvas');
-      c.width = tempImg.naturalWidth;
-      c.height = tempImg.naturalHeight;
-      const ctx = c.getContext('2d');
-      ctx.drawImage(tempImg, 0, 0);
-      const imgData = ctx.getImageData(0, 0, c.width, c.height);
-      const d = imgData.data;
-      const w = c.width;
-      const h = c.height;
-
-      const visited = new Uint8Array(w * h);
-      const queue = [];
-
-      function checkAndEnqueue(x, y) {
-        const idx = y * w + x;
-        if (visited[idx]) return;
-        visited[idx] = 1;
-        const pIdx = idx * 4;
-        // Píxeles casi blancos del fondo de estudio
-        if (d[pIdx] > 225 && d[pIdx + 1] > 225 && d[pIdx + 2] > 225) {
-          queue.push(x, y);
-        }
-      }
-
-      // Encolar bordes exteriores
-      for (let x = 0; x < w; x++) {
-        checkAndEnqueue(x, 0);
-        checkAndEnqueue(x, h - 1);
-      }
-      for (let y = 0; y < h; y++) {
-        checkAndEnqueue(0, y);
-        checkAndEnqueue(w - 1, y);
-      }
-
-      let qHead = 0;
-      while (qHead < queue.length) {
-        const cx = queue[qHead++];
-        const cy = queue[qHead++];
-        const pIdx = (cy * w + cx) * 4;
-        d[pIdx + 3] = 0; // Hacer transparente
-
-        if (cx > 0) checkAndEnqueue(cx - 1, cy);
-        if (cx < w - 1) checkAndEnqueue(cx + 1, cy);
-        if (cy > 0) checkAndEnqueue(cx, cy - 1);
-        if (cy < h - 1) checkAndEnqueue(cx, cy + 1);
-      }
-
-      ctx.putImageData(imgData, 0, 0);
-      pinataImg.src = c.toDataURL('image/png');
-      console.log('[OBS Overlay] 🪅 Piñata de Capibara procesada con transparencia exitosamente');
-    } catch (e) {
-      console.warn('Canvas flood fill fallback:', e);
-    }
+// Fallback de imagen para la piñata
+if (pinataImg) {
+  pinataImg.onerror = function() {
+    this.onerror = null;
+    this.src = 'img/pinata_capi.png';
   };
-  tempImg.src = '/img/pinata_capi.jpg';
 }
-
-prepareTransparentPinata();
 
 function startPinataUI(data) {
   if (!pinataWrapper) return;
@@ -662,7 +604,7 @@ function startPinataUI(data) {
   // Reset barra HP
   if (pinataHpFill) {
     pinataHpFill.style.width = '100%';
-    pinataHpFill.style.background = 'linear-gradient(90deg, #10b981 0%, #fbbf24 50%, #f43f5e 100%)';
+    pinataHpFill.style.background = 'linear-gradient(90deg, #10b981 0%, #fbbf24 60%, #f43f5e 100%)';
   }
   if (pinataHpText) pinataHpText.textContent = `${data.maxHp} / ${data.maxHp} HP`;
 
@@ -686,8 +628,8 @@ function startPinataUI(data) {
   // Mini disparo de confeti inicial de bienvenida
   if (typeof confetti === 'function') {
     confetti({
-      particleCount: 45,
-      spread: 70,
+      particleCount: 50,
+      spread: 80,
       origin: { y: 0.35 },
       colors: ['#fbbf24', '#f43f5e', '#06b6d4', '#10b981']
     });
@@ -712,7 +654,7 @@ function hitPinataUI(data) {
   // Animación del palo/bate
   if (pinataBat) {
     pinataBat.classList.remove('is-swinging');
-    void pinataBat.offsetWidth; // Reflow para reiniciar animación
+    void pinataBat.offsetWidth;
     pinataBat.classList.add('is-swinging');
   }
 
@@ -730,12 +672,19 @@ function hitPinataUI(data) {
     pinataBody.classList.add('is-hit');
   }
 
+  // Salto de animación en las capibaras porristas
+  document.querySelectorAll('.pinata-cheerleader').forEach(el => {
+    el.classList.remove('is-cheering');
+    void el.offsetWidth;
+    el.classList.add('is-cheering');
+  });
+
   // Chispas de confeti desde el impacto
   if (typeof confetti === 'function') {
     confetti({
       particleCount: 15,
       spread: 45,
-      origin: { x: 0.52 + (Math.random() - 0.5) * 0.05, y: 0.38 + (Math.random() - 0.5) * 0.05 },
+      origin: { x: 0.52 + (Math.random() - 0.5) * 0.05, y: 0.45 + (Math.random() - 0.5) * 0.05 },
       colors: ['#fbbf24', '#f43f5e', '#06b6d4'],
       scalar: 0.8,
       ticks: 70
@@ -746,8 +695,8 @@ function hitPinataUI(data) {
   if (pinataHitsFeed) {
     const badge = document.createElement('div');
     badge.className = 'pinata-hit-badge';
-    const avatarSrc = (data.avatar && data.avatar.startsWith('http')) ? data.avatar : '/img/yocapi.png';
-    badge.innerHTML = `<img src="${avatarSrc}" onerror="this.src='/img/yocapi.png'" alt=""> <span>+1 @${data.user || 'Amigo'}</span>`;
+    const avatarSrc = (data.avatar && data.avatar.startsWith('http')) ? data.avatar : 'img/yocapi.png';
+    badge.innerHTML = `<img src="${avatarSrc}" onerror="this.src='img/yocapi.png'" alt=""> <span>+1 @${data.user || 'Amigo'}</span>`;
 
     const rndX = 140 + Math.random() * 80;
     const rndY = 160 + (Math.random() - 0.5) * 60;
