@@ -57,6 +57,7 @@ let appSettings = {
 };
 
 const twitchBot = require('./twitchBot');
+const pinataManager = require('./pinataManager');
 
 const pausedAlertsQueue = []; // Alertas en cola cuando la streamer pausa las alertas en vivo
 
@@ -303,7 +304,12 @@ function getBirthdayStatus(birthMonth, birthDay) {
     };
 }
 
-// ─── Inicialización del Bot Oficial de Twitch ──────────────────────────────
+// ─── Inicialización del Motor de Piñata de Capibara & Bot Oficial ──────────
+pinataManager.init({
+    broadcastToOverlay: (data) => broadcastToOverlay(data),
+    sendChat: (msg) => twitchBot.sendChat(msg)
+});
+
 twitchBot.initTwitchBot({
     db,
     getBirthdayStatus,
@@ -315,6 +321,7 @@ twitchBot.initTwitchBot({
     acquireMusicLock: (u) => acquireMusicLock(u),
     getMusicLockStatus: () => getMusicLockStatus(),
     pausedAlertsQueue,
+    pinataManager,
     saveSettings: (partial) => {
         appSettings = { ...appSettings, ...partial };
         saveAppSettings();
@@ -1010,6 +1017,52 @@ app.get('/api/dashboard/stats', authenticateDashboard, async (req, res) => {
         overlayToken: OVERLAY_TOKEN,
         appUrl: APP_URL
     });
+});
+
+// ─── API DASHBOARD: MINIJUEGO PIÑATA DE CAPIBARA ────────────────────────────
+
+app.get('/api/dashboard/pinata/status', authenticateDashboard, (req, res) => {
+    res.json(pinataManager.getStatus());
+});
+
+app.post('/api/dashboard/pinata/start', authenticateDashboard, async (req, res) => {
+    try {
+        const { targetUser, targetAvatar, maxHp, durationSec } = req.body;
+        const status = await pinataManager.start({
+            targetUser: (targetUser || '').trim() || 'la Comunidad',
+            targetAvatar: targetAvatar || '/img/yocapi.png',
+            maxHp: parseInt(maxHp, 10) || 30,
+            durationSec: parseInt(durationSec, 10) || 35,
+            initiatedBy: 'streamer_dashboard'
+        });
+        res.json({ success: true, status });
+    } catch (err) {
+        console.error('Error iniciando piñata:', err);
+        res.status(500).json({ error: 'Error al iniciar la piñata' });
+    }
+});
+
+app.post('/api/dashboard/pinata/stop', authenticateDashboard, (req, res) => {
+    try {
+        const stopped = pinataManager.stop(true);
+        res.json({ success: true, stopped });
+    } catch (err) {
+        res.status(500).json({ error: 'Error al detener la piñata' });
+    }
+});
+
+app.post('/api/dashboard/pinata/hit', authenticateDashboard, async (req, res) => {
+    try {
+        const { user, avatar } = req.body;
+        const result = await pinataManager.hit({
+            username: (user || 'Streamer').toLowerCase(),
+            displayName: user || 'Streamer',
+            avatar: avatar || '/img/yocapi.png'
+        });
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: 'Error al golpear piñata' });
+    }
 });
 
 app.get('/api/dashboard/today', authenticateDashboard, async (req, res) => {

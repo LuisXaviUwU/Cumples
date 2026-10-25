@@ -57,6 +57,7 @@ let getAppSettingsRef = null;
 let acquireMusicLockRef = null;
 let getMusicLockStatusRef = null;
 let pausedAlertsQueueRef = null;
+let pinataManagerRef = null;
 
 // Respuestas personalizables para comandos estáticos
 let customCmdResponses = {
@@ -241,15 +242,6 @@ async function handleChatMessage(channel, tags, message, self) {
         return; // Silencio total: no responde en chat
     }
 
-    // ─── EASTER EGG: "yocapi condon" exclusivo de capiluisxavi ────────────────
-    // Solo para el usuario capiluisxavi, sin respuesta en chat y sin visual en overlay.
-    if (text.toLowerCase() === 'yocapi condon' && senderLogin === 'capiluisxavi') {
-        if (broadcastToOverlayRef) {
-            broadcastToOverlayRef({ type: 'play_audio', sound: 'condon.mp3' });
-        }
-        return; // Silencio total: no responde en chat
-    }
-
     // ─── DETECCIÓN PASIVA DE CAMBIO DE NOMBRE DE TWITCH ───────────────────────
     // Twitch envía `user-id` en cada mensaje — es permanente aunque el nombre cambie.
     // Si el user-id está en la BD con otro username, renombramos automáticamente en segundo plano.
@@ -298,6 +290,41 @@ async function handleChatMessage(channel, tags, message, self) {
     const arg = (parts[1] || '').trim().replace(/^@/, '');
     const sender = tags['display-name'] || tags.username || 'amigo';
 
+    // ─── MINIJUEGO: GOLPES A LA PIÑATA DE CAPIBARA (!dale, !pegar, !hit, etc.) ─
+    const PINATA_HIT_COMMANDS = ['!dale', '!pegar', '!hit', '!palo', '!golpe', '!batear'];
+    if (PINATA_HIT_COMMANDS.includes(command)) {
+        if (pinataManagerRef) {
+            const pinataStatus = pinataManagerRef.getStatus();
+            if (pinataStatus.active) {
+                let hitterAvatar = '/img/yocapi.png';
+                const senderLogin = (tags.username || '').toLowerCase();
+                if (dbRef) {
+                    dbRef.getUser(senderLogin).then(u => {
+                        if (u && u.profile_image) hitterAvatar = u.profile_image;
+                        pinataManagerRef.hit({
+                            username: senderLogin,
+                            displayName: sender,
+                            avatar: hitterAvatar
+                        });
+                    }).catch(() => {
+                        pinataManagerRef.hit({
+                            username: senderLogin,
+                            displayName: sender,
+                            avatar: hitterAvatar
+                        });
+                    });
+                } else {
+                    pinataManagerRef.hit({
+                        username: senderLogin,
+                        displayName: sender,
+                        avatar: hitterAvatar
+                    });
+                }
+            }
+        }
+        return;
+    }
+
     // 2. COOLDOWN ANTI-SPAM (Evita que el mismo usuario dispare el mismo comando repetidamente en < 3s)
     const KNOWN_COMMANDS = [
         '!registro', '!regcumple', '!registrarme',
@@ -305,6 +332,7 @@ async function handleChatMessage(channel, tags, message, self) {
         '!cumpleinfo', '!ayudacumple', '!hoyesmicumple', '!hoyesmicum', '!mialerta', '!lanzarmicumple',
         '!felicidades', '!felicidades1', '!felicidades2', '!felicidades3',
         '!felicitar', '!felicitar1', '!felicitar2', '!felicitar3',
+        '!pinata', '!pinatastart', '!pinatastop',
         '!hbcambio', '!hbfrase', '!micumplefrase',
         '!hbsonido', '!cambiarsonido', '!misonido',
         '!hbalertas', '!cumplealertas', '!alertascumple',
@@ -345,7 +373,7 @@ async function handleChatMessage(channel, tags, message, self) {
                 `(Ej: !registro 11-06 para el 11 de junio). Para registrar a un compañero: !registro DD-MM usuario (Ej: !registro 11-06 capiluisxavi) 🎉`);
         }
 
-        const regDay = parseInt(match[1], 10);
+        const regDay   = parseInt(match[1], 10);
         const regMonth = parseInt(match[2], 10);
 
         if (regMonth < 1 || regMonth > 12) {
@@ -355,14 +383,14 @@ async function handleChatMessage(channel, tags, message, self) {
             return sendChat(`⚠️ @${sender}, el día debe ser del 1 al 31. Ej: !registro 11-06 = 11 de Junio 📅`);
         }
 
-        const monthName = MONTH_NAMES[regMonth] || regMonth;
+        const monthName      = MONTH_NAMES[regMonth] || regMonth;
         const senderLoginReg = (tags.username || sender).toLowerCase().replace(/[^a-z0-9_]/g, '');
 
-        const cleanTarget = targetPart.toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '');
-        const isSelf = !cleanTarget || cleanTarget === senderLoginReg;
-        const targetLogin = isSelf ? senderLoginReg : cleanTarget;
+        const cleanTarget   = targetPart.toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '');
+        const isSelf        = !cleanTarget || cleanTarget === senderLoginReg;
+        const targetLogin   = isSelf ? senderLoginReg : cleanTarget;
         const targetDisplay = isSelf ? (tags['display-name'] || senderLoginReg) : targetPart.replace(/^@/, '');
-        const twitchId = isSelf && tags['user-id'] ? String(tags['user-id']).trim() : '';
+        const twitchId      = isSelf && tags['user-id'] ? String(tags['user-id']).trim() : '';
 
         try {
             const existing = await dbRef.getUser(targetLogin);
@@ -402,9 +430,9 @@ async function handleChatMessage(channel, tags, message, self) {
                 }
 
                 // Actualizar fecha
-                existing.birth_month = regMonth;
-                existing.birth_day = regDay;
-                existing.created_at = new Date().toISOString();
+                existing.birth_month  = regMonth;
+                existing.birth_day    = regDay;
+                existing.created_at   = new Date().toISOString();
                 existing.birthday_unlocked = false;
                 if (twitchId && !existing.twitch_id) existing.twitch_id = twitchId;
                 await dbRef.saveUser(existing);
@@ -420,19 +448,19 @@ async function handleChatMessage(channel, tags, message, self) {
             // ── Registro NUEVO desde chat ──
             const nowIso = new Date().toISOString();
             await dbRef.saveUser({
-                username: targetLogin,
-                display_name: targetDisplay,
-                pin_hash: '',
-                recovery_hash: '',
-                profile_image: '/img/yocapi.png',
-                birth_month: regMonth,
-                birth_day: regDay,
+                username:       targetLogin,
+                display_name:   targetDisplay,
+                pin_hash:       '',
+                recovery_hash:  '',
+                profile_image:  '/img/yocapi.png',
+                birth_month:    regMonth,
+                birth_day:      regDay,
                 custom_message: '',
                 selected_sound: 'HBSilbato.mp3',
                 birthday_unlocked: false,
-                created_at: nowIso,
-                registered_at: nowIso,
-                twitch_id: twitchId
+                created_at:     nowIso,
+                registered_at:  nowIso,
+                twitch_id:      twitchId
             });
 
             if (isSelf) {
@@ -757,8 +785,8 @@ async function handleChatMessage(channel, tags, message, self) {
                 { file: 'HBVoz.mp3', label: '🎤 Felicitación con Voz' }
             ];
             const musicLock = getMusicLockStatusRef ? getMusicLockStatusRef() : { locked: false };
-            const availableOptions = musicLock.locked
-                ? soundOptions.filter(s => s.file !== 'MBMusica.mp3')
+            const availableOptions = musicLock.locked 
+                ? soundOptions.filter(s => s.file !== 'MBMusica.mp3') 
                 : soundOptions;
             const picked = availableOptions[Math.floor(Math.random() * availableOptions.length)];
             chosenSound = picked.file;
@@ -864,9 +892,85 @@ async function handleChatMessage(channel, tags, message, self) {
         return sendChat(`🎵 @${sender}, ¡sonido de tu alerta actualizado a ${soundLabel}! Sonará cuando lances tu festejo en directo 🥳✨`);
     }
 
+    // ─── COMANDO PIÑATA: !pinata [usuario | stop] (Iniciar o detener piñata de capibara) ────
+    if (command === '!pinata' || command === '!pinatastart' || command === '!pinatastop') {
+        if (!pinataManagerRef) return;
+
+        const subAction = (parts[1] || '').toLowerCase().trim();
+        if (subAction === 'stop' || subAction === 'detener' || subAction === 'cancelar' || command === '!pinatastop') {
+            if (!isStreamerOrMod(tags, channel)) {
+                return sendChat(`⛔ @${sender}, solo la streamer (@yocapi_pr) y los moderadores pueden detener la piñata 🛡️`);
+            }
+            const stopped = pinataManagerRef.stop(true);
+            if (!stopped) {
+                return sendChat(`ℹ️ @${sender}, no hay ninguna piñata de capibara activa en este momento.`);
+            }
+            return;
+        }
+
+        // Si es un espectador normal
+        if (!isStreamerOrMod(tags, channel)) {
+            const pStatus = pinataManagerRef.getStatus();
+            if (pStatus.active) {
+                return sendChat(`🪅 ¡La piñata de capibara está activa (${pStatus.currentHp}/${pStatus.maxHp} HP)! Escribe !dale o !pegar para batear 💥`);
+            }
+            return sendChat(`🪅 La piñata comunitaria de capibara es iniciada por la streamer (@yocapi_pr) o moderadores. ¡Atentos al stream! 🎉`);
+        }
+
+        const currentStatus = pinataManagerRef.getStatus();
+        if (currentStatus.active && subAction !== 'restart' && subAction !== 'reiniciar') {
+            return sendChat(`🪅 @${sender}, ya hay una piñata de capibara en curso (${currentStatus.currentHp}/${currentStatus.maxHp} HP, quedan ${currentStatus.remainingSec}s). Usa "!pinata stop" si deseas cancelarla.`);
+        }
+
+        let targetName = 'la Comunidad';
+        let targetAvatar = '/img/yocapi.png';
+
+        let targetCandidate = (parts[1] || '').replace(/^@/, '').trim();
+        if (targetCandidate && targetCandidate !== 'start' && targetCandidate !== 'iniciar') {
+            targetName = targetCandidate;
+            if (dbRef) {
+                try {
+                    const u = await dbRef.getUser(targetCandidate.toLowerCase());
+                    if (u) {
+                        targetName = u.display_name || u.username;
+                        if (u.profile_image) targetAvatar = u.profile_image;
+                    }
+                } catch (_) {}
+            }
+        } else if (dbRef && getBirthdayStatusRef) {
+            try {
+                const allUsers = await dbRef.getAllUsers();
+                for (const u of allUsers) {
+                    if (!u.birth_month || !u.birth_day || u.birthday_unlocked) continue;
+                    const bStatus = getBirthdayStatusRef(u.birth_month, u.birth_day);
+                    if (bStatus.canCelebrate && bStatus.isToday) {
+                        targetName = u.display_name || u.username;
+                        targetAvatar = u.profile_image || '/img/yocapi.png';
+                        break;
+                    }
+                }
+            } catch (_) {}
+        }
+
+        let hp = 30;
+        const hpArg = parseInt(parts[2], 10);
+        if (!isNaN(hpArg) && hpArg >= 10 && hpArg <= 100) {
+            hp = hpArg;
+        }
+
+        await pinataManagerRef.start({
+            targetUser: targetName,
+            targetAvatar,
+            maxHp: hp,
+            durationSec: 35,
+            initiatedBy: sender
+        });
+        return;
+    }
+
     // ─── COMANDO 9: !cumpleinfo o !ayudacumple ────────────────────────────────
     if (command === '!cumpleinfo' || command === '!ayudacumple') {
-        return sendChat(`🎉 Comandos de Fiesta: !hoyesmicumple (lanza tu alerta) · !felicidades [mensaje] (!felicidades1/2/3) · !hbcambio <frase> · !hbsonido <1/2/3> · !cumple · !proximos · !cumplemes · !regcumple 🎂✨`);
+        return sendChat(`🎉 Comandos de Fiesta: !hoyesmicumple · !felicidades [mensaje] · !dale (golpea la piñata 🪅) · !pinata · !hbcambio <frase> · !hbsonido <1/2/3> · !cumple · !proximos · !cumplemes 🎂✨`);
     }
 
     // ─── COMANDOS EXCLUSIVOS DE MODERACIÓN Y CONTROL (STREAMER & MODS) ─────────
@@ -986,7 +1090,7 @@ async function connectBot() {
             try {
                 client.removeAllListeners();
                 await client.disconnect();
-            } catch (_) { }
+            } catch (_) {}
             client = null;
         }
 
@@ -1004,7 +1108,7 @@ async function connectBot() {
                 username,
                 password
             },
-            channels: [channel]
+            channels: [ channel ]
         });
 
         client.on('message', handleChatMessage);
@@ -1041,7 +1145,7 @@ async function disconnectBot() {
     if (client) {
         try {
             await client.disconnect();
-        } catch (_) { }
+        } catch (_) {}
         client = null;
     }
     status = 'disconnected';
@@ -1058,6 +1162,7 @@ function initTwitchBot(options) {
     acquireMusicLockRef = options.acquireMusicLock || null;
     getMusicLockStatusRef = options.getMusicLockStatus || null;
     pausedAlertsQueueRef = options.pausedAlertsQueue || null;
+    pinataManagerRef = options.pinataManager || null;
 
     if (options.initialConfig) {
         botConfig = { ...botConfig, ...options.initialConfig };
