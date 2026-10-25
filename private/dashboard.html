@@ -215,10 +215,56 @@
               <p style="color: #94a3b8; font-size: 0.83rem; margin: 0 0 14px 0; line-height: 1.45;">
                 Permite a los espectadores mandar tarjetas flotantes y sonidos al cumpleañero en directo. Apágalo al terminar el momento.
               </p>
-              <div>
+                <div>
                 <button type="button" id="btn-toggle-felic" class="btn-primary" style="padding: 9px 20px; font-size: 0.85rem; font-weight: 800; border-radius: 10px; width: 100%;">
                   🎊 Activar Felicitaciones
                 </button>
+              </div>
+            </div>
+
+            <!-- Control 3: Minijuego Piñata Comunitaria de Capibara -->
+            <div class="glass-card" style="padding: 20px 22px; border: 1.5px solid rgba(251, 191, 36, 0.5); background: linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(20, 14, 38, 0.7)); border-radius: 16px;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 12px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span style="font-size: 2.2rem; line-height: 1;">🪅</span>
+                  <div>
+                    <h3 style="font-family: var(--font-h); font-size: 1.12rem; font-weight: 800; margin: 0; color: #fff;">
+                      Piñata de Capibara en Vivo
+                    </h3>
+                    <div style="font-size: 0.78rem; color: #cbd5e1; margin-top: 2px;">
+                      Comandos chat: <code>!dale</code> &bull; <code>!pegar</code> &bull; <code>!pinata</code>
+                    </div>
+                  </div>
+                </div>
+                <span id="pinata-status-badge" style="padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.4);">
+                  ⚪ Inactiva
+                </span>
+              </div>
+              <p style="color: #cbd5e1; font-size: 0.83rem; margin: 0 0 12px 0; line-height: 1.45;">
+                Despliega una piñata animada de capibara colgada en OBS. El chat tiene 35s para golpearla en cooperativo hasta romperla.
+              </p>
+              
+              <!-- Controles Rápidos de Piñata -->
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <input type="text" id="dash-pinata-target" placeholder="Nombre (ej: cumpleañero o chat)" style="flex: 2; min-width: 150px; background: rgba(0,0,0,0.4); border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 8px; padding: 7px 12px; color: #fff; font-size: 0.82rem;">
+                  <select id="dash-pinata-hp" style="flex: 1; min-width: 100px; background: #1e1537; border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 8px; padding: 7px 10px; color: #fff; font-size: 0.82rem; cursor: pointer;">
+                    <option value="20">⚡ 20 HP (Rápida)</option>
+                    <option value="35" selected>🪅 35 HP (Normal)</option>
+                    <option value="60">🔥 60 HP (Fiestón)</option>
+                  </select>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button type="button" id="btn-start-pinata" class="btn-primary" style="flex: 2; padding: 9px 16px; font-size: 0.84rem; font-weight: 800; background: linear-gradient(135deg, #f59e0b, #ef4444); border-radius: 10px; cursor: pointer;">
+                    🪅 Iniciar Piñata
+                  </button>
+                  <button type="button" id="btn-test-hit-pinata" class="btn-copy" style="flex: 1; padding: 9px 12px; font-size: 0.82rem; font-weight: 700; background: rgba(56, 189, 248, 0.2); border-color: rgba(56, 189, 248, 0.5); color: #38bdf8; cursor: pointer;" title="Simula un golpe !dale en OBS">
+                    🏏 Batear (!dale)
+                  </button>
+                  <button type="button" id="btn-stop-pinata" class="btn-copy" style="padding: 9px 12px; font-size: 0.82rem; font-weight: 700; background: rgba(239, 68, 68, 0.16); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; cursor: pointer;" title="Guarda o cancela la piñata">
+                    🛑 Detener
+                  </button>
+                </div>
               </div>
             </div>
 
