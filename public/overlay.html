@@ -59,6 +59,69 @@
     </div>
   </div>
 
+  <!-- Minijuego: Piñata Comunitaria de Capibara -->
+  <div id="pinata-wrapper" class="pinata-wrapper">
+    <div class="pinata-rope"></div>
+
+    <!-- HUD Superior: Título, Barra de HP, Cuenta regresiva -->
+    <div class="pinata-hud">
+      <div class="pinata-title-badge">
+        <span class="pinata-badge-icon">🪅</span>
+        <span>¡PIÑATA DE CAPIBARA!</span>
+        <span class="pinata-badge-icon">✨</span>
+      </div>
+      <div class="pinata-target-name" id="pinata-target-name">Cumpleaños de @Comunidad</div>
+
+      <div class="pinata-bar-container">
+        <div class="pinata-hp-fill" id="pinata-hp-fill" style="width: 100%;"></div>
+        <div class="pinata-hp-text" id="pinata-hp-text">30 / 30 HP</div>
+      </div>
+
+      <div class="pinata-meta-row">
+        <div class="pinata-timer" id="pinata-timer">⏳ 35s</div>
+        <div class="pinata-chat-callout">¡Escribe <span class="kbd">!dale</span> o <span class="kbd">!pegar</span> en el chat!</div>
+      </div>
+    </div>
+
+    <!-- Contenedor del Personaje de la Piñata -->
+    <div class="pinata-body-container" id="pinata-body-container">
+      <div class="pinata-bat" id="pinata-bat">🏏</div>
+      <img id="pinata-img" src="/img/pinata_capi.jpg" class="pinata-img" alt="Piñata Capibara">
+      <div class="pinata-impact-star" id="pinata-impact-star">💥</div>
+      <div class="pinata-crack-overlay" id="pinata-crack-overlay"></div>
+    </div>
+
+    <!-- Contenedor de badges de bateadores flotantes (+1 @usuario) -->
+    <div class="pinata-hits-feed" id="pinata-hits-feed"></div>
+
+    <!-- Pantalla de Victoria (cuando se rompe) -->
+    <div class="pinata-result-card" id="pinata-result-card" style="display: none;">
+      <div class="result-badge-break">💥 ¡PIÑATA DESTRUIDA! 💥</div>
+      <div class="result-candies">🍬 🍭 🍫 🎁 🍩 🧁 ✨</div>
+      <h2 class="result-celebration" id="result-celebration-title">¡Felicidades @Usuario!</h2>
+      <div class="result-stats-row">
+        <div class="result-stat-card last-hitter">
+          <span class="stat-icon">⚡</span>
+          <span class="stat-label">Golpe de Gracia</span>
+          <strong id="result-last-hitter">@usuario</strong>
+        </div>
+        <div class="result-stat-card top-hitter">
+          <span class="stat-icon">🏆</span>
+          <span class="stat-label">Máximo Bateador</span>
+          <strong id="result-top-hitter">@usuario (12 golpes)</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pantalla de Tiempo Agotado (si escapa) -->
+    <div class="pinata-timeout-card" id="pinata-timeout-card" style="display: none;">
+      <div class="timeout-badge">⏰ ¡SE ACABÓ EL TIEMPO!</div>
+      <div class="timeout-emoji">🪅💨</div>
+      <h3>¡La capibara piñata escapó corriendo!</h3>
+      <p id="timeout-hp-left">Le quedaron 12 de vida. ¡Estuvo cerca, chat!</p>
+    </div>
+  </div>
+
   <!-- Estado de conexión (oculto para que nunca salga en directo) -->
   <div id="debug-status" class="obs-debug-status" style="display: none !important;"></div>
 
