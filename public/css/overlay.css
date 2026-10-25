@@ -501,22 +501,23 @@ body.debug .obs-debug-status {
 }
 
 /* ==========================================================================
-   MINIJUEGO: PIÑATA COMUNITARIA DE CAPIBARA (OBS OVERLAY)
+   MINIJUEGO: PIÑATA COMUNITARIA DE CAPIBARA (OBS OVERLAY PREMIUM)
    ========================================================================== */
 
 .pinata-wrapper {
   position: fixed;
-  top: 0;
+  top: 15px;
   left: 50%;
-  transform: translateX(-50%) translateY(-120%);
+  transform: translateX(-50%) translateY(-140%);
   display: flex;
   flex-direction: column;
   align-items: center;
   z-index: 600;
   pointer-events: none;
   opacity: 0;
-  transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease;
+  transition: transform 0.85s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease;
   will-change: transform, opacity;
+  max-width: 90vw;
 }
 
 .pinata-wrapper.active {
@@ -524,75 +525,94 @@ body.debug .obs-debug-status {
   opacity: 1;
 }
 
-/* Cuerda festiva trenzada que cuelga del techo */
-.pinata-rope {
-  width: 5px;
-  height: 90px;
-  background: repeating-linear-gradient(45deg, #fbbf24, #fbbf24 6px, #f43f5e 6px, #f43f5e 12px, #06b6d4 12px, #06b6d4 18px);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
-  border-radius: 2px;
-  animation: ropeSway 3.2s ease-in-out infinite alternate;
-  transform-origin: top center;
+/* Guirnalda festiva superior de banderines */
+.pinata-garland {
+  display: flex;
+  gap: 14px;
+  margin-bottom: -12px;
+  z-index: 10;
+  font-size: 1.4rem;
+  animation: garlandWave 3s ease-in-out infinite alternate;
 }
+
+.pinata-garland .flag {
+  display: inline-block;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+  animation: flagFlutter 2s ease-in-out infinite alternate;
+}
+.pinata-garland .flag:nth-child(even) { animation-delay: 0.3s; }
+.pinata-garland .flag:nth-child(3n) { animation-delay: 0.6s; }
 
 /* HUD Superior con HP y Timer */
 .pinata-hud {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, rgba(24, 14, 46, 0.96) 0%, rgba(10, 8, 24, 0.98) 100%);
-  border: 2px solid rgba(251, 191, 36, 0.65);
-  box-shadow: 0 0 35px rgba(251, 191, 36, 0.35), 0 12px 40px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  border-radius: 24px;
-  padding: 14px 28px;
-  backdrop-filter: blur(14px);
-  margin-top: -10px;
-  min-width: 440px;
-  max-width: 540px;
+  background: linear-gradient(135deg, rgba(22, 12, 44, 0.98) 0%, rgba(10, 8, 24, 0.99) 100%);
+  border: 2.5px solid #fbbf24;
+  box-shadow: 0 0 45px rgba(251, 191, 36, 0.45), 0 14px 45px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  border-radius: 26px;
+  padding: 14px 34px;
+  backdrop-filter: blur(16px);
+  min-width: 480px;
+  max-width: 600px;
   text-align: center;
+  z-index: 5;
+}
+
+.pinata-ambient-glow {
+  position: absolute;
+  inset: -8px;
+  border-radius: 34px;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.3) 0%, transparent 70%);
+  z-index: -1;
+  pointer-events: none;
+  animation: ambientPulse 2s ease-in-out infinite alternate;
 }
 
 .pinata-title-badge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 900;
-  letter-spacing: 1.5px;
+  letter-spacing: 1.8px;
   text-transform: uppercase;
   color: #fde047;
-  text-shadow: 0 0 12px rgba(253, 224, 71, 0.8);
+  text-shadow: 0 0 14px rgba(253, 224, 71, 0.85);
 }
 
 .pinata-target-name {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.45rem;
+  font-size: 1.6rem;
   font-weight: 900;
   color: #ffffff;
-  letter-spacing: 0.4px;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9), 0 0 20px rgba(168, 85, 247, 0.6);
-  margin-top: -2px;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.95), 0 0 22px rgba(168, 85, 247, 0.7);
+  margin-top: -3px;
 }
 
-/* Barra de Vida (HP) */
+/* Barra de Vida (HP) con rayas animadas */
 .pinata-bar-container {
   position: relative;
   width: 100%;
-  height: 28px;
-  background: rgba(0, 0, 0, 0.75);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 14px;
+  height: 30px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 15px;
   overflow: hidden;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 15px rgba(251, 191, 36, 0.2);
 }
 
 .pinata-hp-fill {
   height: 100%;
-  background: linear-gradient(90deg, #10b981 0%, #fbbf24 50%, #f43f5e 100%);
-  border-radius: 12px;
-  box-shadow: 0 0 16px rgba(245, 158, 11, 0.65);
-  transition: width 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s ease;
+  background: linear-gradient(90deg, #10b981 0%, #fbbf24 60%, #f43f5e 100%);
+  background-size: 30px 30px;
+  border-radius: 13px;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.75);
+  transition: width 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .pinata-hp-text {
@@ -601,11 +621,11 @@ body.debug .obs-debug-status {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   font-weight: 900;
   color: #ffffff;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 1), 0 0 8px rgba(0, 0, 0, 0.8);
-  letter-spacing: 0.5px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 1), 0 0 10px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.6px;
 }
 
 .pinata-meta-row {
@@ -616,46 +636,117 @@ body.debug .obs-debug-status {
   margin-top: 2px;
 }
 
-.pinata-timer {
-  font-size: 1rem;
+.pinata-timer-badge {
+  font-size: 1.05rem;
   font-weight: 800;
   color: #38bdf8;
-  text-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  padding: 3px 12px;
+  border-radius: 14px;
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.7);
   animation: timerPulse 1s infinite alternate;
 }
 
 .pinata-chat-callout {
-  font-size: 0.85rem;
-  color: #cbd5e1;
+  font-size: 0.88rem;
+  color: #e2e8f0;
   font-weight: 700;
 }
 
 .pinata-chat-callout .kbd {
   background: linear-gradient(135deg, #9146ff, #ec4899);
   color: #fff;
-  padding: 3px 8px;
-  border-radius: 6px;
+  padding: 3px 9px;
+  border-radius: 7px;
   font-weight: 900;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
   margin: 0 2px;
+  display: inline-block;
+  animation: keyPulse 1.2s infinite alternate;
 }
 
-/* Personaje: Piñata de Capibara */
+/* Cuerda festiva trenzada que cuelga del HUD a la piñata */
+.pinata-rope {
+  width: 6px;
+  height: 60px;
+  background: repeating-linear-gradient(45deg, #fbbf24, #fbbf24 8px, #f43f5e 8px, #f43f5e 16px, #06b6d4 16px, #06b6d4 24px);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+  border-radius: 3px;
+  margin: 0 auto;
+  transform-origin: top center;
+  animation: ropeSway 3s ease-in-out infinite alternate;
+}
+
+/* Escenario Central: Capibara Piñata + Porristas Capibaras */
+.pinata-stage-row {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 20px;
+  margin-top: -10px;
+}
+
+/* Porristas Capibaras Animadas en los costados */
+.pinata-cheerleader {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.25s ease;
+}
+
+.cheer-left {
+  animation: cheerBounceLeft 2.4s ease-in-out infinite alternate;
+}
+
+.cheer-right {
+  animation: cheerBounceRight 2.6s ease-in-out infinite alternate;
+}
+
+.pinata-cheerleader.is-cheering {
+  animation: cheerleaderJump 0.4s ease-out;
+}
+
+.cheerleader-img {
+  width: 175px;
+  height: 175px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.75));
+  user-select: none;
+}
+
+.cheerleader-bubble {
+  background: #fff;
+  color: #1a1035;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 900;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  margin-bottom: -5px;
+  z-index: 10;
+  border: 2px solid #fbbf24;
+}
+
+/* Personaje Principal: Piñata de Capibara */
 .pinata-body-container {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 10px;
-  animation: pinataSway 3.2s ease-in-out infinite alternate;
+  animation: pinataSway 3s ease-in-out infinite alternate;
   transform-origin: top center;
 }
 
 .pinata-img {
-  width: 320px;
-  height: 320px;
+  width: 330px;
+  height: 330px;
   object-fit: contain;
-  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.75));
+  filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.8));
   transition: transform 0.15s ease-out, filter 0.2s ease;
   user-select: none;
 }
@@ -669,8 +760,8 @@ body.debug .obs-debug-status {
 .pinata-bat {
   position: absolute;
   right: -50px;
-  top: 40px;
-  font-size: 4rem;
+  top: 50px;
+  font-size: 4.5rem;
   opacity: 0;
   pointer-events: none;
   z-index: 50;
@@ -684,9 +775,9 @@ body.debug .obs-debug-status {
 /* Estrella de impacto en el punto de contacto */
 .pinata-impact-star {
   position: absolute;
-  right: 60px;
-  top: 70px;
-  font-size: 3.5rem;
+  right: 70px;
+  top: 80px;
+  font-size: 3.8rem;
   opacity: 0;
   pointer-events: none;
   z-index: 60;
@@ -711,12 +802,12 @@ body.debug .obs-debug-status {
   align-items: center;
   gap: 8px;
   padding: 6px 14px;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.95), rgba(239, 68, 68, 0.95));
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.98), rgba(239, 68, 68, 0.98));
   border: 1.5px solid #fff;
   border-radius: 20px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7), 0 0 15px rgba(245, 158, 11, 0.7);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.75), 0 0 15px rgba(245, 158, 11, 0.75);
   color: #fff;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 800;
   animation: floatUpAndFade 1.3s cubic-bezier(0.215, 0.61, 0.355, 1) forwards;
   pointer-events: none;
@@ -724,8 +815,8 @@ body.debug .obs-debug-status {
 }
 
 .pinata-hit-badge img {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   border: 1.5px solid #fff;
 }
@@ -736,84 +827,84 @@ body.debug .obs-debug-status {
   top: 45%;
   left: 50%;
   transform: translate(-50%, -50%) scale(0.8);
-  background: linear-gradient(135deg, rgba(20, 12, 38, 0.98) 0%, rgba(10, 8, 22, 0.99) 100%);
+  background: linear-gradient(135deg, rgba(22, 12, 42, 0.99) 0%, rgba(10, 8, 22, 0.99) 100%);
   border: 3px solid #fbbf24;
-  box-shadow: 0 0 50px rgba(251, 191, 36, 0.6), 0 20px 60px rgba(0, 0, 0, 0.95);
-  border-radius: 28px;
-  padding: 28px 40px;
+  box-shadow: 0 0 60px rgba(251, 191, 36, 0.7), 0 24px 70px rgba(0, 0, 0, 0.98);
+  border-radius: 30px;
+  padding: 30px 45px;
   text-align: center;
   z-index: 200;
-  min-width: 500px;
+  min-width: 520px;
   animation: victoryCardPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
 .result-badge-break {
   display: inline-block;
-  font-size: 1.3rem;
+  font-size: 1.35rem;
   font-weight: 900;
   letter-spacing: 2px;
   color: #fde047;
-  text-shadow: 0 0 20px rgba(253, 224, 71, 0.8);
+  text-shadow: 0 0 22px rgba(253, 224, 71, 0.85);
   margin-bottom: 8px;
 }
 
 .result-candies {
-  font-size: 2.2rem;
-  letter-spacing: 6px;
+  font-size: 2.4rem;
+  letter-spacing: 8px;
   margin-bottom: 12px;
   animation: bounceCandies 0.8s infinite alternate;
 }
 
 .result-celebration {
-  font-size: 1.7rem;
+  font-size: 1.75rem;
   font-weight: 900;
   color: #ffffff;
   margin-bottom: 18px;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9);
 }
 
 .result-stats-row {
   display: flex;
-  gap: 14px;
+  gap: 16px;
   justify-content: center;
 }
 
 .result-stat-card {
   flex: 1;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1.5px solid rgba(255, 255, 255, 0.15);
-  border-radius: 16px;
-  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
 .result-stat-card.last-hitter {
-  border-color: rgba(244, 63, 94, 0.5);
-  background: rgba(244, 63, 94, 0.12);
+  border-color: rgba(244, 63, 94, 0.6);
+  background: rgba(244, 63, 94, 0.15);
 }
 
 .result-stat-card.top-hitter {
-  border-color: rgba(251, 191, 36, 0.5);
-  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.6);
+  background: rgba(251, 191, 36, 0.15);
 }
 
 .result-stat-card .stat-icon {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
 }
 
 .result-stat-card .stat-label {
-  font-size: 0.74rem;
-  font-weight: 700;
-  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #cbd5e1;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
 }
 
 .result-stat-card strong {
-  font-size: 0.98rem;
-  font-weight: 800;
+  font-size: 1.05rem;
+  font-weight: 900;
   color: #fff;
 }
 
@@ -823,31 +914,31 @@ body.debug .obs-debug-status {
   top: 45%;
   left: 50%;
   transform: translate(-50%, -50%) scale(0.85);
-  background: linear-gradient(135deg, rgba(30, 20, 10, 0.98), rgba(15, 10, 5, 0.99));
+  background: linear-gradient(135deg, rgba(32, 20, 12, 0.99), rgba(16, 10, 6, 0.99));
   border: 2px solid #f59e0b;
-  box-shadow: 0 0 40px rgba(245, 158, 11, 0.4), 0 20px 60px rgba(0, 0, 0, 0.9);
-  border-radius: 24px;
-  padding: 24px 36px;
+  box-shadow: 0 0 45px rgba(245, 158, 11, 0.45), 0 20px 60px rgba(0, 0, 0, 0.9);
+  border-radius: 26px;
+  padding: 26px 40px;
   text-align: center;
   z-index: 200;
-  min-width: 440px;
+  min-width: 460px;
   animation: victoryCardPop 0.5s ease-out forwards;
 }
 
 .timeout-badge {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 900;
   color: #fcd34d;
   letter-spacing: 1.5px;
 }
 
 .timeout-emoji {
-  font-size: 3rem;
+  font-size: 3.2rem;
   margin: 10px 0;
 }
 
 .pinata-timeout-card h3 {
-  font-size: 1.3rem;
+  font-size: 1.35rem;
   font-weight: 800;
   color: #fff;
   margin-bottom: 6px;
@@ -855,10 +946,41 @@ body.debug .obs-debug-status {
 
 .pinata-timeout-card p {
   color: #cbd5e1;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 /* KEYFRAMES & ANIMACIONES */
+@keyframes garlandWave {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(4px); }
+}
+
+@keyframes flagFlutter {
+  0% { transform: rotate(-4deg); }
+  100% { transform: rotate(4deg); }
+}
+
+@keyframes ambientPulse {
+  0% { opacity: 0.6; transform: scale(0.98); }
+  100% { opacity: 1; transform: scale(1.02); }
+}
+
+@keyframes cheerBounceLeft {
+  0% { transform: translateY(0) rotate(-2deg); }
+  100% { transform: translateY(-8px) rotate(2deg); }
+}
+
+@keyframes cheerBounceRight {
+  0% { transform: translateY(-8px) rotate(2deg); }
+  100% { transform: translateY(0) rotate(-2deg); }
+}
+
+@keyframes cheerleaderJump {
+  0% { transform: translateY(0) scale(1); }
+  40% { transform: translateY(-22px) scale(1.12); }
+  100% { transform: translateY(0) scale(1); }
+}
+
 @keyframes ropeSway {
   0% { transform: rotate(-3deg); }
   100% { transform: rotate(3deg); }
@@ -909,5 +1031,10 @@ body.debug .obs-debug-status {
 @keyframes timerPulse {
   0% { opacity: 0.85; transform: scale(1); }
   100% { opacity: 1; transform: scale(1.06); }
+}
+
+@keyframes keyPulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.08); }
 }
 
