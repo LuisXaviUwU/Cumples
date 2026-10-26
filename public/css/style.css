@@ -1532,6 +1532,26 @@ footer a {
   transition: none !important;
 }
 
+.sim-pinata-wrapper {
+  position: absolute;
+  left: 50%;
+  top: 25%;
+  transform: translate(-50%, -50%);
+  user-select: none;
+  cursor: grab;
+  touch-action: none;
+  z-index: 10;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sim-pinata-wrapper.dragging {
+  cursor: grabbing !important;
+  transition: none !important;
+}
+
 .sim-drag-handle-tag {
   background: linear-gradient(135deg, #9146ff, #7c3aed);
   color: #fff;

@@ -506,9 +506,9 @@ body.debug .obs-debug-status {
 
 .pinata-wrapper {
   position: fixed;
-  top: 15px;
-  left: 50%;
-  transform: translateX(-50%) translateY(-140%);
+  left: var(--pinata-pos-x, 50%);
+  top: var(--pinata-pos-y, 25%);
+  transform: translate(-50%, -50%) translateY(-280px) scale(calc(var(--pinata-scale, 0.85) * 0.85));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -521,7 +521,7 @@ body.debug .obs-debug-status {
 }
 
 .pinata-wrapper.active {
-  transform: translateX(-50%) translateY(0);
+  transform: translate(-50%, -50%) translateY(0) scale(var(--pinata-scale, 0.85));
   opacity: 1;
 }
 
