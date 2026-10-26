@@ -1953,7 +1953,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Estado del Simulador
   let simMode = 'card'; // 'card' | 'pinata'
   let simState = { posX: 50, posY: 85, scale: 0.85, animation: 'slide-up', volume: 0.85 };
-  let pinataState = { posX: 50, posY: 25, scale: 0.85 };
+  let pinataState = { posX: 50, posY: 25, scale: 0.85, maxHp: 30 };
   const volSlider = document.getElementById('sim-vol-slider');
   const volVal = document.getElementById('sim-vol-val');
 
@@ -2265,6 +2265,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // ─── Selector de Golpes (HP) de la Piñata ─────────────────────────────────
+  document.querySelectorAll('#obs-sim-modal .btn-pinata-hp').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const hp = parseInt(btn.dataset.hp, 10);
+      if (!isNaN(hp)) {
+        pinataState.maxHp = hp;
+        document.querySelectorAll('#obs-sim-modal .btn-pinata-hp').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        // Calcular duración estimada y mostrarla brevemente
+        const estSec = Math.min(120, Math.max(20, Math.round(45 + (hp - 10) * 0.75)));
+        const estLabel = estSec >= 60 ? `${Math.floor(estSec/60)}m ${estSec % 60 > 0 ? estSec % 60 + 's' : ''}`.trim() : `${estSec}s`;
+        showToast(`🪅 Piñata: ${hp} golpes · duración ~${estLabel}`, 'info');
+      }
+    });
+  });
+
   // ─── Slider de Volumen ────────────────────────────────────────────────────
   if (volSlider && volVal) {
     volSlider.addEventListener('input', () => {
@@ -2386,7 +2402,7 @@ document.addEventListener('DOMContentLoaded', () => {
           await authFetch('/api/dashboard/pinata/start', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ maxHp: 50, theme: 'cumple' })
+            body: JSON.stringify({ maxHp: pinataState.maxHp || 30, theme: 'cumple' })
           });
           const hitRes = await authFetch('/api/dashboard/pinata/hit', {
             method: 'POST',
@@ -2471,13 +2487,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnReset) {
     btnReset.addEventListener('click', () => {
       if (simMode === 'pinata') {
-        pinataState = { posX: 50, posY: 25, scale: 0.85 };
+        pinataState = { posX: 50, posY: 25, scale: 0.85, maxHp: 30 };
         movePinataTo(50, 25);
         if (pinataScaleSlider) pinataScaleSlider.value = 85;
         if (pinataScaleVal) pinataScaleVal.textContent = '85%';
         updatePinataScale(0.85);
         document.querySelectorAll('#obs-sim-modal .btn-pinata-scale-quick').forEach(b => b.classList.toggle('active', b.dataset.scale === '0.85'));
-        showToast('🪅 Piñata restablecida a posición y tamaño por defecto (50%, 25%, 85%)', 'info');
+        document.querySelectorAll('#obs-sim-modal .btn-pinata-hp').forEach(b => b.classList.toggle('active', b.dataset.hp === '30'));
+        showToast('🪅 Piñata restablecida a valores por defecto (50%, 25%, 85%, 30 golpes)', 'info');
       } else {
         simState = { posX: 50, posY: 85, scale: 0.85, animation: 'slide-up' };
         moveCardTo(50, 85);
