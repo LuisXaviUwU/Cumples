@@ -332,7 +332,7 @@ async function handleChatMessage(channel, tags, message, self) {
         '!cumpleinfo', '!ayudacumple', '!hoyesmicumple', '!hoyesmicum', '!mialerta', '!lanzarmicumple',
         '!felicidades', '!felicidades1', '!felicidades2', '!felicidades3',
         '!felicitar', '!felicitar1', '!felicitar2', '!felicitar3',
-        '!pinata', '!pinatastart', '!pinatastop',
+        '!piñata', '!piñatastop',
         '!hbcambio', '!hbfrase', '!micumplefrase',
         '!hbsonido', '!cambiarsonido', '!misonido',
         '!hbalertas', '!cumplealertas', '!alertascumple',
@@ -892,12 +892,17 @@ async function handleChatMessage(channel, tags, message, self) {
         return sendChat(`🎵 @${sender}, ¡sonido de tu alerta actualizado a ${soundLabel}! Sonará cuando lances tu festejo en directo 🥳✨`);
     }
 
-    // ─── COMANDO PIÑATA: !pinata [usuario | stop] (Iniciar o detener piñata de capibara) ────
-    if (command === '!pinata' || command === '!pinatastart' || command === '!pinatastop') {
+    // ─── COMANDO PIÑATA: !piñata [nombre] [golpes] o !piñatastop ──────────────────
+    // Uso: !piñata capiluisxavi       -> piñata para esa persona (30 hits default)
+    // Uso: !piñata capiluisxavi 60   -> piñata para esa persona con 60 hits
+    // Uso: !piñata cumpleañeros       -> piñata genérica "cumpleañeros"
+    // Uso: !piñata stop               -> detener piñata activa
+    // Solo streamer (@yocapi_pr) y moderadores pueden iniciarlo o detenerlo.
+    if (command === '!piñata' || command === '!piñatastop') {
         if (!pinataManagerRef) return;
 
         const subAction = (parts[1] || '').toLowerCase().trim();
-        if (subAction === 'stop' || subAction === 'detener' || subAction === 'cancelar' || command === '!pinatastop') {
+        if (subAction === 'stop' || subAction === 'detener' || subAction === 'cancelar' || command === '!piñatastop') {
             if (!isStreamerOrMod(tags, channel)) {
                 return sendChat(`⛔ @${sender}, solo la streamer (@yocapi_pr) y los moderadores pueden detener la piñata 🛡️`);
             }
@@ -908,7 +913,7 @@ async function handleChatMessage(channel, tags, message, self) {
             return;
         }
 
-        // Si es un espectador normal
+        // Solo streamer y mods pueden iniciar la piñata
         if (!isStreamerOrMod(tags, channel)) {
             const pStatus = pinataManagerRef.getStatus();
             if (pStatus.active) {
@@ -919,50 +924,70 @@ async function handleChatMessage(channel, tags, message, self) {
 
         const currentStatus = pinataManagerRef.getStatus();
         if (currentStatus.active && subAction !== 'restart' && subAction !== 'reiniciar') {
-            return sendChat(`🪅 @${sender}, ya hay una piñata de capibara en curso (${currentStatus.currentHp}/${currentStatus.maxHp} HP, quedan ${currentStatus.remainingSec}s). Usa "!pinata stop" si deseas cancelarla.`);
+            return sendChat(`🪅 @${sender}, ya hay una piñata de capibara en curso (${currentStatus.currentHp}/${currentStatus.maxHp} HP, quedan ${currentStatus.remainingSec}s). Usa "!piñata stop" si deseas cancelarla.`);
         }
 
+        // ── Parsear nombre y golpes ────────────────────────────────────────
+        // parts[1] = nombre del cumpleañero (opcional)
+        // parts[2] = golpes / maxHp (opcional, número)
         let targetName = 'la Comunidad';
         let targetAvatar = '/img/yocapi.png';
+        let hp = 30;
 
-        let targetCandidate = (parts[1] || '').replace(/^@/, '').trim();
-        if (targetCandidate && targetCandidate !== 'start' && targetCandidate !== 'iniciar') {
-            targetName = targetCandidate;
+        // Determinar si parts[1] es un número (golpes directos) o nombre
+        const part1Raw = (parts[1] || '').replace(/^@/, '').trim();
+        const part1Num = parseInt(part1Raw, 10);
+        const part1IsNum = !isNaN(part1Num) && part1Raw !== '';
+
+        if (part1IsNum) {
+            // !piñata 60 → sin nombre, sólo golpes
+            hp = part1Num;
+        } else if (part1Raw && part1Raw !== 'start' && part1Raw !== 'iniciar') {
+            // !piñata capiluisxavi [60]
+            targetName = part1Raw;
+
+            // Buscar avatar y displayName en la BD
             if (dbRef) {
                 try {
-                    const u = await dbRef.getUser(targetCandidate.toLowerCase());
+                    const u = await dbRef.getUser(part1Raw.toLowerCase());
                     if (u) {
                         targetName = u.display_name || u.username;
                         if (u.profile_image) targetAvatar = u.profile_image;
                     }
                 } catch (_) {}
             }
-        } else if (dbRef && getBirthdayStatusRef) {
-            try {
-                const allUsers = await dbRef.getAllUsers();
-                for (const u of allUsers) {
-                    if (!u.birth_month || !u.birth_day || u.birthday_unlocked) continue;
-                    const bStatus = getBirthdayStatusRef(u.birth_month, u.birth_day);
-                    if (bStatus.canCelebrate && bStatus.isToday) {
-                        targetName = u.display_name || u.username;
-                        targetAvatar = u.profile_image || '/img/yocapi.png';
-                        break;
+
+            // Leer golpes en parts[2]
+            const hpArg = parseInt((parts[2] || ''), 10);
+            if (!isNaN(hpArg) && hpArg >= 10 && hpArg <= 100) {
+                hp = hpArg;
+            }
+        } else {
+            // Sin argumentos: buscar automáticamente el cumpleañero de hoy
+            if (dbRef && getBirthdayStatusRef) {
+                try {
+                    const allUsers = await dbRef.getAllUsers();
+                    for (const u of allUsers) {
+                        if (!u.birth_month || !u.birth_day) continue;
+                        const bStatus = getBirthdayStatusRef(u.birth_month, u.birth_day);
+                        if (bStatus.canCelebrate && bStatus.isToday) {
+                            targetName = u.display_name || u.username;
+                            targetAvatar = u.profile_image || '/img/yocapi.png';
+                            break;
+                        }
                     }
-                }
-            } catch (_) {}
+                } catch (_) {}
+            }
         }
 
-        let hp = 30;
-        const hpArg = parseInt(parts[2], 10);
-        if (!isNaN(hpArg) && hpArg >= 10 && hpArg <= 100) {
-            hp = hpArg;
-        }
+        hp = Math.min(100, Math.max(10, hp));
 
         await pinataManagerRef.start({
             targetUser: targetName,
             targetAvatar,
             maxHp: hp,
-            durationSec: 35,
+            // durationSec: null → pinataManager lo calcula automáticamente (35 hits=60s, 60 hits=90s)
+            durationSec: null,
             initiatedBy: sender
         });
         return;
@@ -970,7 +995,7 @@ async function handleChatMessage(channel, tags, message, self) {
 
     // ─── COMANDO 9: !cumpleinfo o !ayudacumple ────────────────────────────────
     if (command === '!cumpleinfo' || command === '!ayudacumple') {
-        return sendChat(`🎉 Comandos de Fiesta: !hoyesmicumple · !felicidades [mensaje] · !dale (golpea la piñata 🪅) · !pinata · !hbcambio <frase> · !hbsonido <1/2/3> · !cumple · !proximos · !cumplemes 🎂✨`);
+        return sendChat(`🎉 Comandos de Fiesta: !hoyesmicumple · !felicidades [mensaje] · !dale (golpea la piñata 🪅) · !piñata [nombre] [golpes] · !hbcambio <frase> · !hbsonido <1/2/3> · !cumple · !proximos · !cumplemes 🎂✨`);
     }
 
     // ─── COMANDOS EXCLUSIVOS DE MODERACIÓN Y CONTROL (STREAMER & MODS) ─────────

@@ -37,12 +37,18 @@ class PinataManager {
         };
     }
 
-    async start({ targetUser = 'la Comunidad', targetAvatar = '', maxHp = 30, durationSec = 35, initiatedBy = 'streamer' } = {}) {
+    async start({ targetUser = 'la Comunidad', targetAvatar = '', maxHp = 30, durationSec = null, initiatedBy = 'streamer' } = {}) {
         // Si hay una piñata activa previa, cancelarla limpiamente
         this.stop(false);
 
         const cleanHp = Math.min(100, Math.max(10, parseInt(maxHp, 10) || 30));
-        const cleanDuration = Math.min(90, Math.max(15, parseInt(durationSec, 10) || 35));
+        // Si no se provee duración, calcularla automáticamente según los golpes:
+        //   35 hits → 60s (1 min), 60 hits → 90s (1.5 min), interpolación lineal.
+        //   Fórmula: base 45s + 0.75s por hit adicional desde 10.
+        const autoSec = Math.round(45 + (cleanHp - 10) * 0.75);
+        const requestedSec = parseInt(durationSec, 10);
+        const resolvedSec = (!isNaN(requestedSec) && requestedSec > 0) ? requestedSec : autoSec;
+        const cleanDuration = Math.min(120, Math.max(20, resolvedSec));
         const now = Date.now();
         const expiresAt = now + (cleanDuration * 1000);
 
@@ -80,7 +86,11 @@ class PinataManager {
         // Anuncio en chat de Twitch
         if (this.sendChatFn) {
             try {
-                await this.sendChatFn(`🪅 ¡SE COLGÓ LA PIÑATA DE CAPIBARA DE CUMPLEAÑOS! 🎂🎉 Tienen ${cleanDuration}s para romperla entre todos. ¡Escriban !dale o !pegar para batear! 🏑💥 (Salud: ${cleanHp} golpes)`);
+                const targetLabel = (this.activePinata.targetUser && this.activePinata.targetUser !== 'la Comunidad')
+                    ? `¡Hoy celebramos a @${this.activePinata.targetUser}! `
+                    : '';
+                const minSec = cleanDuration >= 60 ? `${Math.floor(cleanDuration/60)}m ${cleanDuration % 60 > 0 ? `${cleanDuration % 60}s` : ''}`.trim() : `${cleanDuration}s`;
+                await this.sendChatFn(`🪅 ¡SE COLGÓ LA PIÑATA CAPIBARA DE CUMPLEAÑOS! 🎂🎉 ${targetLabel}Tienen ${minSec} para romperla entre todos. ¡Escriban !dale o !pegar para batear! 🏑💥 (Salud: ${cleanHp} golpes)`);
             } catch (e) {
                 console.warn('[Pinata] Error enviando chat start:', e.message);
             }
@@ -169,7 +179,7 @@ class PinataManager {
         if (this.sendChatFn) {
             try {
                 let topStr = topHitters.map((h, i) => `${i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'} @${h.displayName} (${h.count} golpes)`).join(' · ');
-                await this.sendChatFn(`💥 ¡LA PIÑATA DE CAPIBARA EXPLOTÓ EN MIL DULCES Y CONFETI! 🍬🍭🎉 ¡Felicidades @${target}! ⚡ Golpe de gracia por @${lastHitter}. ${topStr} 🏑👑`);
+                await this.sendChatFn(`💥 ¡LA PIÑATA CAPIBARA EXPLOTÓ EN MIL DULCES Y CONFETI! 🍬🍭🎉 ¡Felicidades @${target}! ⚡ Golpe de gracia: @${lastHitter} 🏑💥 ${topStr} 👑`);
             } catch (e) {
                 console.warn('[Pinata] Error enviando chat broken:', e.message);
             }
