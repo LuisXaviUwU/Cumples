@@ -115,6 +115,12 @@ function initDatabase() {
             message TEXT DEFAULT '',
             launched_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS app_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
     `);
 
     try {
@@ -372,6 +378,66 @@ const db = {
         } else {
             const stmt = sqliteDb.prepare('SELECT * FROM alert_log ORDER BY launched_at DESC LIMIT ?');
             return stmt.all(limit);
+        }
+    },
+
+    // ─ CONFIGURACIÓN DE LA APLICACIÓN / STREAMER (PERSISTENCIA TOTAL EN LA NUBE) ──
+    async getAppSettings() {
+        if (mode === 'firestore') {
+            try {
+                const doc = await firestoreDb.collection('settings').doc('app_config').get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    // Eliminar metadatos internos de db si existen
+                    delete data.updated_at;
+                    return data;
+                }
+                return null;
+            } catch (err) {
+                console.error('⚠️ [DB] Error obteniendo app_config de Firestore:', err.message);
+                return null;
+            }
+        } else {
+            try {
+                const stmt = sqliteDb.prepare('SELECT value FROM app_settings WHERE key = ?');
+                const row = stmt.get('app_config');
+                return row && row.value ? JSON.parse(row.value) : null;
+            } catch (err) {
+                return null;
+            }
+        }
+    },
+
+    async saveAppSettings(settingsData) {
+        if (!settingsData || typeof settingsData !== 'object') return false;
+        try {
+            const payload = JSON.parse(JSON.stringify(settingsData));
+            payload.updated_at = new Date().toISOString();
+
+            if (mode === 'firestore') {
+                await firestoreDb.collection('settings').doc('app_config').set(payload, { merge: true });
+                return true;
+            } else {
+                sqliteDb.exec(`
+                    CREATE TABLE IF NOT EXISTS app_settings (
+                        key TEXT PRIMARY KEY,
+                        value TEXT NOT NULL,
+                        updated_at TEXT NOT NULL
+                    );
+                `);
+                const stmt = sqliteDb.prepare(`
+                    INSERT INTO app_settings (key, value, updated_at)
+                    VALUES (?, ?, ?)
+                    ON CONFLICT(key) DO UPDATE SET
+                        value = excluded.value,
+                        updated_at = excluded.updated_at
+                `);
+                stmt.run('app_config', JSON.stringify(payload), payload.updated_at);
+                return true;
+            }
+        } catch (err) {
+            console.error('⚠️ [DB] Error guardando app_config en base de datos:', err.message);
+            return false;
         }
     }
 };

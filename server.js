@@ -29,12 +29,19 @@ const ALERT_COOLDOWN_MS = 30_000; // 30 segundos entre alertas del mismo usuario
 
 // Configuración persistente (Felicitaciones en directo activadas por la streamer, etc.)
 const settingsFile = path.join(__dirname, 'data', 'settings.json');
+const DEFAULT_PINATA_CONFIG = {
+    posX: 50,
+    posY: 25,
+    scale: 0.85
+};
+
 const DEFAULT_OVERLAY_CONFIG = {
     posX: 50,
     posY: 85,
     scale: 0.85,
     animation: 'slide-up',
-    volume: 0.85
+    volume: 0.85,
+    pinata: { ...DEFAULT_PINATA_CONFIG }
 };
 
 // Si las variables de entorno del bot están presentes, auto-habilitarlo
@@ -61,36 +68,70 @@ const pinataManager = require('./pinataManager');
 
 const pausedAlertsQueue = []; // Alertas en cola cuando la streamer pausa las alertas en vivo
 
-try {
-    if (fs.existsSync(settingsFile)) {
-        const loaded = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
-        appSettings = { 
-            ...appSettings, 
-            ...loaded,
-            overlay_config: { ...DEFAULT_OVERLAY_CONFIG, ...(loaded.overlay_config || {}) },
-            twitch_bot: { ...appSettings.twitch_bot, ...(loaded.twitch_bot || {}) }
-        };
-    }
-} catch (e) {
-    console.error('Error cargando settings.json:', e);
-}
-
-// Las variables de entorno siempre tienen prioridad sobre settings.json
-// Permite que Render funcione correctamente aunque no exista settings.json
-if (process.env.TWITCH_BOT_USERNAME) appSettings.twitch_bot.bot_username = process.env.TWITCH_BOT_USERNAME;
-if (process.env.TWITCH_BOT_TOKEN)    appSettings.twitch_bot.oauth_token  = process.env.TWITCH_BOT_TOKEN;
-if (process.env.TWITCH_BOT_CHANNEL)  appSettings.twitch_bot.channel       = process.env.TWITCH_BOT_CHANNEL;
-if (_botAutoEnabled)                  appSettings.twitch_bot.enabled        = true;
-
-
 function saveAppSettings() {
     try {
         const dir = path.dirname(settingsFile);
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(settingsFile, JSON.stringify(appSettings, null, 2));
     } catch (e) {
-        console.error('Error guardando settings.json:', e);
+        console.error('Error guardando settings.json local:', e);
     }
+
+    // Persistencia permanente en la nube (Firestore / SQLite) — nunca se pierde en Render
+    db.saveAppSettings(appSettings).catch(err => {
+        console.error('⚠️ [Config] Error sincronizando appSettings en la nube:', err);
+    });
+}
+
+// Carga asíncrona de configuración: primero intenta Firestore (nube), luego local de respaldo
+async function loadInitialSettings() {
+    // 1. Cargar archivo local settings.json si existe
+    try {
+        if (fs.existsSync(settingsFile)) {
+            const loaded = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
+            appSettings = { 
+                ...appSettings, 
+                ...loaded,
+                overlay_config: { ...DEFAULT_OVERLAY_CONFIG, ...(loaded.overlay_config || {}) },
+                twitch_bot: { ...appSettings.twitch_bot, ...(loaded.twitch_bot || {}) },
+                bot_cmd_responses: { ...(appSettings.bot_cmd_responses || {}), ...(loaded.bot_cmd_responses || {}) }
+            };
+        }
+    } catch (e) {
+        console.error('Error cargando settings.json local:', e);
+    }
+
+    // 2. Cargar desde la nube (Firestore sobrevive a cualquier redeploy de Render)
+    try {
+        const cloudConfig = await db.getAppSettings();
+        if (cloudConfig) {
+            console.log(`☁️ [Config] Configuración de streamer restaurada desde ${db.getMode() === 'firestore' ? 'Firebase Firestore (Nube)' : 'Base de datos'}`);
+            appSettings = {
+                ...appSettings,
+                ...cloudConfig,
+                overlay_config: { ...DEFAULT_OVERLAY_CONFIG, ...(cloudConfig.overlay_config || {}) },
+                twitch_bot: { ...appSettings.twitch_bot, ...(cloudConfig.twitch_bot || {}) },
+                bot_cmd_responses: { ...(appSettings.bot_cmd_responses || {}), ...(cloudConfig.bot_cmd_responses || {}) }
+            };
+            // Guardar copia local actualizada
+            try {
+                const dir = path.dirname(settingsFile);
+                if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+                fs.writeFileSync(settingsFile, JSON.stringify(appSettings, null, 2));
+            } catch (_) {}
+        } else {
+            console.log('ℹ️ [Config] No se encontró configuración previa en la nube. Creando respaldo inicial en la base de datos...');
+            await db.saveAppSettings(appSettings);
+        }
+    } catch (err) {
+        console.error('⚠️ [Config] Error al consultar configuración en la base de datos:', err.message);
+    }
+
+    // 3. Variables de entorno tienen prioridad si están definidas
+    if (process.env.TWITCH_BOT_USERNAME) appSettings.twitch_bot.bot_username = process.env.TWITCH_BOT_USERNAME;
+    if (process.env.TWITCH_BOT_TOKEN)    appSettings.twitch_bot.oauth_token  = process.env.TWITCH_BOT_TOKEN;
+    if (process.env.TWITCH_BOT_CHANNEL)  appSettings.twitch_bot.channel       = process.env.TWITCH_BOT_CHANNEL;
+    if (_botAutoEnabled)                  appSettings.twitch_bot.enabled        = true;
 }
 
 // ─── Middleware ─────────────────────────────────────────────────────────────
@@ -310,23 +351,25 @@ pinataManager.init({
     sendChat: (msg) => twitchBot.sendChat(msg)
 });
 
-twitchBot.initTwitchBot({
-    db,
-    getBirthdayStatus,
-    APP_URL,
-    initialConfig: appSettings.twitch_bot,
-    cmdResponses: appSettings.bot_cmd_responses || {},
-    broadcastToOverlay: (data) => broadcastToOverlay(data),
-    getAppSettings: () => appSettings,
-    acquireMusicLock: (u) => acquireMusicLock(u),
-    getMusicLockStatus: () => getMusicLockStatus(),
-    pausedAlertsQueue,
-    pinataManager,
-    saveSettings: (partial) => {
-        appSettings = { ...appSettings, ...partial };
-        saveAppSettings();
-    }
-});
+function initBotService() {
+    twitchBot.initTwitchBot({
+        db,
+        getBirthdayStatus,
+        APP_URL,
+        initialConfig: appSettings.twitch_bot,
+        cmdResponses: appSettings.bot_cmd_responses || {},
+        broadcastToOverlay: (data) => broadcastToOverlay(data),
+        getAppSettings: () => appSettings,
+        acquireMusicLock: (u) => acquireMusicLock(u),
+        getMusicLockStatus: () => getMusicLockStatus(),
+        pausedAlertsQueue,
+        pinataManager,
+        saveSettings: (partial) => {
+            appSettings = { ...appSettings, ...partial };
+            saveAppSettings();
+        }
+    });
+}
 
 // ─── Middleware Autenticación de Usuario ────────────────────────────────────
 async function authenticateUser(req, res, next) {
@@ -1490,7 +1533,7 @@ app.get('/api/dashboard/overlay-config', authenticateDashboard, (req, res) => {
 // Guardar y Aplicar en tiempo real la configuración del Overlay (Dashboard)
 app.post('/api/dashboard/overlay-config', authenticateDashboard, (req, res) => {
     try {
-        const { posX, posY, scale, animation, volume } = req.body;
+        const { posX, posY, scale, animation, volume, pinata } = req.body;
         const cleanX = Math.max(5, Math.min(95, parseFloat(posX) || 50));
         const cleanY = Math.max(5, Math.min(95, parseFloat(posY) || 85));
         const cleanScale = Math.max(0.4, Math.min(1.5, parseFloat(scale) || 0.85));
@@ -1498,12 +1541,25 @@ app.post('/api/dashboard/overlay-config', authenticateDashboard, (req, res) => {
         const cleanAnim = validAnims.includes(animation) ? animation : 'slide-up';
         const cleanVol = Math.max(0, Math.min(1, parseFloat(volume) !== undefined && !isNaN(parseFloat(volume)) ? parseFloat(volume) : 0.85));
 
+        let cleanPinata = appSettings.overlay_config?.pinata || { ...DEFAULT_PINATA_CONFIG };
+        if (pinata && typeof pinata === 'object') {
+            const pinX = Math.max(5, Math.min(95, parseFloat(pinata.posX) !== undefined ? parseFloat(pinata.posX) : 50));
+            const pinY = Math.max(5, Math.min(95, parseFloat(pinata.posY) !== undefined ? parseFloat(pinata.posY) : 25));
+            const pinScale = Math.max(0.4, Math.min(1.5, parseFloat(pinata.scale) !== undefined ? parseFloat(pinata.scale) : 0.85));
+            cleanPinata = {
+                posX: Math.round(pinX * 10) / 10,
+                posY: Math.round(pinY * 10) / 10,
+                scale: Math.round(pinScale * 100) / 100
+            };
+        }
+
         appSettings.overlay_config = {
             posX: Math.round(cleanX * 10) / 10,
             posY: Math.round(cleanY * 10) / 10,
             scale: Math.round(cleanScale * 100) / 100,
             animation: cleanAnim,
             volume: Math.round(cleanVol * 100) / 100,
+            pinata: cleanPinata,
             updatedAt: Date.now()
         };
 
@@ -1523,6 +1579,85 @@ app.post('/api/dashboard/overlay-config', authenticateDashboard, (req, res) => {
     } catch (err) {
         console.error('Error guardando overlay-config:', err);
         res.status(500).json({ error: 'Error del servidor al guardar configuración' });
+    }
+});
+
+// ─── RESPALDO Y RESTAURACIÓN DE CONFIGURACIÓN ─────────────────────────────
+// Exportar configuración completa como respaldo JSON
+app.get('/api/dashboard/backup-config', authenticateDashboard, (req, res) => {
+    res.setHeader('Content-Disposition', 'attachment; filename="yocapi_config_backup.json"');
+    res.json({
+        exportDate: new Date().toISOString(),
+        version: '2.0',
+        config: appSettings
+    });
+});
+
+// Importar y restaurar configuración desde archivo JSON
+app.post('/api/dashboard/restore-config', authenticateDashboard, async (req, res) => {
+    try {
+        const imported = req.body.config || req.body;
+        if (!imported || typeof imported !== 'object') {
+            return res.status(400).json({ error: 'Formato de configuración inválido' });
+        }
+
+        if (imported.overlay_config) {
+            appSettings.overlay_config = {
+                ...DEFAULT_OVERLAY_CONFIG,
+                ...imported.overlay_config
+            };
+        }
+        if (imported.twitch_bot) {
+            appSettings.twitch_bot = {
+                ...appSettings.twitch_bot,
+                ...imported.twitch_bot
+            };
+            if (twitchBot && typeof twitchBot.updateBotConfig === 'function') {
+                await twitchBot.updateBotConfig(appSettings.twitch_bot);
+            }
+        }
+        if (imported.bot_cmd_responses) {
+            appSettings.bot_cmd_responses = {
+                ...(appSettings.bot_cmd_responses || {}),
+                ...imported.bot_cmd_responses
+            };
+            if (twitchBot) {
+                Object.entries(appSettings.bot_cmd_responses).forEach(([cmd, resp]) => {
+                    twitchBot.updateCmdResponse(cmd, resp);
+                });
+            }
+        }
+        if (typeof imported.birthday_alerts_enabled === 'boolean') {
+            appSettings.birthday_alerts_enabled = imported.birthday_alerts_enabled;
+        }
+        if (typeof imported.felicitations_enabled === 'boolean') {
+            appSettings.felicitations_enabled = imported.felicitations_enabled;
+        }
+
+        saveAppSettings();
+
+        // Broadcast a OBS
+        broadcastToOverlay({
+            type: 'overlay_config',
+            config: appSettings.overlay_config
+        });
+        broadcastToOverlay({
+            type: 'felicitations_status',
+            enabled: !!appSettings.felicitations_enabled
+        });
+        broadcastToOverlay({
+            type: 'birthday_alerts_status',
+            enabled: appSettings.birthday_alerts_enabled !== false
+        });
+
+        res.json({
+            success: true,
+            message: '¡Configuración restaurada y sincronizada en la nube con éxito!',
+            config: appSettings
+        });
+    } catch (err) {
+        console.error('Error restaurando configuración:', err);
+        res.status(500).json({ error: 'Error al procesar la configuración: ' + err.message });
     }
 });
 
@@ -1928,13 +2063,24 @@ app.get(['/dashboard', '/dashboard.html', '/admin', '/panel'], (req, res) => {
     res.status(404).send('Página no encontrada');
 });
 
-// ─── Inicio de Servidor ─────────────────────────────────────────────────────
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`\n==================================================`);
-    console.log(`🎂 Yocapi Birthday Platform v2.0 (Nick + PIN)`);
-    console.log(`🌐 Servidor: http://localhost:${PORT}`);
-    console.log(`📺 Overlay OBS: http://localhost:${PORT}/overlay?token=${OVERLAY_TOKEN}`);
-    console.log(`⚙️  Dashboard Secreto: http://localhost:${PORT}/${DASHBOARD_SECRET_PATH}`);
-    console.log(`💾 Base de datos: ${db.getMode().toUpperCase()}`);
-    console.log(`==================================================\n`);
+// ─── Inicio del Servidor con Carga Asíncrona de Firestore ──────────────────
+async function startServer() {
+    await loadInitialSettings();
+    initBotService();
+
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`\n==================================================`);
+        console.log(`🎂 Yocapi Birthday Platform v2.0 (Nick + PIN)`);
+        console.log(`🌐 Servidor: http://localhost:${PORT}`);
+        console.log(`📺 Overlay OBS: http://localhost:${PORT}/overlay?token=${OVERLAY_TOKEN}`);
+        console.log(`⚙️  Dashboard Secreto: http://localhost:${PORT}/${DASHBOARD_SECRET_PATH}`);
+        console.log(`💾 Base de datos: ${db.getMode().toUpperCase()}`);
+        console.log(`☁️  Configuración OBS & Bot: PERSISTENTE EN ${db.getMode() === 'firestore' ? 'FIRESTORE CLOUD' : 'SQLITE'}`);
+        console.log(`==================================================\n`);
+    });
+}
+
+startServer().catch(err => {
+    console.error('❌ Error fatal al iniciar el servidor:', err);
+    process.exit(1);
 });
