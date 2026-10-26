@@ -1335,19 +1335,22 @@
 
           <!-- CONTROLES: PIÑATA DE CAPIBARA -->
           <div id="sim-pinata-controls" style="display: none;">
-            <!-- Anclaje Rápido Piñata -->
+
+            <!-- Anclaje Rápido Piñata 3x3 -->
             <div class="sim-control-group">
-              <label class="sim-group-label">📍 Posiciones Rápidas de la Piñata:</label>
+              <label class="sim-group-label">📍 Posición en Pantalla:</label>
               <div class="sim-grid-presets">
                 <button type="button" class="btn-pinata-snap" data-x="28" data-y="25" title="Superior Izquierda">↖️ Sup. Izq</button>
-                <button type="button" class="btn-pinata-snap active" data-x="50" data-y="25" title="Superior Centro (Recomendado)">⬆️ Superior</button>
+                <button type="button" class="btn-pinata-snap active" data-x="50" data-y="25" title="Superior Centro — Recomendado para streams">⬆️ Superior</button>
                 <button type="button" class="btn-pinata-snap" data-x="72" data-y="25" title="Superior Derecha">↗️ Sup. Der</button>
 
                 <button type="button" class="btn-pinata-snap" data-x="28" data-y="50" title="Centro Izquierda">⬅️ Izquierda</button>
                 <button type="button" class="btn-pinata-snap" data-x="50" data-y="50" title="Centro Total">🎯 Centro</button>
                 <button type="button" class="btn-pinata-snap" data-x="72" data-y="50" title="Centro Derecha">➡️ Derecha</button>
 
+                <button type="button" class="btn-pinata-snap" data-x="28" data-y="75" title="Inferior Izquierda">↙️ Inf. Izq</button>
                 <button type="button" class="btn-pinata-snap" data-x="50" data-y="75" title="Inferior Centro">⬇️ Inferior</button>
+                <button type="button" class="btn-pinata-snap" data-x="72" data-y="75" title="Inferior Derecha">↘️ Inf. Der</button>
               </div>
             </div>
 
@@ -1357,17 +1360,72 @@
                 <label class="sim-group-label" style="margin: 0;">📏 Tamaño de la Piñata:</label>
                 <span id="sim-pinata-scale-val" style="font-size: 0.85rem; font-weight: 800; color: #f59e0b;">85%</span>
               </div>
-              <input type="range" id="sim-pinata-scale-slider" min="50" max="130" step="5" value="85" class="sim-slider">
+              <input type="range" id="sim-pinata-scale-slider" min="50" max="130" step="5" value="85" class="sim-slider-amber">
               <div style="display: flex; gap: 6px; margin-top: 8px;">
-                <button type="button" class="btn-pinata-scale-quick" data-scale="0.65">65% (Compacta)</button>
-                <button type="button" class="btn-pinata-scale-quick active" data-scale="0.85">85% (Equilibrada)</button>
-                <button type="button" class="btn-pinata-scale-quick" data-scale="1.0">100% (Grande)</button>
+                <button type="button" class="btn-pinata-scale-quick" data-scale="0.65">65% Compacta</button>
+                <button type="button" class="btn-pinata-scale-quick active" data-scale="0.85">85% Equilibrada</button>
+                <button type="button" class="btn-pinata-scale-quick" data-scale="1.0">100% Grande</button>
+                <button type="button" class="btn-pinata-scale-quick" data-scale="1.15">115% Épica</button>
               </div>
             </div>
 
-            <div style="padding: 12px 14px; background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); border-radius: 10px; font-size: 0.78rem; color: #fde68a; line-height: 1.4;">
-              💡 <strong>Tip para OBS:</strong> Arrastra la piñata en el lienzo con el ratón a una zona despejada de tu pantalla donde no tape la cámara web ni el gameplay.
+            <!-- Selector de Golpes (HP) -->
+            <div class="sim-control-group">
+              <label class="sim-group-label">🏑 Resistencia de la Piñata (Golpes):</label>
+              <div class="pinata-hp-selector">
+                <button type="button" class="btn-pinata-hp" data-hp="20" title="~45s de duración">20 🐾 Fácil</button>
+                <button type="button" class="btn-pinata-hp active" data-hp="30" title="~60s de duración">30 🪅 Normal</button>
+                <button type="button" class="btn-pinata-hp" data-hp="50" title="~75s de duración">50 💪 Difícil</button>
+                <button type="button" class="btn-pinata-hp" data-hp="75" title="~98s de duración">75 🔥 Extremo</button>
+                <button type="button" class="btn-pinata-hp" data-hp="100" title="~112s de duración">100 👑 Jefe</button>
+              </div>
+              <div style="margin-top: 8px; font-size: 0.73rem; color: #94a3b8; line-height: 1.4;">
+                💡 El tiempo se calcula automáticamente: ~1 min para 30 golpes, ~1.5 min para 60.
+              </div>
             </div>
+
+            <!-- Tabla de referencia: Golpes → Duración -->
+            <div class="sim-control-group">
+              <label class="sim-group-label">⏱️ Referencia de Duración:</label>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div class="pinata-info-row">
+                  <span class="pi-label">20 golpes</span>
+                  <span class="pi-value">~45s</span>
+                  <span style="font-size: 0.7rem; color: #6b7280; margin-left: auto;">Streams pequeños</span>
+                </div>
+                <div class="pinata-info-row">
+                  <span class="pi-label">30 golpes</span>
+                  <span class="pi-value">~60s</span>
+                  <span style="font-size: 0.7rem; color: #6b7280; margin-left: auto;">✅ Recomendado</span>
+                </div>
+                <div class="pinata-info-row">
+                  <span class="pi-label">50 golpes</span>
+                  <span class="pi-value">~75s</span>
+                  <span style="font-size: 0.7rem; color: #6b7280; margin-left: auto;">Chat activo</span>
+                </div>
+                <div class="pinata-info-row">
+                  <span class="pi-label">75 golpes</span>
+                  <span class="pi-value">~98s</span>
+                  <span style="font-size: 0.7rem; color: #6b7280; margin-left: auto;">Alta actividad</span>
+                </div>
+                <div class="pinata-info-row">
+                  <span class="pi-label">100 golpes</span>
+                  <span class="pi-value">~112s</span>
+                  <span style="font-size: 0.7rem; color: #6b7280; margin-left: auto;">Máximo</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tip informativo -->
+            <div class="pinata-info-card">
+              <strong>🪅 ¿Cómo funciona el minijuego?</strong>
+              <div style="margin-top: 6px; color: #fde68a; font-size: 0.76rem; line-height: 1.55;">
+                La streamer escribe <code style="background: rgba(0,0,0,0.4); padding: 1px 5px; border-radius: 4px; color: #fbbf24;">!piñata [nombre] [golpes]</code> en el chat de Twitch.<br>
+                El chat participa con <code style="background: rgba(0,0,0,0.4); padding: 1px 5px; border-radius: 4px; color: #fbbf24;">!dale</code> o <code style="background: rgba(0,0,0,0.4); padding: 1px 5px; border-radius: 4px; color: #fbbf24;">!pegar</code> para golpear.<br>
+                Al romperse, aparece el ranking de golpeadores más entusiastas 🏆
+              </div>
+            </div>
+
           </div>
 
           <!-- Botones de Acción -->
