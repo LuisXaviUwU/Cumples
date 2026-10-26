@@ -75,6 +75,12 @@
             <span id="obs-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #64748b;"></span>
             <span id="obs-status-text">OBS</span>
           </div>
+          <div id="cloud-status-pill"
+            style="display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; background: rgba(16,185,129,0.12); font-size: 0.76rem; font-weight: 700; border: 1px solid rgba(16,185,129,0.3); color: #6ee7b7; flex-shrink: 0;"
+            title="Tu configuración está respaldada en la nube y sobrevive a cualquier actualización en Render">
+            <span style="font-size: 0.85rem;">☁️</span>
+            <span>Nube Permanente</span>
+          </div>
         </div>
         <div class="topbar-actions-wrap">
           <button type="button" id="btn-panic-stop" class="btn-copy"
@@ -317,6 +323,34 @@
               </div>
             </div>
 
+          </div>
+
+          <!-- Respaldo y Persistencia en la Nube -->
+          <div class="glass-card" style="padding: 20px 24px; margin-bottom: 24px; border: 1.5px solid rgba(16, 185, 129, 0.4); background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 182, 212, 0.08));">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 16px;">
+                <span style="font-size: 2.2rem;">☁️</span>
+                <div>
+                  <h4 style="font-family: var(--font-h); font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0 0 4px 0;">
+                    Persistencia en la Nube & Respaldos
+                  </h4>
+                  <p style="color: #cbd5e1; font-size: 0.84rem; margin: 0;">
+                    Tu diseño visual de OBS (posición, escala, animaciones), opciones del Bot y preferencias ahora se guardan permanentemente en <strong>Firebase Firestore</strong> y <strong>nunca se borran al actualizar en Render</strong>.
+                  </p>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <button type="button" id="btn-backup-config" class="btn-copy" style="background: rgba(255,255,255,0.08); padding: 9px 16px; font-size: 0.84rem; font-weight: 700; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;" title="Descargar un archivo .json con toda tu configuración">
+                  <span>📥</span>
+                  <span>Descargar Copia (.json)</span>
+                </button>
+                <button type="button" id="btn-restore-config" class="btn-copy" style="background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.5); color: #6ee7b7; padding: 9px 16px; font-size: 0.84rem; font-weight: 700; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;" title="Subir un archivo .json para restaurar tu configuración">
+                  <span>📤</span>
+                  <span>Restaurar Copia</span>
+                </button>
+                <input type="file" id="input-restore-config" accept=".json,application/json" style="display: none;">
+              </div>
+            </div>
           </div>
 
           <!-- Acceso Destacado a Comandos de Nightbot -->
@@ -1142,6 +1176,40 @@
                 <span>🎈</span>
               </div>
             </div>
+
+            <!-- Piñata de Capibara Arrastrable en el Canvas -->
+            <div id="sim-pinata-wrapper" class="sim-pinata-wrapper" style="display: none;">
+              <div class="sim-drag-handle-tag" style="background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #1a1035;">
+                <span>✥</span>
+                <span id="sim-pinata-pos-text">50%, 25%</span>
+                <span style="opacity: 0.8; font-size: 0.65rem;">(Arrastra la Piñata)</span>
+              </div>
+
+              <!-- Mini Guirnalda -->
+              <div style="font-size: 0.95rem; margin-bottom: -4px; display: flex; gap: 6px;">
+                <span>🚩</span><span>🎉</span><span>✨</span><span>🎈</span><span>🪅</span><span>🎊</span>
+              </div>
+
+              <!-- Mini HUD -->
+              <div style="background: linear-gradient(135deg, rgba(22,12,44,0.98), rgba(10,8,24,0.99)); border: 2px solid #fbbf24; border-radius: 16px; padding: 6px 16px; box-shadow: 0 0 16px rgba(251,191,36,0.35); text-align: center; min-width: 260px;">
+                <div style="font-size: 0.68rem; font-weight: 900; color: #fde047; letter-spacing: 1px;">🪅 ¡PIÑATA DE CAPIBARA! ✨</div>
+                <div style="font-weight: 800; font-size: 0.95rem; color: #fff; margin: 2px 0;">Cumpleaños de @Comunidad</div>
+                <div style="height: 12px; background: rgba(0,0,0,0.6); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); position: relative;">
+                  <div style="width: 100%; height: 100%; background: linear-gradient(90deg, #10b981, #fbbf24, #f43f5e);"></div>
+                  <span style="position: absolute; inset: 0; font-size: 0.6rem; font-weight: 800; color: #fff; display: flex; align-items: center; justify-content: center; text-shadow: 0 1px 2px #000;">35 / 35 HP</span>
+                </div>
+              </div>
+
+              <!-- Mini Cuerda -->
+              <div style="width: 4px; height: 20px; background: repeating-linear-gradient(45deg, #fbbf24, #fbbf24 4px, #f43f5e 4px, #f43f5e 8px); border-radius: 2px; margin: 0 auto;"></div>
+
+              <!-- Capibaras -->
+              <div style="display: flex; align-items: flex-end; justify-content: center; gap: 8px; margin-top: -4px;">
+                <img src="/img/capi_cheer_bat.png" style="width: 65px; height: 65px; object-fit: contain;" alt="Porrista">
+                <img src="/img/pinata_capi.png" style="width: 110px; height: 110px; object-fit: contain;" alt="Piñata">
+                <img src="/img/capi_cheer_horn.png" style="width: 65px; height: 65px; object-fit: contain;" alt="Porrista">
+              </div>
+            </div>
           </div>
 
           <!-- Barra inferior del canvas con tip y sugerencia inteligente -->
@@ -1153,100 +1221,152 @@
 
         <!-- Columna Derecha: Panel de Controles -->
         <div class="sim-controls-column">
-          <!-- Anclaje Rápido 3x3 -->
-          <div class="sim-control-group">
-            <label class="sim-group-label">📍 Anclaje Rápido en Pantalla:</label>
-            <div class="sim-grid-presets">
-              <button type="button" class="btn-snap" data-x="24" data-y="16" title="Superior Izquierda">↖️ Sup. Izq</button>
-              <button type="button" class="btn-snap" data-x="50" data-y="16" title="Superior Centro">⬆️ Superior</button>
-              <button type="button" class="btn-snap" data-x="76" data-y="16" title="Superior Derecha">↗️ Sup. Der</button>
+          <!-- Selector de Modo: Tarjeta vs Piñata -->
+          <div class="sim-selector-tabs" style="display: flex; gap: 6px; margin-bottom: 12px; background: rgba(0,0,0,0.35); padding: 4px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+            <button type="button" id="tab-sim-card" class="btn-sim-tab active" style="flex: 1; padding: 7px 10px; border-radius: 8px; border: none; font-size: 0.82rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: #9146ff; color: #fff; transition: all 0.2s ease;">
+              <span>🎂</span>
+              <span>Tarjeta Alerta</span>
+            </button>
+            <button type="button" id="tab-sim-pinata" class="btn-sim-tab" style="flex: 1; padding: 7px 10px; border-radius: 8px; border: none; font-size: 0.82rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: transparent; color: #94a3b8; transition: all 0.2s ease;">
+              <span>🪅</span>
+              <span>Piñata Capibara</span>
+            </button>
+          </div>
 
-              <button type="button" class="btn-snap" data-x="24" data-y="50" title="Centro Izquierda">⬅️ Izquierda</button>
-              <button type="button" class="btn-snap" data-x="50" data-y="50" title="Centro Total">🎯 Centro</button>
-              <button type="button" class="btn-snap" data-x="76" data-y="50" title="Centro Derecha">➡️ Derecha</button>
+          <!-- CONTROLES: TARJETA DE CUMPLEAÑOS -->
+          <div id="sim-card-controls">
+            <!-- Anclaje Rápido 3x3 -->
+            <div class="sim-control-group">
+              <label class="sim-group-label">📍 Anclaje Rápido en Pantalla:</label>
+              <div class="sim-grid-presets">
+                <button type="button" class="btn-snap" data-x="24" data-y="16" title="Superior Izquierda">↖️ Sup. Izq</button>
+                <button type="button" class="btn-snap" data-x="50" data-y="16" title="Superior Centro">⬆️ Superior</button>
+                <button type="button" class="btn-snap" data-x="76" data-y="16" title="Superior Derecha">↗️ Sup. Der</button>
 
-              <button type="button" class="btn-snap" data-x="24" data-y="85" title="Inferior Izquierda">↙️ Inf. Izq</button>
-              <button type="button" class="btn-snap active" data-x="50" data-y="85" title="Inferior Centro">⬇️ Inferior</button>
-              <button type="button" class="btn-snap" data-x="76" data-y="85" title="Inferior Derecha">↘️ Inf. Der</button>
+                <button type="button" class="btn-snap" data-x="24" data-y="50" title="Centro Izquierda">⬅️ Izquierda</button>
+                <button type="button" class="btn-snap" data-x="50" data-y="50" title="Centro Total">🎯 Centro</button>
+                <button type="button" class="btn-snap" data-x="76" data-y="50" title="Centro Derecha">➡️ Derecha</button>
+
+                <button type="button" class="btn-snap" data-x="24" data-y="85" title="Inferior Izquierda">↙️ Inf. Izq</button>
+                <button type="button" class="btn-snap active" data-x="50" data-y="85" title="Inferior Centro">⬇️ Inferior</button>
+                <button type="button" class="btn-snap" data-x="76" data-y="85" title="Inferior Derecha">↘️ Inf. Der</button>
+              </div>
+            </div>
+
+            <!-- Slider de Escala -->
+            <div class="sim-control-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="sim-group-label" style="margin: 0;">📏 Tamaño de la Tarjeta:</label>
+                <span id="sim-scale-val" style="font-size: 0.85rem; font-weight: 800; color: #a855f7;">85%</span>
+              </div>
+              <input type="range" id="sim-scale-slider" min="50" max="130" step="5" value="85" class="sim-slider">
+              <div style="display: flex; gap: 6px; margin-top: 8px;">
+                <button type="button" class="btn-scale-quick" data-scale="0.65">65% (Compacta)</button>
+                <button type="button" class="btn-scale-quick active" data-scale="0.85">85% (Equilibrada)</button>
+                <button type="button" class="btn-scale-quick" data-scale="1.0">100% (Grande)</button>
+              </div>
+            </div>
+
+            <!-- Slider de Volumen de Audio OBS -->
+            <div class="sim-control-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="sim-group-label" style="margin: 0;">🔊 Volumen del Overlay en OBS:</label>
+                <span id="sim-vol-val" style="font-size: 0.85rem; font-weight: 800; color: #10b981;">85%</span>
+              </div>
+              <input type="range" id="sim-vol-slider" min="0" max="100" step="5" value="85" class="sim-slider">
+            </div>
+
+            <!-- Dirección y Tipo de Animación -->
+            <div class="sim-control-group">
+              <label class="sim-group-label">🎬 Por Dónde y Cómo Aparece:</label>
+              <div class="sim-anim-list">
+                <button type="button" class="btn-anim-choice" data-anim="slide-down">
+                  <span class="anim-icon">⬇️</span>
+                  <div class="anim-info">
+                    <strong>Desde Arriba hacia Abajo</strong>
+                    <small>Baja suavemente desde el techo del stream</small>
+                  </div>
+                </button>
+                <button type="button" class="btn-anim-choice active" data-anim="slide-up">
+                  <span class="anim-icon">⬆️</span>
+                  <div class="anim-info">
+                    <strong>Desde Abajo hacia Arriba</strong>
+                    <small>Sube desde el borde inferior de la pantalla</small>
+                  </div>
+                </button>
+                <button type="button" class="btn-anim-choice" data-anim="slide-right">
+                  <span class="anim-icon">➡️</span>
+                  <div class="anim-info">
+                    <strong>Desde la Izquierda</strong>
+                    <small>Entra deslizándose por el lateral izquierdo</small>
+                  </div>
+                </button>
+                <button type="button" class="btn-anim-choice" data-anim="slide-left">
+                  <span class="anim-icon">⬅️</span>
+                  <div class="anim-info">
+                    <strong>Desde la Derecha</strong>
+                    <small>Entra deslizándose por el lateral derecho</small>
+                  </div>
+                </button>
+                <button type="button" class="btn-anim-choice" data-anim="pop-zoom">
+                  <span class="anim-icon">💥</span>
+                  <div class="anim-info">
+                    <strong>Zoom / Pop In Central</strong>
+                    <small>Emerge desde el centro con impacto brillante</small>
+                  </div>
+                </button>
+                <button type="button" class="btn-anim-choice" data-anim="bounce-drop">
+                  <span class="anim-icon">🎪</span>
+                  <div class="anim-info">
+                    <strong>Rebote Festivo (Bounce Drop)</strong>
+                    <small>Cae con rebote elástico estilo fiesta</small>
+                  </div>
+                </button>
+                <button type="button" class="btn-anim-choice" data-anim="fade-glow">
+                  <span class="anim-icon">✨</span>
+                  <div class="anim-info">
+                    <strong>Fade & Glow Suave</strong>
+                    <small>Aparece elegantemente con resplandor</small>
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
 
-          <!-- Slider de Escala -->
-          <div class="sim-control-group">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <label class="sim-group-label" style="margin: 0;">📏 Tamaño de la Tarjeta:</label>
-              <span id="sim-scale-val" style="font-size: 0.85rem; font-weight: 800; color: #a855f7;">85%</span>
-            </div>
-            <input type="range" id="sim-scale-slider" min="50" max="130" step="5" value="85" class="sim-slider">
-            <div style="display: flex; gap: 6px; margin-top: 8px;">
-              <button type="button" class="btn-scale-quick" data-scale="0.65">65% (Compacta)</button>
-              <button type="button" class="btn-scale-quick active" data-scale="0.85">85% (Equilibrada)</button>
-              <button type="button" class="btn-scale-quick" data-scale="1.0">100% (Grande)</button>
-            </div>
-          </div>
+          <!-- CONTROLES: PIÑATA DE CAPIBARA -->
+          <div id="sim-pinata-controls" style="display: none;">
+            <!-- Anclaje Rápido Piñata -->
+            <div class="sim-control-group">
+              <label class="sim-group-label">📍 Posiciones Rápidas de la Piñata:</label>
+              <div class="sim-grid-presets">
+                <button type="button" class="btn-pinata-snap" data-x="28" data-y="25" title="Superior Izquierda">↖️ Sup. Izq</button>
+                <button type="button" class="btn-pinata-snap active" data-x="50" data-y="25" title="Superior Centro (Recomendado)">⬆️ Superior</button>
+                <button type="button" class="btn-pinata-snap" data-x="72" data-y="25" title="Superior Derecha">↗️ Sup. Der</button>
 
-          <!-- Slider de Volumen de Audio OBS -->
-          <div class="sim-control-group">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <label class="sim-group-label" style="margin: 0;">🔊 Volumen del Overlay en OBS:</label>
-              <span id="sim-vol-val" style="font-size: 0.85rem; font-weight: 800; color: #10b981;">85%</span>
-            </div>
-            <input type="range" id="sim-vol-slider" min="0" max="100" step="5" value="85" class="sim-slider">
-          </div>
+                <button type="button" class="btn-pinata-snap" data-x="28" data-y="50" title="Centro Izquierda">⬅️ Izquierda</button>
+                <button type="button" class="btn-pinata-snap" data-x="50" data-y="50" title="Centro Total">🎯 Centro</button>
+                <button type="button" class="btn-pinata-snap" data-x="72" data-y="50" title="Centro Derecha">➡️ Derecha</button>
 
-          <!-- Dirección y Tipo de Animación -->
-          <div class="sim-control-group">
-            <label class="sim-group-label">🎬 Por Dónde y Cómo Aparece:</label>
-            <div class="sim-anim-list">
-              <button type="button" class="btn-anim-choice" data-anim="slide-down">
-                <span class="anim-icon">⬇️</span>
-                <div class="anim-info">
-                  <strong>Desde Arriba hacia Abajo</strong>
-                  <small>Baja suavemente desde el techo del stream</small>
-                </div>
-              </button>
-              <button type="button" class="btn-anim-choice active" data-anim="slide-up">
-                <span class="anim-icon">⬆️</span>
-                <div class="anim-info">
-                  <strong>Desde Abajo hacia Arriba</strong>
-                  <small>Sube desde el borde inferior de la pantalla</small>
-                </div>
-              </button>
-              <button type="button" class="btn-anim-choice" data-anim="slide-right">
-                <span class="anim-icon">➡️</span>
-                <div class="anim-info">
-                  <strong>Desde la Izquierda</strong>
-                  <small>Entra deslizándose por el lateral izquierdo</small>
-                </div>
-              </button>
-              <button type="button" class="btn-anim-choice" data-anim="slide-left">
-                <span class="anim-icon">⬅️</span>
-                <div class="anim-info">
-                  <strong>Desde la Derecha</strong>
-                  <small>Entra deslizándose por el lateral derecho</small>
-                </div>
-              </button>
-              <button type="button" class="btn-anim-choice" data-anim="pop-zoom">
-                <span class="anim-icon">💥</span>
-                <div class="anim-info">
-                  <strong>Zoom / Pop In Central</strong>
-                  <small>Emerge desde el centro con impacto brillante</small>
-                </div>
-              </button>
-              <button type="button" class="btn-anim-choice" data-anim="bounce-drop">
-                <span class="anim-icon">🎪</span>
-                <div class="anim-info">
-                  <strong>Rebote Festivo (Bounce Drop)</strong>
-                  <small>Cae con rebote elástico estilo fiesta</small>
-                </div>
-              </button>
-              <button type="button" class="btn-anim-choice" data-anim="fade-glow">
-                <span class="anim-icon">✨</span>
-                <div class="anim-info">
-                  <strong>Fade & Glow Suave</strong>
-                  <small>Aparece elegantemente con resplandor</small>
-                </div>
-              </button>
+                <button type="button" class="btn-pinata-snap" data-x="50" data-y="75" title="Inferior Centro">⬇️ Inferior</button>
+              </div>
+            </div>
+
+            <!-- Slider de Escala Piñata -->
+            <div class="sim-control-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="sim-group-label" style="margin: 0;">📏 Tamaño de la Piñata:</label>
+                <span id="sim-pinata-scale-val" style="font-size: 0.85rem; font-weight: 800; color: #f59e0b;">85%</span>
+              </div>
+              <input type="range" id="sim-pinata-scale-slider" min="50" max="130" step="5" value="85" class="sim-slider">
+              <div style="display: flex; gap: 6px; margin-top: 8px;">
+                <button type="button" class="btn-pinata-scale-quick" data-scale="0.65">65% (Compacta)</button>
+                <button type="button" class="btn-pinata-scale-quick active" data-scale="0.85">85% (Equilibrada)</button>
+                <button type="button" class="btn-pinata-scale-quick" data-scale="1.0">100% (Grande)</button>
+              </div>
+            </div>
+
+            <div style="padding: 12px 14px; background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); border-radius: 10px; font-size: 0.78rem; color: #fde68a; line-height: 1.4;">
+              💡 <strong>Tip para OBS:</strong> Arrastra la piñata en el lienzo con el ratón a una zona despejada de tu pantalla donde no tape la cámara web ni el gameplay.
             </div>
           </div>
 
@@ -1267,6 +1387,10 @@
               <button type="button" id="btn-sim-reset" class="btn-sim-reset" title="Restablecer posición inicial">
                 🔄
               </button>
+            </div>
+            <div style="font-size: 0.74rem; color: #6ee7b7; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 2px;">
+              <span>☁️</span>
+              <span>Sincronización en la nube activa: los cambios se guardan permanentemente en Firebase Firestore y nunca se pierden al actualizar en Render.</span>
             </div>
           </div>
         </div>
