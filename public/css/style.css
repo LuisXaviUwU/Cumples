@@ -1892,6 +1892,142 @@ footer a {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   CONTROLES MODO PIÑATA — Paleta ámbar / naranja-dorado
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Botones de anclaje rápido (Piñata) — misma estructura que .btn-snap pero dorado */
+.btn-pinata-snap {
+  padding: 7px 6px;
+  font-size: 0.74rem;
+  border-radius: 8px;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-pinata-snap:hover {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.6);
+  color: #fde68a;
+}
+
+.btn-pinata-snap.active {
+  background: rgba(245, 158, 11, 0.28);
+  border-color: #f59e0b;
+  color: #fef3c7;
+  font-weight: 800;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
+}
+
+/* Slider de escala con acento ámbar */
+.sim-slider-amber {
+  width: 100%;
+  accent-color: #f59e0b;
+  cursor: pointer;
+}
+
+/* Botones de escala rápida (Piñata) */
+.btn-pinata-scale-quick {
+  flex: 1;
+  padding: 5px 8px;
+  font-size: 0.72rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-pinata-scale-quick.active,
+.btn-pinata-scale-quick:hover {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: #f59e0b;
+  color: #fef3c7;
+  font-weight: 700;
+}
+
+/* Selector de golpes (HP) para la piñata */
+.pinata-hp-selector {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn-pinata-hp {
+  flex: 1;
+  min-width: 60px;
+  padding: 6px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.btn-pinata-hp:hover {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.5);
+  color: #fde68a;
+}
+
+.btn-pinata-hp.active {
+  background: rgba(245, 158, 11, 0.3);
+  border-color: #f59e0b;
+  color: #fef3c7;
+  font-weight: 800;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+}
+
+/* Tarjeta informativa del minijuego dentro del simulador */
+.pinata-info-card {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(251, 146, 60, 0.05));
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 0.78rem;
+  color: #fde68a;
+  line-height: 1.5;
+}
+
+.pinata-info-card strong {
+  color: #fbbf24;
+  font-size: 0.8rem;
+}
+
+.pinata-info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(245, 158, 11, 0.1);
+  font-size: 0.76rem;
+  color: #fed7aa;
+}
+
+.pinata-info-row:last-child {
+  border-bottom: none;
+}
+
+.pinata-info-row .pi-label {
+  color: #94a3b8;
+  min-width: 90px;
+  font-size: 0.73rem;
+}
+
+.pinata-info-row .pi-value {
+  color: #fbbf24;
+  font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    DESKTOP GRID LAYOUTS — Launch Tab & Security Tab
    ═══════════════════════════════════════════════════════════════════════════ */
 
