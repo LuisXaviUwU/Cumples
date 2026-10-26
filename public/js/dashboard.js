@@ -1931,20 +1931,94 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnClose = document.getElementById('btn-close-sim-modal');
   const canvas = document.getElementById('sim-canvas');
   const cardWrapper = document.getElementById('sim-card-wrapper');
+  const pinataWrapper = document.getElementById('sim-pinata-wrapper');
   const coordsBadge = document.getElementById('sim-coords-badge');
   const cardPosText = document.getElementById('sim-card-pos-text');
+  const pinataPosText = document.getElementById('sim-pinata-pos-text');
   const scaleSlider = document.getElementById('sim-scale-slider');
   const scaleVal = document.getElementById('sim-scale-val');
+  const pinataScaleSlider = document.getElementById('sim-pinata-scale-slider');
+  const pinataScaleVal = document.getElementById('sim-pinata-scale-val');
   const animHint = document.getElementById('sim-anim-hint');
   const webcamToggle = document.getElementById('sim-toggle-webcam');
   const webcamBox = document.getElementById('sim-webcam-box');
 
+  const tabSimCard = document.getElementById('tab-sim-card');
+  const tabSimPinata = document.getElementById('tab-sim-pinata');
+  const cardControls = document.getElementById('sim-card-controls');
+  const pinataControls = document.getElementById('sim-pinata-controls');
+
   if (!modal || !btnOpen) return;
 
-  // State
+  // Estado del Simulador
+  let simMode = 'card'; // 'card' | 'pinata'
   let simState = { posX: 50, posY: 85, scale: 0.85, animation: 'slide-up', volume: 0.85 };
+  let pinataState = { posX: 50, posY: 25, scale: 0.85 };
   const volSlider = document.getElementById('sim-vol-slider');
   const volVal = document.getElementById('sim-vol-val');
+
+  // ─── Control de Modo: Tarjeta vs Piñata ───────────────────────────────────
+  function setSimMode(mode) {
+    simMode = mode;
+    if (simMode === 'card') {
+      if (tabSimCard) {
+        tabSimCard.style.background = '#9146ff';
+        tabSimCard.style.color = '#fff';
+      }
+      if (tabSimPinata) {
+        tabSimPinata.style.background = 'transparent';
+        tabSimPinata.style.color = '#94a3b8';
+      }
+      if (cardControls) cardControls.style.display = 'block';
+      if (pinataControls) pinataControls.style.display = 'none';
+      if (cardWrapper) cardWrapper.style.display = 'block';
+      if (pinataWrapper) pinataWrapper.style.display = 'none';
+      if (coordsBadge) coordsBadge.textContent = `X: ${simState.posX}% | Y: ${simState.posY}%`;
+      refreshAnimHint();
+    } else {
+      if (tabSimPinata) {
+        tabSimPinata.style.background = '#f59e0b';
+        tabSimPinata.style.color = '#1a1035';
+      }
+      if (tabSimCard) {
+        tabSimCard.style.background = 'transparent';
+        tabSimCard.style.color = '#94a3b8';
+      }
+      if (cardControls) cardControls.style.display = 'none';
+      if (pinataControls) pinataControls.style.display = 'block';
+      if (cardWrapper) cardWrapper.style.display = 'none';
+      if (pinataWrapper) pinataWrapper.style.display = 'flex';
+      if (coordsBadge) coordsBadge.textContent = `X: ${pinataState.posX}% | Y: ${pinataState.posY}%`;
+      if (animHint) animHint.textContent = '🪅 La piñata se ubicará en esta posición y bajará desde el techo';
+    }
+  }
+
+  if (tabSimCard) tabSimCard.addEventListener('click', () => setSimMode('card'));
+  if (tabSimPinata) tabSimPinata.addEventListener('click', () => setSimMode('pinata'));
+
+  // ─── Animación y Posicionamiento de la Piñata ─────────────────────────────
+  function updatePinataScale(val) {
+    const factor = Math.round(val * 100) / 100;
+    if (pinataWrapper) pinataWrapper.style.transform = `translate(-50%, -50%) scale(${factor})`;
+  }
+
+  function movePinataTo(pctX, pctY) {
+    pinataState.posX = Math.round(Math.max(5, Math.min(95, pctX)) * 10) / 10;
+    pinataState.posY = Math.round(Math.max(10, Math.min(90, pctY)) * 10) / 10;
+    if (pinataWrapper) {
+      pinataWrapper.style.left = `${pinataState.posX}%`;
+      pinataWrapper.style.top = `${pinataState.posY}%`;
+    }
+    if (simMode === 'pinata' && coordsBadge) {
+      coordsBadge.textContent = `X: ${pinataState.posX}% | Y: ${pinataState.posY}%`;
+    }
+    if (pinataPosText) pinataPosText.textContent = `${pinataState.posX}%, ${pinataState.posY}%`;
+    document.querySelectorAll('.btn-pinata-snap').forEach(b => {
+      const bx = parseFloat(b.dataset.x);
+      const by = parseFloat(b.dataset.y);
+      b.classList.toggle('active', Math.abs(bx - pinataState.posX) < 3 && Math.abs(by - pinataState.posY) < 3);
+    });
+  }
 
   // ─── Animación Dinámica de la Tarjeta ──────────────────────────────────────
   function updateCardScale(val) {
@@ -1990,15 +2064,27 @@ document.addEventListener('DOMContentLoaded', () => {
         simState = { ...simState, ...cfg };
         moveCardTo(simState.posX, simState.posY);
         const sliderPct = Math.round(simState.scale * 100);
-        scaleSlider.value = sliderPct;
-        scaleVal.textContent = `${sliderPct}%`;
+        if (scaleSlider) scaleSlider.value = sliderPct;
+        if (scaleVal) scaleVal.textContent = `${sliderPct}%`;
         updateCardScale(simState.scale);
+
         if (typeof cfg.volume === 'number' && volSlider && volVal) {
           const volPct = Math.round(cfg.volume * 100);
           volSlider.value = volPct;
           volVal.textContent = `${volPct}%`;
           simState.volume = cfg.volume;
         }
+
+        // Cargar Piñata
+        if (cfg.pinata) {
+          pinataState = { ...pinataState, ...cfg.pinata };
+          movePinataTo(pinataState.posX, pinataState.posY);
+          const pinSliderPct = Math.round(pinataState.scale * 100);
+          if (pinataScaleSlider) pinataScaleSlider.value = pinSliderPct;
+          if (pinataScaleVal) pinataScaleVal.textContent = `${pinSliderPct}%`;
+          updatePinataScale(pinataState.scale);
+        }
+
         // Activar botón de animación correcta
         document.querySelectorAll('.btn-anim-choice').forEach(b => {
           b.classList.toggle('active', b.dataset.anim === simState.animation);
@@ -2014,7 +2100,9 @@ document.addEventListener('DOMContentLoaded', () => {
   btnOpen.addEventListener('click', () => {
     modal.style.display = 'flex';
     setTimeout(() => {
+      setSimMode('card');
       moveCardTo(simState.posX, simState.posY);
+      movePinataTo(pinataState.posX, pinataState.posY);
       refreshAnimHint();
     }, 80);
     loadServerConfig();
@@ -2036,16 +2124,19 @@ document.addEventListener('DOMContentLoaded', () => {
   modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.style.display !== 'none') closeModal(); });
 
-  // ─── Drag & Drop de la Tarjeta en el Canvas ────────────────────────────────
+  // ─── Drag & Drop de la Tarjeta y Piñata en el Canvas ─────────────────────
   let isDragging = false;
+  let activeDragTarget = 'card'; // 'card' | 'pinata'
   let dragStartX = 0, dragStartY = 0;
   let dragStartPctX = 0, dragStartPctY = 0;
 
   function getCanvasRect() { return canvas.getBoundingClientRect(); }
 
-  function onDragStart(e) {
+  function onDragStartCard(e) {
     e.preventDefault();
+    setSimMode('card');
     isDragging = true;
+    activeDragTarget = 'card';
     cardWrapper.classList.add('dragging');
     const pt = e.touches ? e.touches[0] : e;
     dragStartX = pt.clientX;
@@ -2054,32 +2145,55 @@ document.addEventListener('DOMContentLoaded', () => {
     dragStartPctY = simState.posY;
   }
 
+  function onDragStartPinata(e) {
+    e.preventDefault();
+    setSimMode('pinata');
+    isDragging = true;
+    activeDragTarget = 'pinata';
+    if (pinataWrapper) pinataWrapper.classList.add('dragging');
+    const pt = e.touches ? e.touches[0] : e;
+    dragStartX = pt.clientX;
+    dragStartY = pt.clientY;
+    dragStartPctX = pinataState.posX;
+    dragStartPctY = pinataState.posY;
+  }
+
   function onDragMove(e) {
     if (!isDragging) return;
     const pt = e.touches ? e.touches[0] : e;
     const rect = getCanvasRect();
     const dx = ((pt.clientX - dragStartX) / rect.width) * 100;
     const dy = ((pt.clientY - dragStartY) / rect.height) * 100;
-    moveCardTo(dragStartPctX + dx, dragStartPctY + dy);
+    if (activeDragTarget === 'pinata') {
+      movePinataTo(dragStartPctX + dx, dragStartPctY + dy);
+    } else {
+      moveCardTo(dragStartPctX + dx, dragStartPctY + dy);
+    }
   }
 
   function onDragEnd() {
     if (!isDragging) return;
     isDragging = false;
     cardWrapper.classList.remove('dragging');
+    if (pinataWrapper) pinataWrapper.classList.remove('dragging');
   }
 
-  // Mouse
-  cardWrapper.addEventListener('mousedown', onDragStart);
+  // Mouse & Touch listeners para Tarjeta
+  cardWrapper.addEventListener('mousedown', onDragStartCard);
+  cardWrapper.addEventListener('touchstart', onDragStartCard, { passive: false });
+
+  // Mouse & Touch listeners para Piñata
+  if (pinataWrapper) {
+    pinataWrapper.addEventListener('mousedown', onDragStartPinata);
+    pinataWrapper.addEventListener('touchstart', onDragStartPinata, { passive: false });
+  }
+
   window.addEventListener('mousemove', onDragMove);
   window.addEventListener('mouseup', onDragEnd);
-
-  // Touch
-  cardWrapper.addEventListener('touchstart', onDragStart, { passive: false });
   window.addEventListener('touchmove', onDragMove, { passive: false });
   window.addEventListener('touchend', onDragEnd);
 
-  // ─── Botones de Anclaje Rápido ─────────────────────────────────────────────
+  // ─── Botones de Anclaje Rápido (Tarjeta) ───────────────────────────────────
   document.querySelectorAll('.btn-snap').forEach(btn => {
     btn.addEventListener('click', () => {
       const x = parseFloat(btn.dataset.x);
@@ -2091,7 +2205,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // ─── Slider de Escala ──────────────────────────────────────────────────────
+  // ─── Botones de Anclaje Rápido (Piñata) ─────────────────────────────────────
+  document.querySelectorAll('.btn-pinata-snap').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const x = parseFloat(btn.dataset.x);
+      const y = parseFloat(btn.dataset.y);
+      movePinataTo(x, y);
+      if (pinataWrapper) {
+        pinataWrapper.style.transition = 'left 0.4s cubic-bezier(0.175,0.885,0.32,1.275), top 0.4s cubic-bezier(0.175,0.885,0.32,1.275)';
+        setTimeout(() => { pinataWrapper.style.transition = ''; }, 500);
+      }
+    });
+  });
+
+  // ─── Slider de Escala (Tarjeta) ────────────────────────────────────────────
   scaleSlider.addEventListener('input', () => {
     const pct = parseInt(scaleSlider.value);
     simState.scale = pct / 100;
@@ -2110,6 +2237,30 @@ document.addEventListener('DOMContentLoaded', () => {
       scaleVal.textContent = `${pct}%`;
       updateCardScale(val);
       document.querySelectorAll('#obs-sim-modal .btn-scale-quick').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // ─── Slider de Escala (Piñata) ─────────────────────────────────────────────
+  if (pinataScaleSlider && pinataScaleVal) {
+    pinataScaleSlider.addEventListener('input', () => {
+      const pct = parseInt(pinataScaleSlider.value);
+      pinataState.scale = pct / 100;
+      pinataScaleVal.textContent = `${pct}%`;
+      updatePinataScale(pinataState.scale);
+      document.querySelectorAll('#obs-sim-modal .btn-pinata-scale-quick').forEach(b => b.classList.remove('active'));
+    });
+  }
+
+  document.querySelectorAll('#obs-sim-modal .btn-pinata-scale-quick').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const val = parseFloat(btn.dataset.scale);
+      pinataState.scale = val;
+      const pct = Math.round(val * 100);
+      if (pinataScaleSlider) pinataScaleSlider.value = pct;
+      if (pinataScaleVal) pinataScaleVal.textContent = `${pct}%`;
+      updatePinataScale(val);
+      document.querySelectorAll('#obs-sim-modal .btn-pinata-scale-quick').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     });
   });
@@ -2137,6 +2288,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnTestAnim = document.getElementById('btn-sim-test-anim');
   if (btnTestAnim) {
     btnTestAnim.addEventListener('click', () => {
+      if (simMode === 'pinata') {
+        if (!pinataWrapper) return;
+        // Animación de bamboleo / fiesta en el simulador
+        const pinImg = pinataWrapper.querySelector('.sim-pinata-img');
+        if (pinImg) {
+          pinImg.style.transition = 'transform 0.15s ease-in-out';
+          pinImg.style.transform = 'rotate(-15deg) scale(1.1)';
+          setTimeout(() => { pinImg.style.transform = 'rotate(15deg) scale(0.95)'; }, 150);
+          setTimeout(() => { pinImg.style.transform = 'rotate(-8deg)'; }, 300);
+          setTimeout(() => { pinImg.style.transform = 'rotate(0deg)'; }, 450);
+          setTimeout(() => { pinImg.style.transition = ''; pinImg.style.transform = ''; }, 600);
+        }
+        showToast('🪅 ¡Bamboleo de piñata probado en el simulador!', 'info');
+        return;
+      }
+
       // Ocultar la tarjeta momentáneamente y "reproducir" la entrada
       cardWrapper.style.transition = 'none';
       cardWrapper.style.opacity = '0';
@@ -2200,7 +2367,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnTestObs.disabled = true;
       btnTestObs.innerHTML = '<span>📡 Enviando...</span>';
       try {
-        // 1. Sincronizar en tiempo real la posición/escala/animación actual al overlay de OBS
+        // 1. Sincronizar en tiempo real tanto la tarjeta como la piñata al overlay de OBS
         await authFetch('/api/dashboard/overlay-config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2208,30 +2375,52 @@ document.addEventListener('DOMContentLoaded', () => {
             posX: simState.posX,
             posY: simState.posY,
             scale: simState.scale,
-            animation: simState.animation
+            animation: simState.animation,
+            volume: simState.volume,
+            pinata: pinataState
           })
         });
 
-        // 2. Disparar alerta de prueba con confeti y sonido
-        const res = await authFetch('/api/dashboard/trigger-alert', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            isTest: true,
-            user: 'capiluisxavi',
-            message: '¡Prueba en vivo con tu diseño y animación! 🎂✨',
-            sound: 'HBSilbato.mp3'
-          })
-        });
-        const data = await res.json();
-        if (data.success) {
-          if (data.activeOverlayConnections > 0) {
-            showToast(`🎉 ¡Prueba lanzada a OBS! (${data.activeOverlayConnections} conectado)`, 'success');
+        if (simMode === 'pinata') {
+          // Activar la piñata en OBS y darle un golpe de prueba
+          await authFetch('/api/dashboard/pinata/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ maxHp: 50, theme: 'cumple' })
+          });
+          const hitRes = await authFetch('/api/dashboard/pinata/hit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user: 'capiluisxavi', damage: 5 })
+          });
+          const hitData = await hitRes.json();
+          if (hitData.success) {
+            showToast('🪅 ¡Piñata capibara activada y golpeada de prueba en OBS!', 'success');
           } else {
-            showToast('⚠️ Prueba enviada a OBS, pero no hay ninguna fuente de OBS abierta en este momento', 'warning');
+            showToast(hitData.error || 'Piñata sincronizada en OBS', 'info');
           }
         } else {
-          showToast(data.error || 'Error al lanzar prueba a OBS', 'error');
+          // 2. Disparar alerta de prueba de la tarjeta de cumpleaños con confeti y sonido
+          const res = await authFetch('/api/dashboard/trigger-alert', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              isTest: true,
+              user: 'capiluisxavi',
+              message: '¡Prueba en vivo con tu diseño y animación! 🎂✨',
+              sound: 'HBSilbato.mp3'
+            })
+          });
+          const data = await res.json();
+          if (data.success) {
+            if (data.activeOverlayConnections > 0) {
+              showToast(`🎉 ¡Prueba lanzada a OBS! (${data.activeOverlayConnections} conectado)`, 'success');
+            } else {
+              showToast('⚠️ Prueba enviada a OBS, pero no hay ninguna fuente de OBS abierta en este momento', 'warning');
+            }
+          } else {
+            showToast(data.error || 'Error al lanzar prueba a OBS', 'error');
+          }
         }
       } catch (err) {
         showToast('Error conectando con el servidor', 'error');
@@ -2257,12 +2446,13 @@ document.addEventListener('DOMContentLoaded', () => {
             posY: simState.posY,
             scale: simState.scale,
             animation: simState.animation,
-            volume: simState.volume
+            volume: simState.volume,
+            pinata: pinataState
           })
         });
         const data = await res.json();
         if (data.success) {
-          showToast('🎯 ¡Configuración guardada y aplicada en OBS en tiempo real!', 'success');
+          showToast('☁️ ¡Configuración guardada en la nube (Firestore) y aplicada en OBS!', 'success');
           setTimeout(() => closeModal(), 1200);
         } else {
           showToast(data.error || 'Error al guardar', 'error');
@@ -2280,20 +2470,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnReset = document.getElementById('btn-sim-reset');
   if (btnReset) {
     btnReset.addEventListener('click', () => {
-      simState = { posX: 50, posY: 85, scale: 0.85, animation: 'slide-up' };
-      moveCardTo(50, 85);
-      scaleSlider.value = 85;
-      scaleVal.textContent = '85%';
-      updateCardScale(0.85);
-      document.querySelectorAll('.btn-anim-choice').forEach(b => b.classList.toggle('active', b.dataset.anim === 'slide-up'));
-      document.querySelectorAll('#obs-sim-modal .btn-scale-quick').forEach(b => b.classList.toggle('active', b.dataset.scale === '0.85'));
-      refreshAnimHint();
-      showToast('Configuración restablecida a los valores por defecto', 'info');
+      if (simMode === 'pinata') {
+        pinataState = { posX: 50, posY: 25, scale: 0.85 };
+        movePinataTo(50, 25);
+        if (pinataScaleSlider) pinataScaleSlider.value = 85;
+        if (pinataScaleVal) pinataScaleVal.textContent = '85%';
+        updatePinataScale(0.85);
+        document.querySelectorAll('#obs-sim-modal .btn-pinata-scale-quick').forEach(b => b.classList.toggle('active', b.dataset.scale === '0.85'));
+        showToast('🪅 Piñata restablecida a posición y tamaño por defecto (50%, 25%, 85%)', 'info');
+      } else {
+        simState = { posX: 50, posY: 85, scale: 0.85, animation: 'slide-up' };
+        moveCardTo(50, 85);
+        scaleSlider.value = 85;
+        scaleVal.textContent = '85%';
+        updateCardScale(0.85);
+        document.querySelectorAll('.btn-anim-choice').forEach(b => b.classList.toggle('active', b.dataset.anim === 'slide-up'));
+        document.querySelectorAll('#obs-sim-modal .btn-scale-quick').forEach(b => b.classList.toggle('active', b.dataset.scale === '0.85'));
+        refreshAnimHint();
+        showToast('🎂 Tarjeta restablecida a los valores por defecto', 'info');
+      }
     });
   }
 
   // Inicializar escala visual al cargar
   updateCardScale(simState.scale);
+  updatePinataScale(pinataState.scale);
   refreshAnimHint();
 })();
 
@@ -2775,6 +2976,82 @@ document.addEventListener('DOMContentLoaded', () => {
   if (modalPreview) {
     modalPreview.addEventListener('click', (e) => {
       if (e.target === modalPreview) closeImagePreviewModal();
+    });
+  }
+})();
+
+// ─── PERSISTENCIA EN LA NUBE & RESPALDO DE CONFIGURACIÓN ─────────────────────
+(function initCloudBackup() {
+  const btnBackup = document.getElementById('btn-backup-config');
+  const btnRestore = document.getElementById('btn-restore-config');
+  const inputRestore = document.getElementById('input-restore-config');
+
+  if (btnBackup) {
+    btnBackup.addEventListener('click', async () => {
+      try {
+        btnBackup.disabled = true;
+        btnBackup.innerHTML = '⏳ Descargando...';
+        const res = await authFetch('/api/dashboard/backup-config');
+        const data = await res.json();
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const dateStr = new Date().toISOString().slice(0, 10);
+        a.href = url;
+        a.download = `yocapi_config_backup_${dateStr}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showToast('📥 ¡Copia de seguridad descargada exitosamente!', 'success');
+      } catch (err) {
+        showToast('Error al descargar copia de seguridad', 'error');
+      } finally {
+        btnBackup.disabled = false;
+        btnBackup.innerHTML = '<span>📥</span><span>Descargar Copia (.json)</span>';
+      }
+    });
+  }
+
+  if (btnRestore && inputRestore) {
+    btnRestore.addEventListener('click', () => {
+      inputRestore.click();
+    });
+
+    inputRestore.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      try {
+        btnRestore.disabled = true;
+        btnRestore.innerHTML = '⏳ Restaurando...';
+        const text = await file.text();
+        const json = JSON.parse(text);
+
+        const res = await authFetch('/api/dashboard/restore-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(json)
+        });
+        const result = await res.json();
+
+        if (result.success) {
+          showToast('☁️ ¡Configuración restaurada y guardada en Firestore!', 'success');
+          if (typeof loadStats === 'function') loadStats();
+          if (typeof loadFelicitationStatus === 'function') loadFelicitationStatus();
+          if (typeof loadBirthdayAlertsStatus === 'function') loadBirthdayAlertsStatus();
+        } else {
+          showToast(result.error || 'Error al restaurar configuración', 'error');
+        }
+      } catch (err) {
+        showToast('Archivo JSON no válido o dañado', 'error');
+      } finally {
+        btnRestore.disabled = false;
+        btnRestore.innerHTML = '<span>📤</span><span>Restaurar Copia</span>';
+        inputRestore.value = '';
+      }
     });
   }
 })();

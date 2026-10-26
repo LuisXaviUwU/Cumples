@@ -55,6 +55,23 @@ function applyOverlayConfig(cfg) {
       alertWrapper.classList.add(`anim-${animName}`);
     }
   }
+
+  // 🪅 Configuración de la Piñata de Capibara (Posición y Escala)
+  if (cfg.pinata) {
+    if (cfg.pinata.posX !== undefined && cfg.pinata.posX !== null) {
+      document.documentElement.style.setProperty('--pinata-pos-x', `${cfg.pinata.posX}%`);
+    }
+    if (cfg.pinata.posY !== undefined && cfg.pinata.posY !== null) {
+      document.documentElement.style.setProperty('--pinata-pos-y', `${cfg.pinata.posY}%`);
+    }
+    if (cfg.pinata.scale !== undefined && cfg.pinata.scale !== null) {
+      const parsedPinataScale = parseFloat(cfg.pinata.scale);
+      if (!isNaN(parsedPinataScale) && parsedPinataScale > 0) {
+        const finalPinataScale = parsedPinataScale > 2 ? parsedPinataScale / 100 : parsedPinataScale;
+        document.documentElement.style.setProperty('--pinata-scale', finalPinataScale);
+      }
+    }
+  }
 }
 
 // Cargar configuración del servidor al iniciar (REST fallback)
