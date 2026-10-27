@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Streamer — Yocapi Birthday</title>
+  <title>Dashboard Streamer — Yocapi Birthday Cockpit v3.0</title>
   <link rel="icon" href="img/HB.png" type="image/png">
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="css/style.css">
@@ -15,101 +15,424 @@
   <!-- DASHBOARD PRINCIPAL -->
   <div id="dash-app" class="dash-layout">
 
-    <!-- Sidebar -->
-    <aside class="dash-sidebar">
-      <div class="sidebar-brand">
-        <img src="img/yocapi.png" alt="yocapi_pr" class="sidebar-avatar">
-        <div class="sidebar-title">
-          <h2>yocapi_pr</h2>
-          <p>Panel de Control</p>
+    <!-- ====================================================================
+         SIDEBAR SUPERIOR (TOP NAVBAR COMPACTO CON DROPDOWNS)
+         ==================================================================== -->
+    <header class="dash-top-navbar" id="dash-top-navbar">
+
+      <!-- Izquierda: Marca y Estado en Vivo -->
+      <div class="navbar-brand-section">
+        <div class="brand-avatar-box">
+          <img src="img/yocapi.png" alt="yocapi_pr" class="brand-avatar">
+          <span class="brand-pulse-dot" title="Sistema Activo 24/7"></span>
         </div>
-        <button type="button" id="btn-close-sidebar-mobile" class="btn-close-sidebar" aria-label="Cerrar Menú">✕</button>
+        <div class="brand-title-group">
+          <h2>yocapi_pr</h2>
+          <div class="brand-tag">
+            <span>✨</span> Cockpit v3.0
+          </div>
+        </div>
+
+        <!-- Píldoras de Estado en Tiempo Real (Compactas) -->
+        <div class="navbar-status-pills">
+          <div id="obs-status-pill" class="nav-status-pill" title="Estado de la conexión SSE con Browser Source de OBS Studio">
+            <span id="obs-dot" style="width: 7px; height: 7px; border-radius: 50%; background: #64748b;"></span>
+            <span id="obs-status-text">OBS: Desconectado</span>
+          </div>
+          <div id="cloud-status-pill" class="nav-status-pill cloud" title="Tu configuración está respaldada en la nube permanentemente en Firebase Firestore">
+            <span>☁️</span>
+            <span>Nube</span>
+          </div>
+        </div>
       </div>
 
-      <div class="nav-section-title">Navegación</div>
-      <div class="nav-item active" data-tab="overview">
-        <span>📊</span> Resumen
-      </div>
-      <div class="nav-item" data-tab="today">
-        <span>🎉</span> Cumpleañeros Hoy
-      </div>
-      <div class="nav-item" data-tab="birthdays">
-        <span>👥</span> Base de Datos
-      </div>
-      <div class="nav-item" data-tab="overlay-test">
-        <span>🚀</span> OBS & Test Alert
-      </div>
-      <div class="nav-item" data-tab="nightbot">
-        <span>🤖</span> Bots &amp; Comandos
-      </div>
-      <div class="nav-item" data-tab="logs">
-        <span>📜</span> Historial
-      </div>
+      <!-- Centro: Menú Horizontal con Dropdowns -->
+      <nav class="navbar-menu-section" aria-label="Navegación Principal">
 
-      <div class="sidebar-footer">
-        <a href="/" target="_blank" class="nav-item" style="color: #64748b; text-decoration: none;">
-          <span>🌐</span> Ver Portal de Seguidores ↗
-        </a>
-      </div>
-    </aside>
-
-    <!-- Fondo Oscuro para Menú Móvil -->
-    <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
-
-    <!-- Main Content -->
-    <main class="dash-main">
-      <header class="dash-topbar">
-        <div class="topbar-left-wrap">
-          <div class="topbar-title-group">
-            <button type="button" id="btn-mobile-sidebar-toggle" class="btn-hamburger" aria-label="Abrir Menú">
-              <span></span>
-              <span></span>
-              <span></span>
-            </button>
-            <div class="topbar-page-title" id="page-title">
-              <span>📊</span> Resumen del Sistema
+        <!-- 1. RESUMEN / COCKPIT -->
+        <div class="top-nav-item">
+          <button type="button" class="top-nav-btn nav-item active" data-tab="overview" id="nav-btn-overview">
+            <span class="nav-icon">📊</span>
+            <span>Resumen</span>
+            <span class="nav-chevron">▼</span>
+          </button>
+          <div class="nav-dropdown">
+            <div class="dropdown-header">
+              <div class="dropdown-header-title">
+                <span>Centro de Control en Vivo</span>
+                <span class="dd-badge neon-pink">En Directo</span>
+              </div>
+              <div class="dropdown-header-desc">Monitoreo y acciones prioritarias</div>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="overview" data-target-sec="sec-kpis">
+              <div class="dd-icon-box">📈</div>
+              <div class="dd-content">
+                <div class="dd-title">Métricas y KPIs</div>
+                <div class="dd-subtitle">Totales, hoy, gracia y alertas</div>
+              </div>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="overview" data-target-sec="sec-bday-alerts">
+              <div class="dd-icon-box">👑</div>
+              <div class="dd-content">
+                <div class="dd-title">Alertas del Cumpleañero</div>
+                <div class="dd-subtitle">Activar o pausar !hoyesmicumple</div>
+              </div>
+              <span class="dd-badge neon-amber">VIP</span>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="overview" data-target-sec="sec-bday-alerts">
+              <div class="dd-icon-box">🎬</div>
+              <div class="dd-content">
+                <div class="dd-title">Modo Grabación</div>
+                <div class="dd-subtitle">Silencio total para TikTok/YouTube</div>
+              </div>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="overview" data-target-sec="sec-felic-control">
+              <div class="dd-icon-box">🎊</div>
+              <div class="dd-content">
+                <div class="dd-title">Lluvia de Felicitaciones</div>
+                <div class="dd-subtitle">Tarjetas del chat con !felicidades</div>
+              </div>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="overview" data-target-sec="sec-pinata-control">
+              <div class="dd-icon-box">🪅</div>
+              <div class="dd-content">
+                <div class="dd-title">Piñata de Capibara</div>
+                <div class="dd-subtitle">Minijuego cooperativo con !dale</div>
+              </div>
+              <span class="dd-badge neon-green">Juego</span>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="overview" data-target-sec="paused-queue-banner">
+              <div class="dd-icon-box">⏸️</div>
+              <div class="dd-content">
+                <div class="dd-title">Cola de Alertas Pausadas</div>
+                <div class="dd-subtitle">Alertas acumuladas en espera</div>
+              </div>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="overview" data-target-sec="sec-cloud-backup">
+              <div class="dd-icon-box">☁️</div>
+              <div class="dd-content">
+                <div class="dd-title">Respaldos & Firestore Cloud</div>
+                <div class="dd-subtitle">Descargar/restaurar copia .json</div>
+              </div>
             </div>
           </div>
-          <div id="obs-status-pill"
-            style="display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; background: rgba(255,255,255,0.04); font-size: 0.76rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.08); flex-shrink: 0;">
-            <span id="obs-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #64748b;"></span>
-            <span id="obs-status-text">OBS</span>
-          </div>
-          <div id="cloud-status-pill"
-            style="display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; background: rgba(16,185,129,0.12); font-size: 0.76rem; font-weight: 700; border: 1px solid rgba(16,185,129,0.3); color: #6ee7b7; flex-shrink: 0;"
-            title="Tu configuración está respaldada en la nube y sobrevive a cualquier actualización en Render">
-            <span style="font-size: 0.85rem;">☁️</span>
-            <span>Nube Permanente</span>
-          </div>
         </div>
-        <div class="topbar-actions-wrap">
-          <button type="button" id="btn-panic-stop" class="btn-copy"
-            style="padding: 7px 12px; background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; gap: 6px;"
-            title="Detiene y silencia inmediatamente cualquier alerta en directo">
-            <span>🛑</span>
-            <span>Detener</span>
-          </button>
-          <button type="button" id="btn-pause-alerts" class="btn-copy"
-            style="padding: 7px 12px; background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.4); color: #fcd34d; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px;"
-            title="Pausa la aparición de alertas en stream (se guardarán en cola)">
-            <span>⏸️</span>
-            <span id="pause-alerts-label">Pausar</span>
-          </button>
-          <button id="btn-refresh" class="btn-copy"
-            style="padding: 7px 12px; background: rgba(255,255,255,0.06); font-size: 0.8rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px;"
-            title="Actualizar datos del panel">
-            <span>🔄</span>
-            <span>Actualizar</span>
-          </button>
-        </div>
-      </header>
 
+        <!-- 2. CUMPLEAÑEROS -->
+        <div class="top-nav-item">
+          <button type="button" class="top-nav-btn nav-item" data-tab="today" id="nav-btn-today">
+            <span class="nav-icon">🎉</span>
+            <span>Cumpleañeros</span>
+            <span class="nav-chevron">▼</span>
+          </button>
+          <div class="nav-dropdown">
+            <div class="dropdown-header">
+              <div class="dropdown-header-title">
+                <span>Celebraciones</span>
+                <span class="dd-badge neon-pink">Comunidad</span>
+              </div>
+              <div class="dropdown-header-desc">Festejos activos y próximas fechas</div>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="today" data-target-sec="sec-today-celebrants">
+              <div class="dd-icon-box">🎂</div>
+              <div class="dd-content">
+                <div class="dd-title">Hoy &amp; Período de Gracia</div>
+                <div class="dd-subtitle">Celebrantes activos (14 días gracia)</div>
+              </div>
+              <span class="dd-badge neon-pink">Hoy</span>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="today" data-target-sec="sec-upcoming-celebrants">
+              <div class="dd-icon-box">🎈</div>
+              <div class="dd-content">
+                <div class="dd-title">Próximos 14 Días</div>
+                <div class="dd-subtitle">Cumpleaños de las próximas semanas</div>
+              </div>
+            </div>
+            <a href="/" target="_blank" class="nav-dropdown-item">
+              <div class="dd-icon-box">🌐</div>
+              <div class="dd-content">
+                <div class="dd-title">Portal de Seguidores ↗</div>
+                <div class="dd-subtitle">Página pública y calendario</div>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <!-- 3. BASE DE DATOS -->
+        <div class="top-nav-item">
+          <button type="button" class="top-nav-btn nav-item" data-tab="birthdays" id="nav-btn-birthdays">
+            <span class="nav-icon">👥</span>
+            <span>Base de Datos</span>
+            <span class="nav-chevron">▼</span>
+          </button>
+          <div class="nav-dropdown">
+            <div class="dropdown-header">
+              <div class="dropdown-header-title">
+                <span>Directorio Maestro</span>
+                <span class="dd-badge neon-green">Registros</span>
+              </div>
+              <div class="dropdown-header-desc">Control y gestión de seguidores</div>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="birthdays" data-target-sec="tab-birthdays">
+              <div class="dd-icon-box">📋</div>
+              <div class="dd-content">
+                <div class="dd-title">Directorio Completo</div>
+                <div class="dd-subtitle">Todos los seguidores registrados</div>
+              </div>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="birthdays" data-target-sec="filter-search">
+              <div class="dd-icon-box">🔍</div>
+              <div class="dd-content">
+                <div class="dd-title">Búsqueda y Filtros</div>
+                <div class="dd-subtitle">Filtrar por nombre o mes</div>
+              </div>
+            </div>
+            <div class="nav-dropdown-item" id="dd-action-export-csv" data-target-tab="birthdays">
+              <div class="dd-icon-box">📥</div>
+              <div class="dd-content">
+                <div class="dd-title">Descargar CSV (Excel)</div>
+                <div class="dd-subtitle">Exportación inmediata de la lista</div>
+              </div>
+              <span class="dd-badge neon-green">Excel</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. OBS & OVERLAY (ALINEADO A LA DERECHA) -->
+        <div class="top-nav-item">
+          <button type="button" class="top-nav-btn nav-item" data-tab="overlay-test" id="nav-btn-overlay">
+            <span class="nav-icon">📺</span>
+            <span>OBS & Overlay</span>
+            <span class="nav-chevron">▼</span>
+          </button>
+          <div class="nav-dropdown dropdown-align-right">
+            <div class="dropdown-header">
+              <div class="dropdown-header-title">
+                <span>Overlay de Navegador</span>
+                <span class="dd-badge neon-pink">1080p</span>
+              </div>
+              <div class="dropdown-header-desc">Simulador visual y pruebas</div>
+            </div>
+            <div class="nav-dropdown-item" id="dd-action-open-sim">
+              <div class="dd-icon-box">🎨</div>
+              <div class="dd-content">
+                <div class="dd-title">Diseñador Visual 1080p</div>
+                <div class="dd-subtitle">Arrastra tarjeta y piñata en canvas</div>
+              </div>
+              <span class="dd-badge neon-amber">Canvas</span>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="overlay-test" data-target-sec="sec-test-launcher">
+              <div class="dd-icon-box">🚀</div>
+              <div class="dd-content">
+                <div class="dd-title">Lanzador de Pruebas</div>
+                <div class="dd-subtitle">Alerta simulada con sonido en OBS</div>
+              </div>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="overview" data-target-sec="sec-obs-url">
+              <div class="dd-icon-box">🔗</div>
+              <div class="dd-content">
+                <div class="dd-title">Copiar URL Browser Source</div>
+                <div class="dd-subtitle">Enlace directo para OBS Studio</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. BOT DE TWITCH (ALINEADO A LA DERECHA) -->
+        <div class="top-nav-item">
+          <button type="button" class="top-nav-btn nav-item" data-tab="nightbot" id="nav-btn-nightbot">
+            <span class="nav-icon">🤖</span>
+            <span>YocapiBot</span>
+            <span class="nav-chevron">▼</span>
+          </button>
+          <div class="nav-dropdown dropdown-align-right">
+            <div class="dropdown-header">
+              <div class="dropdown-header-title">
+                <span>Bot Oficial Twitch</span>
+                <span class="dd-badge neon-pink">IRC</span>
+              </div>
+              <div class="dropdown-header-desc">Comandos, timer y banners HD</div>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="nightbot" data-target-sec="sec-bot-config">
+              <div class="dd-icon-box">⚙️</div>
+              <div class="dd-content">
+                <div class="dd-title">Credenciales &amp; Conexión</div>
+                <div class="dd-subtitle">Token OAuth, canal y timer chat</div>
+              </div>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="nightbot" data-target-sec="sec-cmd-mod">
+              <div class="dd-icon-box">🛡️</div>
+              <div class="dd-content">
+                <div class="dd-title">Comandos Streamer &amp; Mods</div>
+                <div class="dd-subtitle">!hbgrabacion, !hbalertas, !hbmod</div>
+              </div>
+              <span class="dd-badge neon-pink">Mods</span>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="nightbot" data-target-sec="sec-cmd-live">
+              <div class="dd-icon-box">🎮</div>
+              <div class="dd-content">
+                <div class="dd-title">Alertas e Interacción</div>
+                <div class="dd-subtitle">!hoyesmicumple, !felicidades, !dale</div>
+              </div>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="nightbot" data-target-sec="sec-cmd-chat">
+              <div class="dd-icon-box">💬</div>
+              <div class="dd-content">
+                <div class="dd-title">Personalización en Chat</div>
+                <div class="dd-subtitle">!registro, !hbcambio, !hbsonido</div>
+              </div>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="nightbot" data-target-sec="sec-cmd-export">
+              <div class="dd-icon-box">📸</div>
+              <div class="dd-content">
+                <div class="dd-title">Descargar Banners PNG</div>
+                <div class="dd-subtitle">Infografías HD para Twitch/Discord</div>
+              </div>
+              <span class="dd-badge neon-green">PNG</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. HISTORIAL (ALINEADO A LA DERECHA) -->
+        <div class="top-nav-item">
+          <button type="button" class="top-nav-btn nav-item" data-tab="logs" id="nav-btn-logs">
+            <span class="nav-icon">📜</span>
+            <span>Historial</span>
+            <span class="nav-chevron">▼</span>
+          </button>
+          <div class="nav-dropdown dropdown-align-right">
+            <div class="dropdown-header">
+              <div class="dropdown-header-title">
+                <span>Auditoría</span>
+                <span class="dd-badge">Logs</span>
+              </div>
+              <div class="dropdown-header-desc">Histórico de alertas disparadas</div>
+            </div>
+            <div class="nav-dropdown-item" data-target-tab="logs" data-target-sec="tab-logs">
+              <div class="dd-icon-box">📋</div>
+              <div class="dd-content">
+                <div class="dd-title">Alertas en Stream</div>
+                <div class="dd-subtitle">Usuario, sonido, dedicatoria y fecha</div>
+              </div>
+            </div>
+            <div class="nav-dropdown-item" id="dd-action-refresh-logs">
+              <div class="dd-icon-box">🔄</div>
+              <div class="dd-content">
+                <div class="dd-title">Recargar Registro</div>
+                <div class="dd-subtitle">Actualizar la lista en vivo</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </nav>
+
+      <!-- Derecha: Acciones Críticas Streamer (Compactas) -->
+      <div class="navbar-actions-section">
+        <button type="button" id="btn-panic-stop" class="btn-nav-action btn-panic-stop" title="Detiene y silencia inmediatamente cualquier alerta en directo">
+          <span>🛑</span>
+          <span>Detener</span>
+        </button>
+
+        <button type="button" id="btn-pause-alerts" class="btn-nav-action btn-pause-alerts" title="Pausa la aparición de alertas en stream (se guardarán en cola)">
+          <span>⏸️</span>
+          <span id="pause-alerts-label">Pausar</span>
+        </button>
+
+        <button type="button" id="btn-refresh" class="btn-nav-action btn-nav-refresh" title="Actualizar datos del panel">
+          <span>🔄</span>
+        </button>
+
+        <a href="/" target="_blank" class="btn-nav-action btn-nav-portal" title="Abrir portal público en una nueva pestaña">
+          <span>🌐</span>
+          <span>Portal</span>
+        </a>
+
+        <!-- Botón Hamburguesa Móvil -->
+        <button type="button" id="btn-mobile-sidebar-toggle" class="btn-mobile-toggle" aria-label="Abrir Menú">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+
+    </header>
+
+    <!-- Fondo Oscuro para Menú Móvil -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop" style="display: none;"></div>
+
+    <!-- Menú Desplegable Móvil (Drawer) -->
+    <div id="mobile-nav-drawer" class="mobile-nav-drawer">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <img src="img/yocapi.png" alt="yocapi_pr" style="width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--c-purple);">
+          <div>
+            <h3 style="font-family: var(--font-h); font-size: 0.95rem; margin: 0; color: #fff;">yocapi_pr</h3>
+            <span style="font-size: 0.7rem; color: #a855f7;">Menú Móvil</span>
+          </div>
+        </div>
+        <button type="button" id="btn-close-sidebar-mobile" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; width: 30px; height: 30px; color: #fff; cursor: pointer; font-size: 14px;">✕</button>
+      </div>
+
+      <div class="mobile-nav-group">
+        <div class="mobile-nav-title">Navegación</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+          <button type="button" class="btn-act nav-item" data-tab="overview" style="padding: 8px; background: rgba(145,70,255,0.15); color: #fff; border: 1px solid rgba(145,70,255,0.3);">📊 Resumen</button>
+          <button type="button" class="btn-act nav-item" data-tab="today" style="padding: 8px; background: rgba(244,63,94,0.15); color: #fff; border: 1px solid rgba(244,63,94,0.3);">🎉 Cumpleaños</button>
+          <button type="button" class="btn-act nav-item" data-tab="birthdays" style="padding: 8px; background: rgba(16,185,129,0.15); color: #fff; border: 1px solid rgba(16,185,129,0.3);">👥 Base Datos</button>
+          <button type="button" class="btn-act nav-item" data-tab="overlay-test" style="padding: 8px; background: rgba(59,130,246,0.15); color: #fff; border: 1px solid rgba(59,130,246,0.3);">📺 OBS & Overlay</button>
+          <button type="button" class="btn-act nav-item" data-tab="nightbot" style="padding: 8px; background: rgba(245,158,11,0.15); color: #fff; border: 1px solid rgba(245,158,11,0.3);">🤖 YocapiBot</button>
+          <button type="button" class="btn-act nav-item" data-tab="logs" style="padding: 8px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15);">📜 Historial</button>
+        </div>
+      </div>
+
+      <div class="mobile-nav-group">
+        <div class="mobile-nav-title">Acciones Directas</div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <button type="button" id="mobile-btn-open-sim" class="btn-primary" style="padding: 9px; font-weight: 800; border-radius: 8px; font-size: 0.82rem;">🎨 Abrir Diseñador 1080p</button>
+          <a href="/" target="_blank" class="btn-copy" style="padding: 9px; text-decoration: none; justify-content: center; border-radius: 8px; font-size: 0.82rem;">🌐 Ver Portal de Seguidores ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         CONTENIDO PRINCIPAL MODULAR POR SECCIÓN
+         ==================================================================== -->
+    <main class="dash-main">
+
+      <!-- Contenedor Scroll de Secciones -->
       <div class="dash-scroll-content">
 
-        <!-- PESTAÑA: RESUMEN (OVERVIEW) -->
+        <!-- ==================================================================
+             APARTADO 1: RESUMEN / COCKPIT EN DIRECTO (OVERVIEW)
+             ================================================================== -->
         <div id="tab-overview" class="dash-tab-content">
-          <!-- Métricas -->
-          <div class="stats-grid">
+
+          <!-- Cabecera Compacta de Sección 1 -->
+          <div class="section-compact-header" id="sec-overview-header">
+            <div class="sec-left-group">
+              <div class="sec-icon-badge">📊</div>
+              <div>
+                <h2 class="sec-title-text" id="page-title">
+                  Centro de Control en Vivo &amp; KPIs
+                </h2>
+                <p class="sec-desc-text">Monitoreo en tiempo real, alertas del directo y mandos de stream</p>
+              </div>
+            </div>
+            <div class="sec-right-subnav">
+              <a href="#sec-kpis" class="subnav-pill">📈 Métricas</a>
+              <a href="#sec-bday-alerts" class="subnav-pill">👑 Alertas VIP</a>
+              <a href="#sec-felic-control" class="subnav-pill">🎊 Felicitaciones</a>
+              <a href="#sec-pinata-control" class="subnav-pill">🪅 Piñata</a>
+              <a href="#sec-obs-url" class="subnav-pill">📺 Fuente OBS</a>
+              <button type="button" id="btn-hero-open-sim" class="subnav-pill active" style="background: linear-gradient(135deg, #9146ff, #ec4899); color: #fff; border: none; font-weight: 800;">
+                🎨 Simulador 1080p
+              </button>
+            </div>
+          </div>
+
+          <!-- Métricas KPIs (Compactos) -->
+          <div class="stats-grid" id="sec-kpis">
             <div class="stat-card">
               <div class="stat-header">
                 <span class="stat-label">Total Registrados</span>
@@ -117,158 +440,163 @@
               </div>
               <div class="stat-value" id="stat-total">0</div>
             </div>
-            <div class="stat-card" style="border-color: rgba(244, 63, 94, 0.4);">
+            <div class="stat-card" style="border-color: rgba(244, 63, 94, 0.45);">
               <div class="stat-header">
                 <span class="stat-label">Cumpleaños Hoy</span>
                 <span class="stat-icon">🎂</span>
               </div>
               <div class="stat-value" id="stat-today" style="color: var(--c-pink);">0</div>
             </div>
-            <div class="stat-card" style="border-color: rgba(251, 191, 36, 0.4);">
+            <div class="stat-card" style="border-color: rgba(251, 191, 36, 0.45);">
               <div class="stat-header">
                 <span class="stat-label">En Gracia (14 Días)</span>
                 <span class="stat-icon">🎈</span>
               </div>
               <div class="stat-value" id="stat-grace" style="color: var(--c-gold);">0</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" style="border-color: rgba(145, 70, 255, 0.45);">
               <div class="stat-header">
                 <span class="stat-label">Alertas en Stream</span>
                 <span class="stat-icon">🚀</span>
               </div>
-              <div class="stat-value" id="stat-alerts">0</div>
+              <div class="stat-value" id="stat-alerts" style="color: #bf94ff;">0</div>
             </div>
           </div>
 
           <!-- Banner de Alertas Pausadas / Cola (Modo Partida) -->
-          <div id="paused-queue-banner" class="glass-card" style="display: none; padding: 18px 22px; margin-bottom: 22px; border: 1.5px solid #f59e0b; background: rgba(245, 158, 11, 0.1);">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <span style="font-size: 1.8rem;">⏸️</span>
+          <div id="paused-queue-banner" class="glass-card" style="display: none; padding: 14px 18px; margin-bottom: 16px; border: 1.5px solid #f59e0b; background: rgba(245, 158, 11, 0.12);">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.6rem;">⏸️</span>
                 <div>
-                  <h4 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #fcd34d; margin: 0 0 2px 0;">
+                  <h4 style="font-family: var(--font-h); font-size: 0.98rem; font-weight: 800; color: #fcd34d; margin: 0 0 2px 0;">
                     Alertas Pausadas en Cola (<span id="paused-queue-count">0</span> pendientes)
                   </h4>
-                  <p style="color: #fef3c7; font-size: 0.8rem; margin: 0;">
-                    Las alertas enviadas por los seguidores se están guardando aquí para no interrumpir tu directo.
+                  <p style="color: #fef3c7; font-size: 0.78rem; margin: 0;">
+                    Las alertas enviadas por seguidores se guardan aquí para no interrumpir tu directo.
                   </p>
                 </div>
               </div>
-              <div style="display: flex; gap: 8px;">
-                <button type="button" id="btn-release-next-alert" class="btn-copy" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5); color: #34d399; font-weight: 700;">
+              <div style="display: flex; gap: 6px;">
+                <button type="button" id="btn-release-next-alert" class="btn-copy" style="padding: 6px 12px; font-size: 0.78rem; background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5); color: #34d399; font-weight: 700;">
                   ▶️ Soltar Siguiente
                 </button>
-                <button type="button" id="btn-release-all-alerts" class="btn-primary" style="padding: 8px 16px; font-size: 0.82rem; font-weight: 800;">
+                <button type="button" id="btn-release-all-alerts" class="btn-primary" style="padding: 6px 14px; font-size: 0.78rem; font-weight: 800; border-radius: 8px;">
                   🚀 Soltar Todas
                 </button>
               </div>
             </div>
-            <div id="paused-queue-items" style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px;"></div>
+            <div id="paused-queue-items" style="margin-top: 10px; display: flex; flex-direction: column; gap: 5px;"></div>
           </div>
 
-          <!-- Controles Rápidos en Directo: Alertas del Cumpleañero y Felicitaciones -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; margin-bottom: 24px;">
+          <!-- Controles Rápidos en Directo: 3 Columnas Proporcionadas -->
+          <div class="live-controls-grid">
 
-            <!-- Control 1: Alertas del Cumpleañero (!hoyesmicumple) & Modo Grabación -->
-            <div class="glass-card" style="padding: 20px 22px; border: 1.5px solid rgba(234, 179, 8, 0.4); background: linear-gradient(135deg, rgba(234, 179, 8, 0.1), rgba(30, 20, 10, 0.5)); border-radius: 16px;">
-              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 12px; flex-wrap: wrap;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                  <span style="font-size: 2.2rem; line-height: 1;">👑</span>
-                  <div>
-                    <h3 style="font-family: var(--font-h); font-size: 1.12rem; font-weight: 800; margin: 0; color: #fff;">
-                      Alertas del Cumpleañero en Pantalla
-                    </h3>
-                    <div style="font-size: 0.78rem; color: #cbd5e1; margin-top: 2px;">
-                      Comando chat: <code>!hoyesmicumple</code>
+            <!-- Módulo 1: Alertas del Cumpleañero (!hoyesmicumple) & Modo Grabación -->
+            <div class="glass-card control-module-card" id="sec-bday-alerts" style="border: 1.5px solid rgba(234, 179, 8, 0.35); background: linear-gradient(135deg, rgba(234, 179, 8, 0.08), rgba(28, 18, 10, 0.5));">
+              <div>
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.8rem; line-height: 1;">👑</span>
+                    <div>
+                      <h3 style="font-family: var(--font-h); font-size: 1.0rem; font-weight: 800; margin: 0; color: #fff;">
+                        Alertas del Cumpleañero
+                      </h3>
+                      <div style="font-size: 0.72rem; color: #fde68a;">
+                        Comando: <code>!hoyesmicumple</code>
+                      </div>
                     </div>
                   </div>
+                  <span id="bday-alerts-status-badge" style="padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">
+                    🟢 Permitidas
+                  </span>
                 </div>
-                <span id="bday-alerts-status-badge" style="padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">
-                  🟢 Permitidas
-                </span>
+                <p style="color: #cbd5e1; font-size: 0.78rem; margin: 0 0 12px 0; line-height: 1.4;">
+                  Desactívalo temporalmente al grabar videos de YouTube/TikTok para evitar interrupciones.
+                </p>
               </div>
-              <p style="color: #94a3b8; font-size: 0.83rem; margin: 0 0 14px 0; line-height: 1.45;">
-                Desactívalo temporalmente si vas a grabar un video de YouTube/TikTok o en momentos serios para evitar interrupciones no deseadas.
-              </p>
-              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button type="button" id="btn-toggle-bday-alerts" class="btn-primary" style="padding: 9px 18px; font-size: 0.85rem; font-weight: 800; border-radius: 10px; flex: 1; white-space: nowrap;">
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto;">
+                <button type="button" id="btn-toggle-bday-alerts" class="btn-primary" style="padding: 7px 14px; font-size: 0.78rem; font-weight: 800; border-radius: 8px; flex: 1; white-space: nowrap;">
                   🔒 Bloquear Alertas
                 </button>
-                <button type="button" id="btn-quick-rec-mode" class="btn-copy" style="padding: 9px 16px; font-size: 0.84rem; font-weight: 800; border-radius: 10px; background: rgba(239, 68, 68, 0.16); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; white-space: nowrap;" title="Activa silencio total para videos de YouTube/TikTok">
+                <button type="button" id="btn-quick-rec-mode" class="btn-copy" style="padding: 7px 12px; font-size: 0.78rem; font-weight: 800; border-radius: 8px; background: rgba(239, 68, 68, 0.16); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; white-space: nowrap;" title="Activa silencio total para videos de YouTube/TikTok">
                   🎬 Modo Grabación
                 </button>
               </div>
             </div>
 
-            <!-- Control 2: Felicitaciones en Directo para Espectadores (!felicidades) -->
-            <div class="glass-card" style="padding: 20px 22px; border: 1.5px solid rgba(244, 63, 94, 0.4); background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(145, 70, 255, 0.08)); border-radius: 16px;">
-              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 12px; flex-wrap: wrap;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                  <span style="font-size: 2.2rem; line-height: 1;">🎊</span>
-                  <div>
-                    <h3 style="font-family: var(--font-h); font-size: 1.12rem; font-weight: 800; margin: 0; color: #fff;">
-                      Lluvia de Felicitaciones en Directo
-                    </h3>
-                    <div style="font-size: 0.78rem; color: #cbd5e1; margin-top: 2px;">
-                      Comando chat: <code>!felicidades [mensaje]</code>
+            <!-- Módulo 2: Felicitaciones en Directo (!felicidades) -->
+            <div class="glass-card control-module-card" id="sec-felic-control" style="border: 1.5px solid rgba(244, 63, 94, 0.35); background: linear-gradient(135deg, rgba(244, 63, 94, 0.08), rgba(145, 70, 255, 0.08));">
+              <div>
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.8rem; line-height: 1;">🎊</span>
+                    <div>
+                      <h3 style="font-family: var(--font-h); font-size: 1.0rem; font-weight: 800; margin: 0; color: #fff;">
+                        Lluvia de Felicitaciones
+                      </h3>
+                      <div style="font-size: 0.72rem; color: #fbcfe8;">
+                        Comando: <code>!felicidades [mensaje]</code>
+                      </div>
                     </div>
                   </div>
+                  <span id="felic-status-badge" style="padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);">
+                    🔴 Desactivadas
+                  </span>
                 </div>
-                <span id="felic-status-badge" style="padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);">
-                  🔴 Desactivadas
-                </span>
+                <p style="color: #cbd5e1; font-size: 0.78rem; margin: 0 0 12px 0; line-height: 1.4;">
+                  Permite a los espectadores mandar tarjetas flotantes y sonidos al festejado en directo.
+                </p>
               </div>
-              <p style="color: #94a3b8; font-size: 0.83rem; margin: 0 0 14px 0; line-height: 1.45;">
-                Permite a los espectadores mandar tarjetas flotantes y sonidos al cumpleañero en directo. Apágalo al terminar el momento.
-              </p>
-                <div>
-                <button type="button" id="btn-toggle-felic" class="btn-primary" style="padding: 9px 20px; font-size: 0.85rem; font-weight: 800; border-radius: 10px; width: 100%;">
+              <div style="margin-top: auto;">
+                <button type="button" id="btn-toggle-felic" class="btn-primary" style="padding: 7px 16px; font-size: 0.78rem; font-weight: 800; border-radius: 8px; width: 100%;">
                   🎊 Activar Felicitaciones
                 </button>
               </div>
             </div>
 
-            <!-- Control 3: Minijuego Piñata Comunitaria de Capibara -->
-            <div class="glass-card" style="padding: 20px 22px; border: 1.5px solid rgba(251, 191, 36, 0.5); background: linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(20, 14, 38, 0.7)); border-radius: 16px;">
-              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 12px; flex-wrap: wrap;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                  <span style="font-size: 2.2rem; line-height: 1;">🪅</span>
-                  <div>
-                    <h3 style="font-family: var(--font-h); font-size: 1.12rem; font-weight: 800; margin: 0; color: #fff;">
-                      Piñata de Capibara en Vivo
-                    </h3>
-                    <div style="font-size: 0.78rem; color: #cbd5e1; margin-top: 2px;">
-                      Comandos chat: <code>!dale</code> &bull; <code>!pegar</code> &bull; <code>!pinata</code>
+            <!-- Módulo 3: Minijuego Piñata Comunitaria de Capibara -->
+            <div class="glass-card control-module-card" id="sec-pinata-control" style="border: 1.5px solid rgba(251, 191, 36, 0.45); background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(20, 14, 38, 0.7));">
+              <div>
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.8rem; line-height: 1;">🪅</span>
+                    <div>
+                      <h3 style="font-family: var(--font-h); font-size: 1.0rem; font-weight: 800; margin: 0; color: #fff;">
+                        Piñata de Capibara en Vivo
+                      </h3>
+                      <div style="font-size: 0.72rem; color: #fef08a;">
+                        Comando: <code>!dale</code> &bull; <code>!pegar</code>
+                      </div>
                     </div>
                   </div>
+                  <span id="pinata-status-badge" style="padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.4);">
+                    ⚪ Inactiva
+                  </span>
                 </div>
-                <span id="pinata-status-badge" style="padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.4);">
-                  ⚪ Inactiva
-                </span>
+                <p style="color: #cbd5e1; font-size: 0.78rem; margin: 0 0 10px 0; line-height: 1.35;">
+                  Despliega la piñata animada en OBS. El chat tiene tiempo límite para romperla en equipo.
+                </p>
               </div>
-              <p style="color: #cbd5e1; font-size: 0.83rem; margin: 0 0 12px 0; line-height: 1.45;">
-                Despliega una piñata animada de capibara colgada en OBS. El chat tiene 35s para golpearla en cooperativo hasta romperla.
-              </p>
-              
-              <!-- Controles Rápidos de Piñata -->
-              <div style="display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                  <input type="text" id="dash-pinata-target" placeholder="Nombre (ej: cumpleañero o chat)" style="flex: 2; min-width: 150px; background: rgba(0,0,0,0.4); border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 8px; padding: 7px 12px; color: #fff; font-size: 0.82rem;">
-                  <select id="dash-pinata-hp" style="flex: 1; min-width: 100px; background: #1e1537; border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 8px; padding: 7px 10px; color: #fff; font-size: 0.82rem; cursor: pointer;">
-                    <option value="20">⚡ 20 HP (Rápida)</option>
-                    <option value="35" selected>🪅 35 HP (Normal)</option>
-                    <option value="60">🔥 60 HP (Fiestón)</option>
+
+              <div style="display: flex; flex-direction: column; gap: 6px; margin-top: auto;">
+                <div style="display: flex; gap: 6px;">
+                  <input type="text" id="dash-pinata-target" placeholder="Nombre (ej: cumpleañero)" style="flex: 2; min-width: 110px; background: rgba(0,0,0,0.4); border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 6px; padding: 5px 8px; color: #fff; font-size: 0.78rem;">
+                  <select id="dash-pinata-hp" style="flex: 1; min-width: 90px; background: #1e1537; border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 6px; padding: 5px 6px; color: #fff; font-size: 0.78rem; cursor: pointer;">
+                    <option value="20">⚡ 20 HP</option>
+                    <option value="35" selected>🪅 35 HP</option>
+                    <option value="60">🔥 60 HP</option>
                   </select>
                 </div>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                  <button type="button" id="btn-start-pinata" class="btn-primary" style="flex: 2; padding: 9px 16px; font-size: 0.84rem; font-weight: 800; background: linear-gradient(135deg, #f59e0b, #ef4444); border-radius: 10px; cursor: pointer;">
-                    🪅 Iniciar Piñata
+                <div style="display: flex; gap: 6px;">
+                  <button type="button" id="btn-start-pinata" class="btn-primary" style="flex: 2; padding: 7px 10px; font-size: 0.78rem; font-weight: 800; background: linear-gradient(135deg, #f59e0b, #ef4444); border-radius: 8px; cursor: pointer;">
+                    🪅 Iniciar
                   </button>
-                  <button type="button" id="btn-test-hit-pinata" class="btn-copy" style="flex: 1; padding: 9px 12px; font-size: 0.82rem; font-weight: 700; background: rgba(56, 189, 248, 0.2); border-color: rgba(56, 189, 248, 0.5); color: #38bdf8; cursor: pointer;" title="Simula un golpe !dale en OBS">
-                    🏏 Batear (!dale)
+                  <button type="button" id="btn-test-hit-pinata" class="btn-copy" style="flex: 1; padding: 7px 8px; font-size: 0.76rem; font-weight: 700; background: rgba(56, 189, 248, 0.2); border-color: rgba(56, 189, 248, 0.5); color: #38bdf8; cursor: pointer;">
+                    🏏 Batear
                   </button>
-                  <button type="button" id="btn-stop-pinata" class="btn-copy" style="padding: 9px 12px; font-size: 0.82rem; font-weight: 700; background: rgba(239, 68, 68, 0.16); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; cursor: pointer;" title="Guarda o cancela la piñata">
-                    🛑 Detener
+                  <button type="button" id="btn-stop-pinata" class="btn-copy" style="padding: 7px 10px; font-size: 0.76rem; font-weight: 700; background: rgba(239, 68, 68, 0.16); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; cursor: pointer;" title="Detiene la piñata en pantalla">
+                    🛑
                   </button>
                 </div>
               </div>
@@ -276,75 +604,53 @@
 
           </div>
 
-          <!-- OBS Quick Setup Card -->
-          <div class="obs-setup-card">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
+          <!-- OBS Quick Setup Card & Diseñador Visual (Compacto) -->
+          <div class="glass-card" id="sec-obs-url" style="padding: 16px 20px; margin-bottom: 16px; border: 1px solid rgba(145, 70, 255, 0.3); background: linear-gradient(135deg, rgba(145, 70, 255, 0.08), rgba(244, 63, 94, 0.04));">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
               <div>
-                <h3 style="font-family: var(--font-h); font-size: 1.2rem; font-weight: 800; margin-bottom: 4px;">
-                  📺 URL de Navegador para OBS Studio
+                <h3 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; margin: 0 0 2px 0; color: #fff;">
+                  📺 Fuente de Navegador para OBS Studio (1920 × 1080p)
                 </h3>
-                <p style="color: #94a3b8; font-size: 0.85rem;">
-                  Copia esta URL y agrégala como <strong>Fuente de Navegador (Browser Source)</strong> en OBS
-                  (1920x1080). ¡No necesitas ejecutar nada en tu PC!
+                <p style="color: #cbd5e1; font-size: 0.78rem; margin: 0;">
+                  Agrega esta URL como <strong>Browser Source</strong> en OBS. Soporta SSE en vivo sin recargar la fuente.
                 </p>
               </div>
-              <div
-                style="padding: 6px 12px; background: rgba(145, 70, 255, 0.2); border-radius: 8px; font-size: 0.75rem; font-weight: 700; color: #bf94ff;">
-                Modo Cloud 24/7
-              </div>
+              <button type="button" id="btn-open-sim-modal" class="btn-primary" style="background: linear-gradient(135deg, #9146ff, #ec4899); padding: 7px 16px; font-size: 0.8rem; font-weight: 800; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border: none; color: #fff; white-space: nowrap;">
+                <span>🖱️</span>
+                <span>Abrir Simulador Interactivo</span>
+              </button>
             </div>
-            <div class="obs-copy-row">
+
+            <div class="obs-copy-row" style="margin-top: 10px;">
               <input type="text" id="obs-url-display" class="obs-url-input" readonly>
               <button id="btn-copy-obs" class="btn-copy">📋 Copiar URL</button>
-              <button type="button" id="btn-test-obs-direct" class="btn-copy" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #34d399; display: inline-flex; align-items: center; gap: 6px;" title="Dispara una alerta de cumpleaños de prueba directamente a OBS Studio">
+              <button type="button" id="btn-test-obs-direct" class="btn-copy" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #34d399;" title="Dispara alerta de prueba directamente a OBS Studio">
                 <span>🚀</span>
                 <span>Probar en OBS</span>
               </button>
             </div>
-
-            <!-- Botón Destacado: Diseñador Visual de OBS -->
-            <div style="margin-top: 16px; padding: 14px 18px; background: linear-gradient(135deg, rgba(145, 70, 255, 0.18), rgba(236, 72, 153, 0.12)); border: 1.5px solid rgba(145, 70, 255, 0.45); border-radius: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
-              <div style="display: flex; align-items: center; gap: 14px;">
-                <span style="font-size: 2.2rem;">🎨</span>
-                <div>
-                  <h4 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0 0 2px 0;">
-                    Diseñador y Simulador Visual de OBS (1920 × 1080p)
-                  </h4>
-                  <p style="color: #cbd5e1; font-size: 0.82rem; margin: 0;">
-                    Arrastra con el ratón la tarjeta en una pantalla simulada de 1080p, ajusta su tamaño y elige por dónde entra la animación.
-                  </p>
-                </div>
-              </div>
-              <div>
-                <button type="button" id="btn-open-sim-modal" class="btn-primary" style="background: linear-gradient(135deg, #9146ff, #ec4899); padding: 10px 20px; font-size: 0.9rem; font-weight: 800; border-radius: 10px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 16px rgba(145, 70, 255, 0.45); border: none; color: #fff; white-space: nowrap;">
-                  <span>🖱️</span>
-                  <span>Abrir Simulador Interactivo</span>
-                </button>
-              </div>
-            </div>
-
           </div>
 
-          <!-- Respaldo y Persistencia en la Nube -->
-          <div class="glass-card" style="padding: 20px 24px; margin-bottom: 24px; border: 1.5px solid rgba(16, 185, 129, 0.4); background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 182, 212, 0.08));">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
-              <div style="display: flex; align-items: center; gap: 16px;">
-                <span style="font-size: 2.2rem;">☁️</span>
+          <!-- Respaldo y Persistencia en la Nube (Compacto) -->
+          <div class="glass-card" id="sec-cloud-backup" style="padding: 14px 18px; margin-bottom: 16px; border: 1px solid rgba(16, 185, 129, 0.35); background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(6, 182, 212, 0.05));">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.6rem;">☁️</span>
                 <div>
-                  <h4 style="font-family: var(--font-h); font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0 0 4px 0;">
-                    Persistencia en la Nube & Respaldos
+                  <h4 style="font-family: var(--font-h); font-size: 0.95rem; font-weight: 800; color: #fff; margin: 0 0 1px 0;">
+                    Persistencia en la Nube &amp; Respaldos de Seguridad
                   </h4>
-                  <p style="color: #cbd5e1; font-size: 0.84rem; margin: 0;">
-                    Tu diseño visual de OBS (posición, escala, animaciones), opciones del Bot y preferencias ahora se guardan permanentemente en <strong>Firebase Firestore</strong> y <strong>nunca se borran al actualizar en Render</strong>.
+                  <p style="color: #cbd5e1; font-size: 0.76rem; margin: 0;">
+                    Tu diseño visual de OBS, preferencias y credenciales están sincronizados en <strong>Firestore Cloud</strong>.
                   </p>
                 </div>
               </div>
-              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <button type="button" id="btn-backup-config" class="btn-copy" style="background: rgba(255,255,255,0.08); padding: 9px 16px; font-size: 0.84rem; font-weight: 700; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;" title="Descargar un archivo .json con toda tu configuración">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <button type="button" id="btn-backup-config" class="btn-copy" style="background: rgba(255,255,255,0.08); padding: 6px 12px; font-size: 0.76rem; font-weight: 700; border-radius: 8px;" title="Descargar un archivo .json con toda tu configuración">
                   <span>📥</span>
                   <span>Descargar Copia (.json)</span>
                 </button>
-                <button type="button" id="btn-restore-config" class="btn-copy" style="background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.5); color: #6ee7b7; padding: 9px 16px; font-size: 0.84rem; font-weight: 700; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;" title="Subir un archivo .json para restaurar tu configuración">
+                <button type="button" id="btn-restore-config" class="btn-copy" style="background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.5); color: #6ee7b7; padding: 6px 12px; font-size: 0.76rem; font-weight: 700; border-radius: 8px;" title="Subir un archivo .json para restaurar tu configuración">
                   <span>📤</span>
                   <span>Restaurar Copia</span>
                 </button>
@@ -353,94 +659,130 @@
             </div>
           </div>
 
-          <!-- Acceso Destacado a Comandos de Nightbot -->
-          <div class="glass-card" style="padding: 20px 24px; margin-bottom: 24px; border: 1.5px solid rgba(59, 130, 246, 0.4); background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(145, 70, 255, 0.08));">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
-              <div style="display: flex; align-items: center; gap: 16px;">
-                <span style="font-size: 2.2rem;">🤖</span>
+          <!-- Banner Acceso Rápido a Nightbot -->
+          <div class="glass-card" style="padding: 14px 18px; border: 1px solid rgba(59, 130, 246, 0.3); background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(145, 70, 255, 0.06));">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.6rem;">🤖</span>
                 <div>
-                  <h4 style="font-family: var(--font-h); font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0 0 4px 0;">
-                    Comandos de Twitch para Nightbot
+                  <h4 style="font-family: var(--font-h); font-size: 0.95rem; font-weight: 800; color: #fff; margin: 0 0 1px 0;">
+                    YocapiBot — Automatización del Chat de Twitch
                   </h4>
-                  <p style="color: #cbd5e1; font-size: 0.84rem; margin: 0;">
-                    Ahora los comandos tienen su propia sección completa en el menú lateral con pruebas en vivo y nuevos comandos interactivos.
+                  <p style="color: #cbd5e1; font-size: 0.76rem; margin: 0;">
+                    16 comandos interactivos, temporizador automático de recordatorios y generador de infografías PNG.
                   </p>
                 </div>
               </div>
-              <button type="button" id="btn-goto-nightbot" class="btn-primary" style="background: linear-gradient(135deg, #3b82f6, #9146ff); padding: 10px 22px; font-size: 0.88rem; font-weight: 800; border-radius: 10px; cursor: pointer; border: none; color: #fff; display: inline-flex; align-items: center; gap: 8px;">
+              <button type="button" id="btn-goto-nightbot" class="btn-primary" style="background: linear-gradient(135deg, #3b82f6, #9146ff); padding: 7px 16px; font-size: 0.78rem; font-weight: 800; border-radius: 8px; cursor: pointer; border: none; color: #fff; display: inline-flex; align-items: center; gap: 6px;">
                 <span>🤖</span>
-                <span>Abrir Panel de Nightbot ➔</span>
+                <span>Abrir Panel de YocapiBot ➔</span>
               </button>
             </div>
           </div>
 
-          <!-- Info del Sistema -->
-          <div class="glass-card" style="padding: 24px; margin-bottom: 28px;">
-            <div
-              style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+        </div>
+
+        <!-- ==================================================================
+             APARTADO 2: CUMPLEAÑEROS (TODAY & UPCOMING)
+             ================================================================== -->
+        <div id="tab-today" class="dash-tab-content" style="display: none;">
+
+          <!-- Cabecera Compacta de Sección 2 -->
+          <div class="section-compact-header">
+            <div class="sec-left-group">
+              <div class="sec-icon-badge" style="background: rgba(244, 63, 94, 0.2); border-color: rgba(244, 63, 94, 0.4);">🎉</div>
               <div>
-                <h4 style="font-family: var(--font-h); font-size: 1.1rem; font-weight: 800; margin-bottom: 4px;">
-                  ✨ Sistema Ágil (Nick de Twitch + PIN)
-                </h4>
-                <p style="color: #94a3b8; font-size: 0.85rem;">
-                  Tus seguidores solo ingresan su Nick de Twitch y un PIN de 4 dígitos. El sistema carga automáticamente
-                  sus fotos de perfil y lanza las alertas sin depender de inicios de sesión de Twitch ni tokens que
-                  expiren.
-                </p>
-              </div>
-              <div
-                style="padding: 6px 14px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 20px; font-size: 0.8rem; font-weight: 700; color: #10b981;">
-                🟢 Sistema Autónomo 24/7
+                <h2 class="sec-title-text">Celebrantes Activos &amp; Próximos Cumpleaños</h2>
+                <p class="sec-desc-text">Seguidores que celebran su día especial hoy o en las próximas semanas</p>
               </div>
             </div>
+            <div class="sec-right-subnav">
+              <a href="#sec-today-celebrants" class="subnav-pill active">🎂 Celebrantes Activos</a>
+              <a href="#sec-upcoming-celebrants" class="subnav-pill">🎈 Próximos 14 Días</a>
+              <a href="/" target="_blank" class="subnav-pill">🌐 Ver Portal ↗</a>
+            </div>
           </div>
+
+          <!-- Bloque: Celebrantes de Hoy & Gracia -->
+          <div id="sec-today-celebrants" style="margin-bottom: 24px;">
+            <div style="margin-bottom: 10px;">
+              <h3 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0 0 2px 0;">
+                🎂 Celebrantes de Hoy &amp; Período de Gracia (14 Días)
+              </h3>
+              <p style="color: #94a3b8; font-size: 0.76rem; margin: 0;">
+                Seguidores habilitados para detonar su festejo en directo con !hoyesmicumple o manualmente desde aquí.
+              </p>
+            </div>
+            <div id="today-celebrants-list" class="today-cards-list">
+              <!-- Cargado dinámicamente por dashboard.js -->
+            </div>
+          </div>
+
+          <!-- Bloque: Próximos Cumpleaños -->
+          <div id="sec-upcoming-celebrants">
+            <div style="margin-bottom: 10px;">
+              <h3 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #c084fc; margin: 0 0 2px 0;">
+                🎈 Próximos Cumpleaños (Siguientes 14 días)
+              </h3>
+              <p style="color: #94a3b8; font-size: 0.76rem; margin: 0;">
+                Seguidores cuyas fechas están muy cerca de ocurrir:
+              </p>
+            </div>
+            <div id="upcoming-celebrants-list" class="today-cards-list">
+              <!-- Cargado dinámicamente por dashboard.js -->
+            </div>
+          </div>
+
         </div>
 
-        <!-- PESTAÑA: CUMPLEAÑEROS HOY -->
-        <div id="tab-today" class="dash-tab-content" style="display: none;">
-          <div style="margin-bottom: 20px;">
-            <h3 style="font-family: var(--font-h); font-size: 1.3rem; font-weight: 800;">🎂 Celebrantes Activos (Hoy y Período de Gracia)</h3>
-            <p style="color: #94a3b8; font-size: 0.85rem;">Seguidores que cumplen años hoy o se encuentran dentro del período de gracia (14 días posteriores).</p>
-          </div>
-          <div id="today-celebrants-list" class="today-cards-list">
-            <!-- Cargado por JS -->
-          </div>
-
-          <div style="margin-top: 36px; margin-bottom: 16px;">
-            <h3 style="font-family: var(--font-h); font-size: 1.2rem; font-weight: 800; color: #a855f7;">🎈 Próximos Cumpleaños (Siguientes 14 días)</h3>
-            <p style="color: #94a3b8; font-size: 0.85rem;">Seguidores cuyos cumpleaños están muy cerca:</p>
-          </div>
-          <div id="upcoming-celebrants-list" class="today-cards-list">
-            <!-- Cargado por JS -->
-          </div>
-        </div>
-
-        <!-- PESTAÑA: BASE DE DATOS -->
+        <!-- ==================================================================
+             APARTADO 3: BASE DE DATOS (BIRTHDAYS)
+             ================================================================== -->
         <div id="tab-birthdays" class="dash-tab-content" style="display: none;">
+
+          <!-- Cabecera Compacta de Sección 3 -->
+          <div class="section-compact-header">
+            <div class="sec-left-group">
+              <div class="sec-icon-badge" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4);">👥</div>
+              <div>
+                <h2 class="sec-title-text">Base de Datos Maestra de Seguidores</h2>
+                <p class="sec-desc-text">Gestión de registros, fechas, frases, sonidos y relanzamientos</p>
+              </div>
+            </div>
+            <div class="sec-right-subnav">
+              <button type="button" id="btn-export-csv" class="subnav-pill active" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5); color: #34d399; font-weight: 700;">
+                <span>📥</span> Descargar CSV (Excel)
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabla y Barra de Búsqueda -->
           <div class="dash-table-wrap">
             <div class="table-toolbar">
-              <input type="text" id="filter-search" class="search-input" placeholder="Buscar por usuario de Twitch...">
-              <select id="filter-month" class="filter-select">
-                <option value="">Todos los Meses</option>
-                <option value="1">Enero</option>
-                <option value="2">Febrero</option>
-                <option value="3">Marzo</option>
-                <option value="4">Abril</option>
-                <option value="5">Mayo</option>
-                <option value="6">Junio</option>
-                <option value="7">Julio</option>
-                <option value="8">Agosto</option>
-                <option value="9">Septiembre</option>
-                <option value="10">Octubre</option>
-                <option value="11">Noviembre</option>
-                <option value="12">Diciembre</option>
-              </select>
-              <button type="button" id="btn-export-csv" class="btn-copy" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5); color: #34d399; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; margin-left: auto;">
-                <span>📥</span>
-                <span>Descargar CSV (Excel)</span>
-              </button>
+              <div style="display: flex; gap: 8px; align-items: center; flex: 1; min-width: 240px; flex-wrap: wrap;">
+                <input type="text" id="filter-search" class="search-input" placeholder="🔍 Buscar por usuario de Twitch...">
+                <select id="filter-month" class="filter-select">
+                  <option value="">📅 Todos los Meses</option>
+                  <option value="1">Enero</option>
+                  <option value="2">Febrero</option>
+                  <option value="3">Marzo</option>
+                  <option value="4">Abril</option>
+                  <option value="5">Mayo</option>
+                  <option value="6">Junio</option>
+                  <option value="7">Julio</option>
+                  <option value="8">Agosto</option>
+                  <option value="9">Septiembre</option>
+                  <option value="10">Octubre</option>
+                  <option value="11">Noviembre</option>
+                  <option value="12">Diciembre</option>
+                </select>
+              </div>
             </div>
-            <div class="table-scroll-hint">💡 <em>Desliza horizontalmente la tabla para ver todas las opciones de cada fila</em></div>
+
+            <div class="table-scroll-hint" style="padding: 6px 14px; font-size: 0.72rem; color: #64748b; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.04);">
+              💡 <em>Desliza horizontalmente la tabla para ver todas las acciones de cada fila</em>
+            </div>
+
             <div class="table-responsive-container">
               <table class="bday-table">
                 <thead>
@@ -450,608 +792,499 @@
                     <th>Mensaje en Pantalla</th>
                     <th>Sonido</th>
                     <th>Registrado el</th>
-                    <th style="text-align: right; width: 340px; min-width: 330px;">Acciones</th>
+                    <th style="text-align: right; width: 330px; min-width: 320px;">Acciones</th>
                   </tr>
                 </thead>
                 <tbody id="bday-table-body">
-                  <!-- Filas dinámicas -->
+                  <!-- Filas dinámicas cargadas por dashboard.js -->
                 </tbody>
               </table>
             </div>
           </div>
+
         </div>
 
-
-        <!-- PESTAÑA: OBS & TEST ALERT -->
+        <!-- ==================================================================
+             APARTADO 4: OBS & OVERLAY TEST
+             ================================================================== -->
         <div id="tab-overlay-test" class="dash-tab-content" style="display: none;">
-          <div class="glass-card" style="max-width: 650px;">
-            <h3 style="font-family: var(--font-h); font-size: 1.3rem; font-weight: 800; margin-bottom: 8px;">
-              Lanzador de Alertas de Prueba
-            </h3>
-            <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 24px;">
-              Envía una alerta simulada directamente al overlay de OBS para verificar animaciones, sonido y posición.
-            </p>
 
-            <form id="test-alert-form">
-              <div class="input-group">
-                <label class="input-label">Nombre del Usuario</label>
-                <input type="text" id="test-user" class="custom-input" value="SeguidorVIP" required>
+          <!-- Cabecera Compacta de Sección 4 -->
+          <div class="section-compact-header">
+            <div class="sec-left-group">
+              <div class="sec-icon-badge" style="background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.4);">📺</div>
+              <div>
+                <h2 class="sec-title-text">OBS Studio &amp; Simulador de Overlay</h2>
+                <p class="sec-desc-text">Prueba animaciones, sonidos y diseña la posición visual en 1080p</p>
               </div>
-
-              <div class="input-group">
-                <label class="input-label">Mensaje en Pantalla</label>
-                <input type="text" id="test-message" class="custom-input" value="¡Festejando con toda la comunidad! 🎉">
-              </div>
-
-              <div class="input-group">
-                <label class="input-label">Sonido</label>
-                <select id="test-sound" class="custom-select">
-                  <option value="HBSilbato.mp3">🎺 Silbato Festivo (HBSilbato.mp3)</option>
-                  <option value="HBVoz.mp3">🎤 Felicitación de Voz (HBVoz.mp3)</option>
-                  <option value="MBMusica.mp3">🎵 Música de Fiesta (MBMusica.mp3)</option>
-                </select>
-              </div>
-
-              <div class="input-group">
-                <label class="input-label">Tema Visual</label>
-                <select id="test-theme" class="custom-select">
-                  <option value="purple">🟣 Morado Neón (Twitch Classic)</option>
-                  <option value="pink">💖 Rosa Cyberpunk</option>
-                  <option value="gold">⭐ Dorado Celebración</option>
-                </select>
-              </div>
-
-              <button type="submit" class="btn-save" style="margin-top: 10px;">
-                🚀 Enviar Alerta de Prueba a OBS
+            </div>
+            <div class="sec-right-subnav">
+              <button type="button" id="btn-tab-open-sim" class="subnav-pill active" style="background: linear-gradient(135deg, #9146ff, #ec4899); color: #fff; border: none; font-weight: 800;">
+                🎨 Abrir Diseñador 1080p
               </button>
-            </form>
+            </div>
           </div>
-        </div>
 
-        <!-- PESTAÑA: HISTORIAL (LOGS) -->
-        <div id="tab-logs" class="dash-tab-content" style="display: none;">
-          <div class="dash-table-wrap">
-            <table class="bday-table">
-              <thead>
-                <tr>
-                  <th>Usuario</th>
-                  <th>Sonido</th>
-                  <th>Mensaje</th>
-                  <th>Lanzada el</th>
-                </tr>
-              </thead>
-              <tbody id="logs-table-body">
-                <!-- Filas dinámicas -->
-              </tbody>
-            </table>
-          </div>
-        </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
 
-        <!-- PESTAÑA: YOCAPIBOT — COMANDOS Y CONFIGURACIÓN -->
-        <div id="tab-nightbot" class="dash-tab-content" style="display: none;">
-
-          <!-- CABECERA: Estado y controles del Bot -->
-          <div class="glass-card" style="padding: 24px; margin-bottom: 24px; border: 1.5px solid rgba(145, 70, 255, 0.5); background: linear-gradient(135deg, rgba(22,16,42,0.97), rgba(12,9,24,0.97)); border-radius: 18px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;">
-              <div style="display: flex; align-items: center; gap: 14px;">
-                <span style="font-size: 2.8rem; line-height: 1;">🤖</span>
-                <div>
-                  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px;">
-                    <h3 style="font-family: var(--font-h); font-size: 1.3rem; font-weight: 800; color: #fff; margin: 0;">YocapiBot — Bot Oficial de Twitch</h3>
-                    <span id="twitch-bot-status-badge" style="padding: 4px 14px; border-radius: 14px; font-size: 0.78rem; font-weight: 800; background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4);">🔴 Desconectado</span>
-                  </div>
-                  <p style="color: #94a3b8; font-size: 0.85rem; margin: 0; max-width: 600px;">Bot conectado directamente al chat de Twitch vía IRC. Responde comandos en vivo, avisa de cumpleaños automáticamente y personaliza cada respuesta desde aquí.</p>
-                </div>
+            <!-- Formulario de Lanzador de Alertas de Prueba -->
+            <div class="glass-card" id="sec-test-launcher" style="padding: 18px 20px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span style="font-size: 1.3rem;">🚀</span>
+                <h3 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0;">
+                  Lanzador de Alertas de Prueba
+                </h3>
               </div>
-              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button type="button" id="btn-bot-toggle-connect" class="btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); padding: 10px 22px; font-size: 0.88rem; font-weight: 800; border-radius: 10px; border: none; cursor: pointer; color: #fff; display: inline-flex; align-items: center; gap: 8px;">
-                  <span>🟢</span><span id="btn-bot-toggle-label">Conectar Bot</span>
+              <p style="color: #94a3b8; font-size: 0.76rem; margin-bottom: 14px;">
+                Envía una alerta personalizada a OBS Studio para verificar sonido, animación y volumen.
+              </p>
+
+              <form id="test-alert-form">
+                <div class="input-group" style="margin-bottom: 10px;">
+                  <label class="input-label" style="display: block; font-size: 0.72rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Nombre del Usuario</label>
+                  <input type="text" id="test-user" class="custom-input" value="SeguidorVIP" required style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 7px 10px; color: #fff; font-size: 0.8rem; box-sizing: border-box;">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 10px;">
+                  <label class="input-label" style="display: block; font-size: 0.72rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Mensaje en Pantalla</label>
+                  <input type="text" id="test-message" class="custom-input" value="¡Festejando con toda la comunidad! 🎉" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 7px 10px; color: #fff; font-size: 0.8rem; box-sizing: border-box;">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 10px;">
+                  <label class="input-label" style="display: block; font-size: 0.72rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Sonido de Celebración</label>
+                  <select id="test-sound" class="custom-select" style="width: 100%; background: #120e1e; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 7px 10px; color: #fff; font-size: 0.8rem; box-sizing: border-box; cursor: pointer;">
+                    <option value="HBSilbato.mp3">🎺 Silbato Festivo (HBSilbato.mp3)</option>
+                    <option value="HBVoz.mp3">🎤 Felicitación de Voz (HBVoz.mp3)</option>
+                    <option value="MBMusica.mp3">🎵 Música de Fiesta (MBMusica.mp3)</option>
+                  </select>
+                </div>
+
+                <div class="input-group" style="margin-bottom: 14px;">
+                  <label class="input-label" style="display: block; font-size: 0.72rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Tema Visual</label>
+                  <select id="test-theme" class="custom-select" style="width: 100%; background: #120e1e; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 7px 10px; color: #fff; font-size: 0.8rem; box-sizing: border-box; cursor: pointer;">
+                    <option value="purple">🟣 Morado Neón (Twitch Classic)</option>
+                    <option value="pink">💖 Rosa Cyberpunk</option>
+                    <option value="gold">⭐ Dorado Celebración</option>
+                  </select>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%; padding: 9px; font-size: 0.82rem; font-weight: 800; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                  <span>🚀</span>
+                  <span>Enviar Alerta de Prueba a OBS</span>
                 </button>
-                <button type="button" id="btn-bot-test-msg" class="btn-copy" style="background: rgba(145,70,255,0.2); border-color: rgba(145,70,255,0.5); color: #bf94ff; font-weight: 700;">🧪 Probar en Chat</button>
-                <button type="button" id="btn-bot-trigger-timer" class="btn-copy" style="background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5); color: #fde047; font-weight: 700;">⏰ Avisar Ahora</button>
+              </form>
+            </div>
+
+            <!-- Información y Diseñador Visual Destacado -->
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div class="glass-card" style="padding: 18px; border: 1px solid rgba(145, 70, 255, 0.35); background: linear-gradient(135deg, rgba(145, 70, 255, 0.1), rgba(244, 63, 94, 0.05));">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                  <span style="font-size: 1.8rem;">🎨</span>
+                  <div>
+                    <h3 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0;">
+                      Diseñador Visual 1080p
+                    </h3>
+                    <p style="color: #cbd5e1; font-size: 0.76rem; margin: 0;">Arrastra con el ratón la tarjeta en canvas</p>
+                  </div>
+                </div>
+                <p style="color: #cbd5e1; font-size: 0.78rem; line-height: 1.45; margin-bottom: 12px;">
+                  Abre el simulador interactivo para arrastrar libremente la tarjeta o la piñata sobre la pantalla de 1920x1080.
+                  Los cambios se sincronizan en tiempo real con OBS vía Server-Sent Events (SSE).
+                </p>
+                <button type="button" id="btn-card-open-sim" class="btn-primary" style="width: 100%; padding: 9px; font-size: 0.82rem; font-weight: 800; border-radius: 8px; cursor: pointer;">
+                  🖱️ Abrir Lienzo de Diseño
+                </button>
+              </div>
+
+              <div class="glass-card" style="padding: 14px 16px; border: 1px solid rgba(255,255,255,0.08);">
+                <h4 style="font-family: var(--font-h); font-size: 0.88rem; font-weight: 800; color: #fff; margin: 0 0 6px 0;">
+                  💡 Tips de Configuración en OBS:
+                </h4>
+                <ul style="color: #94a3b8; font-size: 0.74rem; line-height: 1.5; padding-left: 18px; margin: 0;">
+                  <li>Ancho recomendado: <strong>1920</strong> y Alto: <strong>1080</strong>.</li>
+                  <li>Marca <em>"Controlar audio a través de OBS"</em> si deseas ecualizarlo.</li>
+                  <li>Mantén activa la fuente para conservar la conexión SSE.</li>
+                </ul>
               </div>
             </div>
 
-            <!-- Formulario de credenciales -->
-            <form id="form-twitch-bot-config" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 18px;">
+          </div>
+
+        </div>
+
+        <!-- ==================================================================
+             APARTADO 5: YOCAPIBOT & COMANDOS (NIGHTBOT)
+             ================================================================== -->
+        <div id="tab-nightbot" class="dash-tab-content" style="display: none;">
+
+          <!-- Cabecera Compacta de Sección 5 -->
+          <div class="section-compact-header">
+            <div class="sec-left-group">
+              <div class="sec-icon-badge" style="background: rgba(145, 70, 255, 0.2); border-color: rgba(145, 70, 255, 0.4);">🤖</div>
               <div>
-                <label style="display: block; font-size: 0.72rem; color: #94a3b8; margin-bottom: 5px; font-weight: 700; letter-spacing: 0.05em;">USUARIO DEL BOT</label>
+                <h2 class="sec-title-text">YocapiBot — Bot Oficial de Twitch</h2>
+                <p class="sec-desc-text">Conexión IRC, comandos en vivo, temporizador y exportador de infografías PNG</p>
+              </div>
+            </div>
+            <div class="sec-right-subnav">
+              <button type="button" id="btn-bot-toggle-connect" class="subnav-pill active" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; font-weight: 800;">
+                <span>🟢</span><span id="btn-bot-toggle-label">Conectar Bot</span>
+              </button>
+              <button type="button" id="btn-bot-test-msg" class="subnav-pill">🧪 Probar Chat</button>
+              <button type="button" id="btn-bot-trigger-timer" class="subnav-pill">⏰ Avisar Ahora</button>
+            </div>
+          </div>
+
+          <!-- Cabecera de Estado y Credenciales (Compacta) -->
+          <div class="glass-card" id="sec-bot-config" style="padding: 16px 20px; margin-bottom: 16px; border: 1px solid rgba(145, 70, 255, 0.35); background: linear-gradient(135deg, rgba(22,16,42,0.9), rgba(12,9,24,0.95));">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+              <h3 style="font-family: var(--font-h); font-size: 1.0rem; font-weight: 800; color: #fff; margin: 0;">Configuración de Conexión IRC de Twitch</h3>
+              <span id="twitch-bot-status-badge" style="padding: 2px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4);">🔴 Desconectado</span>
+            </div>
+
+            <!-- Formulario de credenciales -->
+            <form id="form-twitch-bot-config" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 12px;">
+              <div>
+                <label style="display: block; font-size: 0.68rem; color: #94a3b8; margin-bottom: 4px; font-weight: 700; letter-spacing: 0.04em;">USUARIO BOT</label>
                 <div style="position: relative;">
-                  <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b;">@</span>
-                  <input type="text" id="bot-input-username" placeholder="ej: yocapibot" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 10px; padding: 10px 14px 10px 28px; font-size: 0.88rem; box-sizing: border-box;">
+                  <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 0.8rem;">@</span>
+                  <input type="text" id="bot-input-username" placeholder="yocapibot" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 6px; padding: 7px 10px 7px 22px; font-size: 0.8rem; box-sizing: border-box;">
                 </div>
               </div>
               <div>
-                <label style="display: flex; align-items: center; justify-content: space-between; font-size: 0.72rem; color: #94a3b8; margin-bottom: 5px; font-weight: 700; letter-spacing: 0.05em;">
+                <label style="display: flex; align-items: center; justify-content: space-between; font-size: 0.68rem; color: #94a3b8; margin-bottom: 4px; font-weight: 700; letter-spacing: 0.04em;">
                   <span>OAUTH TOKEN</span>
-                  <a href="https://twitchtokengenerator.com/" target="_blank" style="color: #38bdf8; text-decoration: none; font-weight: 600; font-size: 0.75rem;">🔑 Generar ↗</a>
+                  <a href="https://twitchtokengenerator.com/" target="_blank" style="color: #38bdf8; text-decoration: none; font-size: 0.7rem;">🔑 Generar ↗</a>
                 </label>
                 <div style="display: flex;">
-                  <input type="password" id="bot-input-token" placeholder="oauth:xxxxxxxxxxxxxx" style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 10px 0 0 10px; padding: 10px 14px; font-size: 0.88rem; box-sizing: border-box;">
-                  <button type="button" id="btn-toggle-token-vis" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-left: none; border-radius: 0 10px 10px 0; padding: 0 12px; color: #94a3b8; cursor: pointer;">👁️</button>
+                  <input type="password" id="bot-input-token" placeholder="oauth:xxxx" style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 6px 0 0 6px; padding: 7px 10px; font-size: 0.8rem; box-sizing: border-box;">
+                  <button type="button" id="btn-toggle-token-vis" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-left: none; border-radius: 0 6px 6px 0; padding: 0 10px; color: #94a3b8; cursor: pointer; font-size: 0.8rem;">👁️</button>
                 </div>
               </div>
               <div>
-                <label style="display: block; font-size: 0.72rem; color: #94a3b8; margin-bottom: 5px; font-weight: 700; letter-spacing: 0.05em;">CANAL (STREAM)</label>
+                <label style="display: block; font-size: 0.68rem; color: #94a3b8; margin-bottom: 4px; font-weight: 700; letter-spacing: 0.04em;">CANAL (STREAM)</label>
                 <div style="position: relative;">
-                  <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b;">#</span>
-                  <input type="text" id="bot-input-channel" value="yocapi_pr" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 10px; padding: 10px 14px 10px 28px; font-size: 0.88rem; box-sizing: border-box;">
+                  <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 0.8rem;">#</span>
+                  <input type="text" id="bot-input-channel" value="yocapi_pr" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 6px; padding: 7px 10px 7px 22px; font-size: 0.8rem; box-sizing: border-box;">
                 </div>
               </div>
               <div>
-                <label style="display: block; font-size: 0.72rem; color: #94a3b8; margin-bottom: 5px; font-weight: 700; letter-spacing: 0.05em;">AVISO AUTOMÁTICO CADA</label>
-                <select id="bot-select-interval" style="width: 100%; background: #120e1e; border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 0.88rem; box-sizing: border-box;">
-                  <option value="15">15 minutos</option>
-                  <option value="20">20 minutos</option>
-                  <option value="30">30 minutos</option>
-                  <option value="45">45 minutos</option>
-                  <option value="60" selected>1 hora (Predeterminado)</option>
-                  <option value="90">1 hora y media</option>
+                <label style="display: block; font-size: 0.68rem; color: #94a3b8; margin-bottom: 4px; font-weight: 700; letter-spacing: 0.04em;">AVISO CADA</label>
+                <select id="bot-select-interval" style="width: 100%; background: #120e1e; border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 6px; padding: 7px 10px; font-size: 0.8rem; box-sizing: border-box;">
+                  <option value="15">15 min</option>
+                  <option value="20">20 min</option>
+                  <option value="30">30 min</option>
+                  <option value="45">45 min</option>
+                  <option value="60" selected>1 hora</option>
+                  <option value="90">1.5 horas</option>
                   <option value="120">2 horas</option>
                 </select>
               </div>
             </form>
 
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);">
-              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.85rem; color: #cbd5e1;">
-                <input type="checkbox" id="bot-check-timer-enabled" checked style="accent-color: #9146ff; width: 16px; height: 16px;">
-                <span>Activar recordatorios automáticos de cumpleaños en el chat</span>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06);">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.78rem; color: #cbd5e1;">
+                <input type="checkbox" id="bot-check-timer-enabled" checked style="accent-color: #9146ff; width: 14px; height: 14px;">
+                <span>Recordatorios automáticos en el chat de Twitch</span>
               </label>
-              <button type="button" id="btn-save-bot-config" class="btn-primary" style="padding: 9px 22px; font-size: 0.85rem; font-weight: 700; border-radius: 10px;">
+              <button type="button" id="btn-save-bot-config" class="btn-primary" style="padding: 7px 18px; font-size: 0.8rem; font-weight: 800; border-radius: 8px;">
                 💾 Guardar Configuración
               </button>
             </div>
-
-            <!-- Info token -->
-            <div style="margin-top: 14px; padding: 11px 15px; background: rgba(56,189,248,0.07); border-left: 3px solid #38bdf8; border-radius: 0 8px 8px 0; font-size: 0.79rem; color: #94a3b8; line-height: 1.5;">
-              <strong style="color: #38bdf8;">¿Cómo conectar el bot?</strong><br>
-              1. Inicia sesión en Twitch con la cuenta del bot · 2. Abre <a href="https://twitchtokengenerator.com/" target="_blank" style="color: #38bdf8;">twitchtokengenerator.com</a> y genera un token con permisos <code>chat:read</code> y <code>chat:edit</code> · 3. Pega el token que empieza con <code>oauth:</code> arriba y guarda.
-            </div>
           </div>
 
-          <!-- SECCIÓN: COMANDOS DEL BOT ORGANIZADOS POR CATEGORÍAS -->
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 1.6rem;">⚡</span>
-              <div>
-                <h3 style="font-family: var(--font-h); font-size: 1.25rem; font-weight: 800; color: #fff; margin: 0;">Lista Maestra de Comandos del Bot</h3>
-                <p style="color: #94a3b8; font-size: 0.82rem; margin: 2px 0 0 0;">Comandos activos en Twitch clasificados por función. Puedes editar respuestas personalizadas y probar su funcionamiento en directo.</p>
-              </div>
-            </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-              <span class="badge" style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); font-size: 0.75rem; padding: 4px 10px; border-radius: 8px;">🛡️ Streamer &amp; Mods OK</span>
-              <span class="badge" style="background: rgba(145,70,255,0.18); color: #c084fc; border: 1px solid rgba(145,70,255,0.3); font-size: 0.75rem; padding: 4px 10px; border-radius: 8px;">16 Comandos Activos</span>
-              
-              <div style="display: flex; gap: 6px; margin-left: 6px; flex-wrap: wrap;">
-                <button type="button" id="btn-export-cmd-img-chat" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); font-size: 0.76rem; padding: 5px 12px; border-radius: 8px; border: none; cursor: pointer; color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 3px 10px rgba(109,40,217,0.35); transition: transform 0.15s ease;" title="Generar y descargar imagen para el Chat / Comunidad">
-                  <span>📸</span> Comandos Chat (PNG)
-                </button>
-                <button type="button" id="btn-export-cmd-img-mods" style="background: linear-gradient(135deg, #ef4444, #b91c1c); font-size: 0.76rem; padding: 5px 12px; border-radius: 8px; border: none; cursor: pointer; color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 3px 10px rgba(239,68,68,0.35); transition: transform 0.15s ease;" title="Generar y descargar imagen para Mods y Streamer">
-                  <span>🛡️</span> Comandos Mods (PNG)
-                </button>
-                <button type="button" id="btn-export-cmd-img-all" style="background: rgba(255,255,255,0.08); font-size: 0.76rem; padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; color: #e2e8f0; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; transition: transform 0.15s ease;" title="Generar banner completo con ambas secciones">
-                  <span>🖼️</span> Ambos (Banner HD)
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- CATEGORÍA 0: COMANDOS DE CONTROL (STREAMER Y MODERADORES) -->
-          <div class="cmd-category" style="border-color: rgba(239,68,68,0.45); background: linear-gradient(160deg, rgba(38,12,18,0.8), rgba(18,6,10,0.92));">
-            <div class="cmd-cat-header">
-              <div class="cmd-cat-title-wrap">
-                <span style="font-size: 1.4rem;">🛡️</span>
+          <!-- Barra de Exportación de Banners Gráficos (PNG) -->
+          <div class="glass-card" id="sec-cmd-export" style="padding: 12px 18px; margin-bottom: 16px; border: 1px solid rgba(139, 92, 246, 0.35); background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(236, 72, 153, 0.06));">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.5rem;">📸</span>
                 <div>
-                  <h4 class="cmd-cat-title" style="color: #f87171;">0. Control Exclusivo para Streamer (@yocapi_pr) y Moderadores</h4>
-                  <div style="font-size: 0.78rem; color: #94a3b8;">Comandos protegidos para activar/desactivar alertas en directo y evitar interrupciones al grabar videos.</div>
+                  <h4 style="font-family: var(--font-h); font-size: 0.95rem; font-weight: 800; color: #fff; margin: 0 0 1px 0;">
+                    Exportador de Banners HD (PNG)
+                  </h4>
+                  <p style="color: #cbd5e1; font-size: 0.76rem; margin: 0;">
+                    Infografías nítidas listas para paneles de Twitch, Discord o redes sociales.
+                  </p>
                 </div>
               </div>
-              <span class="cmd-cat-badge" style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.5);">🛡️ Streamer & Mods Only</span>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button type="button" id="btn-export-cmd-img-chat" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); font-size: 0.74rem; padding: 5px 10px; border-radius: 6px; border: none; cursor: pointer; color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                  <span>📸</span> Chat (PNG)
+                </button>
+                <button type="button" id="btn-export-cmd-img-mods" style="background: linear-gradient(135deg, #ef4444, #b91c1c); font-size: 0.74rem; padding: 5px 10px; border-radius: 6px; border: none; cursor: pointer; color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                  <span>🛡️</span> Mods (PNG)
+                </button>
+                <button type="button" id="btn-export-cmd-img-all" style="background: rgba(255,255,255,0.08); font-size: 0.74rem; padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; color: #e2e8f0; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                  <span>🖼️</span> Ambos (HD)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- CATEGORÍA 0: STREAMER Y MODS -->
+          <div class="cmd-category" id="sec-cmd-mod" style="border-color: rgba(239,68,68,0.4); background: linear-gradient(160deg, rgba(38,12,18,0.7), rgba(18,6,10,0.85));">
+            <div class="cmd-cat-header">
+              <div class="cmd-cat-title-wrap">
+                <span style="font-size: 1.2rem;">🛡️</span>
+                <h4 class="cmd-cat-title" style="color: #f87171;">0. Control Exclusivo para Streamer &amp; Moderadores</h4>
+              </div>
+              <span class="cmd-scope-pill" style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.5);">🛡️ Streamer & Mods Only</span>
             </div>
 
             <div class="cmd-list">
-              <!-- Item 0.1: !hbgrabacion -->
               <div class="cmd-item" style="border-left: 3px solid #ef4444;">
                 <div>
                   <span class="cmd-badge-code" style="color: #fca5a5; background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.5);" onclick="navigator.clipboard.writeText('!hbgrabacion on')" title="Clic para copiar">!hbgrabacion [on|off]</span>
-                  <div class="cmd-item-aliases">
-                    <span>Aliases: <code>!hbmodovideo</code> · <code>!hbcine</code> · <code>!hbpausa</code></span>
-                  </div>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Modo Maestro Cero Interrupciones para grabación de videos o momentos importantes.</strong>
-                  <div class="cmd-example-box">
-                    <span>🔴 <code>!hbgrabacion on</code> → Desactiva de un solo golpe las alertas del cumpleañero y las felicitaciones del chat para silencio absoluto en pantalla.</span><br>
-                    <span style="display: inline-block; margin-top: 4px;">🟢 <code>!hbgrabacion off</code> → Reactiva las alertas y felicitaciones cuando termines de grabar para seguir con la fiesta.</span>
-                  </div>
-                  <small>🔒 Máxima seguridad: si alguien que no es mod o la streamer lo intenta, el bot le deniega el permiso educadamente.</small>
+                  <strong>Modo Grabación Cero Interrupciones</strong> para videos de TikTok/YouTube.
                 </div>
-                <div>
-                  <span class="cmd-scope-pill" style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.5);">🎬 Modo Video</span>
-                </div>
+                <span class="cmd-scope-pill" style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.5);">🎬 Video</span>
               </div>
 
-              <!-- Item 0.2: !hbalertas -->
               <div class="cmd-item" style="border-left: 3px solid #f59e0b;">
                 <div>
                   <span class="cmd-badge-code" style="color: #fde68a; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5);" onclick="navigator.clipboard.writeText('!hbalertas on')" title="Clic para copiar">!hbalertas [on|off]</span>
-                  <div class="cmd-item-aliases">
-                    <span>Aliases: <code>!cumplealertas</code> · <code>!alertascumple</code></span>
-                  </div>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Activa o desactiva que el cumpleañero pueda detonar su alerta en directo con <code>!hoyesmicumple</code>.</strong>
-                  <div class="cmd-example-box">
-                    <span>🔒 Si está desactivado y el cumpleañero escribe <code>!hoyesmicumple</code>, el bot le avisa que las alertas están en pausa por grabación y <strong>NO pierde su oportunidad del año</strong>.</span>
-                  </div>
-                  <small>💡 Si escribes <code>!hbalertas</code> a secas, el bot te responde indicando el estado actual (activado o desactivado).</small>
+                  <strong>Activa o bloquea</strong> que el cumpleañero pueda detonar su alerta en stream con <code>!hoyesmicumple</code>.
                 </div>
-                <div>
-                  <span class="cmd-scope-pill" style="background: rgba(245,158,11,0.2); color: #fde68a; border: 1px solid rgba(245,158,11,0.5);">👑 Alertas VIP</span>
-                </div>
+                <span class="cmd-scope-pill" style="background: rgba(245,158,11,0.2); color: #fde68a; border: 1px solid rgba(245,158,11,0.5);">👑 Alertas</span>
               </div>
 
-              <!-- Item 0.3: !hbfelicitar -->
               <div class="cmd-item" style="border-left: 3px solid #ec4899;">
                 <div>
                   <span class="cmd-badge-code" style="color: #fbcfe8; background: rgba(236,72,153,0.2); border-color: rgba(236,72,153,0.5);" onclick="navigator.clipboard.writeText('!hbfelicitar on')" title="Clic para copiar">!hbfelicitar [on|off]</span>
-                  <div class="cmd-item-aliases">
-                    <span>Aliases: <code>!hbfelicitaciones</code> · <code>!felicitaciones on/off</code></span>
-                  </div>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Abre o cierra la lluvia de felicitaciones flotantes en directo para los espectadores con <code>!felicidades</code>.</strong>
-                  <div class="cmd-example-box">
-                    <span>Permite abrir las felicitaciones 5-10 minutos durante el festejo y cerrarlas después sin tener que abrir el panel de control.</span>
-                  </div>
+                  <strong>Abre o cierra</strong> la lluvia de tarjetas de felicitación de los espectadores con <code>!felicidades</code>.
                 </div>
-                <div>
-                  <span class="cmd-scope-pill" style="background: rgba(236,72,153,0.2); color: #fbcfe8; border: 1px solid rgba(236,72,153,0.5);">💌 Felicitaciones</span>
-                </div>
+                <span class="cmd-scope-pill" style="background: rgba(236,72,153,0.2); color: #fbcfe8; border: 1px solid rgba(236,72,153,0.5);">💌 Festejo</span>
               </div>
 
-              <!-- Item 0.4: !hbmod -->
               <div class="cmd-item" style="border-left: 3px solid #3b82f6;">
                 <div>
                   <span class="cmd-badge-code" style="color: #93c5fd; background: rgba(59,130,246,0.2); border-color: rgba(59,130,246,0.5);" onclick="navigator.clipboard.writeText('!hbmod')" title="Clic para copiar">!hbmod</span>
-                  <div class="cmd-item-aliases">
-                    <span>Aliases: <code>!hbadmin</code> · <code>!hbestado</code></span>
-                  </div>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Muestra en el chat un resumen del estado de seguridad y controles</strong> (Modo Grabación, Alertas de Cumpleañero, Felicitaciones de Comunidad, Frecuencia del Timer).
+                  <strong>Muestra en chat</strong> el estado de grabación, alertas VIP, felicitaciones y frecuencia del bot.
                 </div>
-                <div>
-                  <span class="cmd-scope-pill" style="background: rgba(59,130,246,0.2); color: #93c5fd; border: 1px solid rgba(59,130,246,0.5);">📋 Panel Mod</span>
-                </div>
+                <span class="cmd-scope-pill" style="background: rgba(59,130,246,0.2); color: #93c5fd; border: 1px solid rgba(59,130,246,0.5);">📋 Mod Panel</span>
               </div>
             </div>
           </div>
 
-          <!-- CATEGORÍA 1: INTERACCIÓN EN DIRECTO (ALERTAS Y FELICITACIONES) -->
-          <div class="cmd-category" style="border-color: rgba(234,179,8,0.3); background: linear-gradient(160deg, rgba(30,22,10,0.7), rgba(15,12,8,0.85));">
+          <!-- CATEGORÍA 1: ALERTAS E INTERACCIÓN -->
+          <div class="cmd-category" id="sec-cmd-live" style="border-color: rgba(234,179,8,0.3); background: linear-gradient(160deg, rgba(30,22,10,0.6), rgba(15,12,8,0.8));">
             <div class="cmd-cat-header">
               <div class="cmd-cat-title-wrap">
-                <span style="font-size: 1.4rem;">🎮</span>
-                <div>
-                  <h4 class="cmd-cat-title" style="color: #facc15;">1. Alertas e Interacción en Directo</h4>
-                  <div style="font-size: 0.78rem; color: #94a3b8;">Comandos que disparan alertas visuales y efectos de audio en la pantalla de OBS.</div>
-                </div>
+                <span style="font-size: 1.2rem;">🎮</span>
+                <h4 class="cmd-cat-title" style="color: #facc15;">1. Alertas e Interacción en Directo</h4>
               </div>
-              <span class="cmd-cat-badge" style="background: rgba(234,179,8,0.15); color: #fde047; border: 1px solid rgba(234,179,8,0.35);">OBS & Audio en Vivo</span>
+              <span class="cmd-scope-pill" style="background: rgba(234,179,8,0.15); color: #fde047; border: 1px solid rgba(234,179,8,0.35);">OBS & Audio</span>
             </div>
 
             <div class="cmd-list">
-              <!-- Item 1.1: !hoyesmicumple -->
               <div class="cmd-item" style="border-left: 3px solid #facc15;">
                 <div>
                   <span class="cmd-badge-code" style="color: #fef08a; background: rgba(234,179,8,0.18); border-color: rgba(234,179,8,0.4);" onclick="navigator.clipboard.writeText('!hoyesmicumple')" title="Clic para copiar">!hoyesmicumple</span>
-                  <div class="cmd-item-aliases">
-                    <span>Aliases: <code>!hoyesmicum</code> · <code>!mialerta</code> · <code>!lanzarmicumple</code></span>
-                  </div>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Detona la alerta VIP del cumpleañero en la pantalla de OBS.</strong> Despliega la tarjeta con su foto, confeti 3D y su sonido seleccionado.
-                  <div class="cmd-example-box">
-                    <span>💬 <strong>Chat bot:</strong> 🚨🎂 ¡FIESTA TOTAL EN DIRECTO! 👑 ¡@usuario acaba de detonar su alerta de cumpleaños con confeti y música! 🥳🎉</span>
-                  </div>
-                  <small>🔒 Validación automática: solo funciona si es su día (o gracia) y no ha celebrado este año. Se registra 1 vez por año.</small>
+                  <strong>Detona la alerta VIP del cumpleañero</strong> en OBS con confeti y sonido personalizado.
                 </div>
-                <div>
-                  <span class="cmd-scope-pill" style="background: rgba(234,179,8,0.18); color: #fef08a; border: 1px solid rgba(234,179,8,0.4);">👑 Cumpleañero</span>
-                </div>
+                <span class="cmd-scope-pill" style="background: rgba(234,179,8,0.18); color: #fef08a; border: 1px solid rgba(234,179,8,0.4);">👑 Cumpleañero</span>
               </div>
 
-              <!-- Item 1.2: !felicidades -->
               <div class="cmd-item" style="border-left: 3px solid #ec4899;">
                 <div>
-                  <span class="cmd-badge-code" style="color: #f472b6; background: rgba(236,72,153,0.18); border-color: rgba(236,72,153,0.4);" onclick="navigator.clipboard.writeText('!felicidades')" title="Clic para copiar">!felicidades</span>
-                  <div class="cmd-item-aliases">
-                    <span>Variantes de audio: <code>!felicidades1</code> · <code>!felicidades2</code> · <code>!felicidades3</code></span>
-                  </div>
+                  <span class="cmd-badge-code" style="color: #f472b6; background: rgba(236,72,153,0.18); border-color: rgba(236,72,153,0.4);" onclick="navigator.clipboard.writeText('!felicidades')" title="Clic para copiar">!felicidades [mensaje]</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Envía una tarjeta flotante de felicitación al stream con audio y mensaje dedicatorio.</strong>
-                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 6px; margin-top: 6px; font-size: 0.77rem;">
-                    <div style="background: rgba(0,0,0,0.3); padding: 5px 8px; border-radius: 6px;">🎲 <code>!felicidades</code> → Audio Aleatorio</div>
-                    <div style="background: rgba(0,0,0,0.3); padding: 5px 8px; border-radius: 6px;">🎵 <code>!felicidades1</code> → Música de Fiesta</div>
-                    <div style="background: rgba(0,0,0,0.3); padding: 5px 8px; border-radius: 6px;">🎺 <code>!felicidades2</code> → Silbato Festivo</div>
-                    <div style="background: rgba(0,0,0,0.3); padding: 5px 8px; border-radius: 6px;">🎤 <code>!felicidades3</code> → Felicitación de Voz</div>
-                  </div>
-                  <div class="cmd-example-box" style="margin-top: 6px;">
-                    <span>📝 <strong>Uso con dedicatoria:</strong> <code>!felicidades1 @usuario ¡Feliz cumple pásala increíble!</code></span>
-                  </div>
-                  <small>🔒 Requiere que el espectador esté registrado y que la streamer tenga habilitadas las felicitaciones en este panel.</small>
+                  <strong>Envía tarjeta de felicitación al stream</strong>. Variantes: <code>!felicidades1</code> (Música) &bull; <code>!felicidades2</code> (Silbato) &bull; <code>!felicidades3</code> (Voz).
                 </div>
-                <div>
-                  <span class="cmd-scope-pill" style="background: rgba(236,72,153,0.18); color: #fbcfe8; border: 1px solid rgba(236,72,153,0.4);">📺 Espectadores</span>
-                </div>
+                <span class="cmd-scope-pill" style="background: rgba(236,72,153,0.18); color: #fbcfe8; border: 1px solid rgba(236,72,153,0.4);">📺 Chat</span>
               </div>
             </div>
           </div>
 
-          <!-- CATEGORÍA 2: PERSONALIZACIÓN DESDE EL CHAT -->
-          <div class="cmd-category" style="border-color: rgba(168,85,247,0.35); background: linear-gradient(160deg, rgba(28,14,38,0.7), rgba(14,8,22,0.85));">
+          <!-- CATEGORÍA 2: PERSONALIZACIÓN EN CHAT -->
+          <div class="cmd-category" id="sec-cmd-chat" style="border-color: rgba(168,85,247,0.3); background: linear-gradient(160deg, rgba(28,14,38,0.6), rgba(14,8,22,0.8));">
             <div class="cmd-cat-header">
               <div class="cmd-cat-title-wrap">
-                <span style="font-size: 1.4rem;">🎨</span>
-                <div>
-                  <h4 class="cmd-cat-title" style="color: #c084fc;">2. Personalización de Ficha desde el Chat</h4>
-                  <div style="font-size: 0.78rem; color: #94a3b8;">Permite a los espectadores modificar su frase y sonido de alerta directamente escribiendo en Twitch.</div>
-                </div>
+                <span style="font-size: 1.2rem;">🎨</span>
+                <h4 class="cmd-cat-title" style="color: #c084fc;">2. Personalización de Ficha desde el Chat</h4>
               </div>
-              <span class="cmd-cat-badge" style="background: rgba(168,85,247,0.15); color: #e9d5ff; border: 1px solid rgba(168,85,247,0.35);">Configuración en Directo</span>
             </div>
 
             <div class="cmd-list">
-              <!-- Item 2.0: !registro DD-MM [usuario] -->
               <div class="cmd-item" style="border-left: 3px solid #10b981;">
                 <div>
                   <span class="cmd-badge-code" style="color: #6ee7b7; background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.4);" onclick="navigator.clipboard.writeText('!registro 11-06')" title="Clic para copiar">!registro DD-MM [usuario]</span>
-                  <div class="cmd-item-aliases">
-                    <span>Aliases: <code>!registrarme DD-MM [user]</code></span>
-                  </div>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Registra tu cumpleaños o el de un compañero directamente desde el chat sin contraseñas ni formularios.</strong>
-                  <div class="cmd-example-box">
-                    <span>💬 <strong>Propio:</strong> <code>!registro 11-06</code> (11 de Junio)</span><br>
-                    <span>👥 <strong>Para un amigo:</strong> <code>!registro 11-06 capiluisxavi</code> (o <code>!registro 11-06 @amigo</code>)</span><br>
-                    <span style="color: #cbd5e1; margin-top: 4px; display: inline-block;">🎉 <strong>Bot responde:</strong> ¡@sender ha registrado a @usuario en la lista VIP de cumpleañeros para el 11 de Junio! 🥳🎈</span>
-                  </div>
-                  <small>✨ Protección de 1 año: una vez registrada la fecha, solo se puede modificar 1 vez al año para evitar abusos.</small>
+                  <strong>Registra tu cumpleaños</strong> o el de un amigo (ej: <code>!registro 11-06 @amigo</code>).
                 </div>
-                <div>
-                  <span class="cmd-scope-pill" style="background: rgba(16,185,129,0.18); color: #a7f3d0; border: 1px solid rgba(16,185,129,0.4);">✨ Registro Chat</span>
-                </div>
+                <span class="cmd-scope-pill" style="background: rgba(16,185,129,0.18); color: #a7f3d0; border: 1px solid rgba(16,185,129,0.4);">✨ Registro</span>
               </div>
 
-              <!-- Item 2.1: !hbcambio -->
               <div class="cmd-item" style="border-left: 3px solid #a855f7;">
                 <div>
                   <span class="cmd-badge-code" style="color: #d8b4fe; background: rgba(168,85,247,0.18); border-color: rgba(168,85,247,0.4);" onclick="navigator.clipboard.writeText('!hbcambio')" title="Clic para copiar">!hbcambio &lt;frase&gt;</span>
-                  <div class="cmd-item-aliases">
-                    <span>Aliases: <code>!hbfrase</code> · <code>!micumplefrase</code></span>
-                  </div>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Cambia la frase o dedicatoria que se mostrará en pantalla al disparar la alerta (máx. 60 letras).</strong>
-                  <div class="cmd-example-box">
-                    <span>💬 <strong>Ejemplo en chat:</strong> <code>!hbcambio Hola chat, hoy es mi cumple festejen conmigo!</code></span><br>
-                    <span style="color: #cbd5e1; margin-top: 4px; display: inline-block;">✨ <strong>Bot responde:</strong> ✨ @usuario, ¡frase de tu alerta actualizada con éxito! Se mostrará en pantalla cuando lances tu festejo 🎂🎉</span>
-                  </div>
-                  <small>💡 Si se escribe solo <code>!hbcambio</code> sin texto, el bot le dice al usuario cuál es su frase actual y cómo cambiarla.</small>
+                  <strong>Cambia la dedicatoria</strong> que saldrá en OBS al lanzar el festejo (máx. 60 letras).
                 </div>
-                <div>
-                  <span class="cmd-scope-pill" style="background: rgba(168,85,247,0.18); color: #e9d5ff; border: 1px solid rgba(168,85,247,0.4);">💬 Frase en OBS</span>
-                </div>
+                <span class="cmd-scope-pill" style="background: rgba(168,85,247,0.18); color: #e9d5ff; border: 1px solid rgba(168,85,247,0.4);">💬 Frase</span>
               </div>
 
-              <!-- Item 2.2: !hbsonido -->
               <div class="cmd-item" style="border-left: 3px solid #8b5cf6;">
                 <div>
-                  <span class="cmd-badge-code" style="color: #c4b5fd; background: rgba(139,92,246,0.18); border-color: rgba(139,92,246,0.4);" onclick="navigator.clipboard.writeText('!hbsonido')" title="Clic para copiar">!hbsonido &lt;1|2|3&gt;</span>
-                  <div class="cmd-item-aliases">
-                    <span>Aliases: <code>!cambiarsonido</code> · <code>!misonido</code></span>
-                  </div>
+                  <span class="cmd-badge-code" style="color: #c4b5fd; background: rgba(139,92,246,0.18); border-color: rgba(139,92,246,0.4);" onclick="navigator.clipboard.writeText('!hbsonido 1')" title="Clic para copiar">!hbsonido &lt;1|2|3&gt;</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Elige el efecto de sonido asignado a la alerta de cumpleaños del espectador.</strong>
-                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 6px; margin-top: 6px; font-size: 0.77rem;">
-                    <div style="background: rgba(0,0,0,0.3); padding: 5px 8px; border-radius: 6px;">🎺 <code>!hbsonido 1</code> → Silbato Festivo</div>
-                    <div style="background: rgba(0,0,0,0.3); padding: 5px 8px; border-radius: 6px;">🎵 <code>!hbsonido 2</code> → Música de Fiesta</div>
-                    <div style="background: rgba(0,0,0,0.3); padding: 5px 8px; border-radius: 6px;">🎤 <code>!hbsonido 3</code> → Felicitación con Voz</div>
-                  </div>
-                  <div class="cmd-example-box" style="margin-top: 6px;">
-                    <span>🎵 <strong>Bot responde:</strong> 🎵 @usuario, ¡sonido de tu alerta actualizado a 🎵 Música de Fiesta! Sonará cuando lances tu festejo en directo 🥳✨</span>
-                  </div>
-                  <small>💡 Si se escribe solo <code>!hbsonido</code>, el bot muestra su audio actual y la lista de opciones para elegir.</small>
+                  <strong>Elige sonido</strong>: 1 = Silbato Festivo, 2 = Música de Fiesta, 3 = Felicitación con Voz.
                 </div>
-                <div>
-                  <span class="cmd-scope-pill" style="background: rgba(139,92,246,0.18); color: #ddd6fe; border: 1px solid rgba(139,92,246,0.4);">🎵 Sonido OBS</span>
-                </div>
+                <span class="cmd-scope-pill" style="background: rgba(139,92,246,0.18); color: #ddd6fe; border: 1px solid rgba(139,92,246,0.4);">🎵 Sonido</span>
               </div>
             </div>
           </div>
 
-          <!-- CATEGORÍA 3: INFORMACIÓN Y CONSULTAS -->
-          <div class="cmd-category" style="border-color: rgba(59,130,246,0.3); background: linear-gradient(160deg, rgba(14,22,38,0.7), rgba(8,12,22,0.85));">
+          <!-- CATEGORÍA 3: CONSULTAS -->
+          <div class="cmd-category" id="sec-cmd-queries" style="border-color: rgba(59,130,246,0.25); background: linear-gradient(160deg, rgba(14,22,38,0.6), rgba(8,12,22,0.8));">
             <div class="cmd-cat-header">
               <div class="cmd-cat-title-wrap">
-                <span style="font-size: 1.4rem;">📊</span>
-                <div>
-                  <h4 class="cmd-cat-title" style="color: #60a5fa;">3. Comandos de Información y Consultas</h4>
-                  <div style="font-size: 0.78rem; color: #94a3b8;">Permiten a la comunidad revisar el calendario, días restantes y estado de cumpleaños.</div>
-                </div>
+                <span style="font-size: 1.2rem;">📊</span>
+                <h4 class="cmd-cat-title" style="color: #60a5fa;">3. Consultas en el Chat</h4>
               </div>
-              <span class="cmd-cat-badge" style="background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.35);">Consultas en Chat</span>
             </div>
 
             <div class="cmd-list">
-              <!-- Item 3.1: !cumple -->
               <div class="cmd-item" style="border-left: 3px solid #3b82f6;">
                 <div>
                   <span class="cmd-badge-code" style="color: #93c5fd; background: rgba(59,130,246,0.18); border-color: rgba(59,130,246,0.4);" onclick="navigator.clipboard.writeText('!cumple')" title="Clic para copiar">!cumple [@usuario]</span>
-                  <div class="cmd-item-aliases">
-                    <span>Alias propio: <code>!micumple</code></span>
-                  </div>
                 </div>
                 <div class="cmd-desc">
-                  <strong>El comando principal de consulta.</strong> Si el viewer escribe <code>!cumple</code> consulta el suyo. Si escribe <code>!cumple @amigo</code> consulta el de otro usuario de la comunidad.
-                  <div class="cmd-example-box">
-                    <span>🎂 <strong>Respuesta inteligente:</strong> Detecta si es hoy, período de gracia, o días restantes con enlace directo al sistema.</span>
-                  </div>
+                  <strong>Consulta inteligente</strong>: hoy, días restantes o período de gracia.
                 </div>
-                <div>
-                  <span class="cmd-scope-pill" style="background: rgba(59,130,246,0.18); color: #bfdbfe; border: 1px solid rgba(59,130,246,0.4);">🌟 Consulta</span>
-                </div>
+                <span class="cmd-scope-pill" style="background: rgba(59,130,246,0.18); color: #bfdbfe; border: 1px solid rgba(59,130,246,0.4);">🌟 Consulta</span>
               </div>
 
-              <!-- Item 3.2: !proximos -->
               <div class="cmd-item" style="border-left: 3px solid #38bdf8;">
                 <div>
                   <span class="cmd-badge-code" style="color: #7dd3fc; background: rgba(56,189,248,0.18); border-color: rgba(56,189,248,0.4);" onclick="navigator.clipboard.writeText('!proximos')" title="Clic para copiar">!proximos</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Muestra los cumpleaños que se celebrarán en los próximos 15 días</strong> con conteo regresivo exacto, ordenados cronológicamente.
-                  <div class="cmd-example-box">
-                    <span>📅 <strong>Ejemplo:</strong> 📅 Próximas velitas por soplar (15 días): @capidieguito1204 en 2 días · @gcm_mascapito en 7 días 🎂</span>
-                  </div>
+                  <strong>Próximos 15 días</strong> ordenados cronológicamente.
                 </div>
-                <div>
-                  <span class="cmd-scope-pill" style="background: rgba(56,189,248,0.18); color: #bae6fd; border: 1px solid rgba(56,189,248,0.4);">📅 15 Días</span>
-                </div>
+                <span class="cmd-scope-pill" style="background: rgba(56,189,248,0.18); color: #bae6fd; border: 1px solid rgba(56,189,248,0.4);">📅 15 Días</span>
               </div>
 
-              <!-- Item 3.3: !cumplemes -->
               <div class="cmd-item" style="border-left: 3px solid #10b981;">
                 <div>
                   <span class="cmd-badge-code" style="color: #6ee7b7; background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.4);" onclick="navigator.clipboard.writeText('!cumplemes')" title="Clic para copiar">!cumplemes</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Cartelera completa de todos los cumpleaños registrados en el mes actual</strong>, ordenados por número de día.
-                  <div class="cmd-example-box">
-                    <span>🗓️ <strong>Ejemplo:</strong> 🗓️ Cartelera festiva de Octubre: día 22 @capiluisxavi · día 25 @capi_daniellc_21 🎂🎈</span>
-                  </div>
+                  <strong>Cartelera completa</strong> del mes actual.
                 </div>
-                <div>
-                  <span class="cmd-scope-pill" style="background: rgba(16,185,129,0.18); color: #a7f3d0; border: 1px solid rgba(16,185,129,0.4);">🗓️ Mes Actual</span>
-                </div>
-              </div>
-
-              <!-- Item 3.4: !cumpleinfo -->
-              <div class="cmd-item" style="border-left: 3px solid #06b6d4;">
-                <div>
-                  <span class="cmd-badge-code" style="color: #67e8f9; background: rgba(6,182,212,0.18); border-color: rgba(6,182,212,0.4);" onclick="navigator.clipboard.writeText('!cumpleinfo')" title="Clic para copiar">!cumpleinfo</span>
-                  <div class="cmd-item-aliases">
-                    <span>Alias: <code>!ayudacumple</code></span>
-                  </div>
-                </div>
-                <div class="cmd-desc">
-                  <strong>Guía rápida en una sola línea</strong> para que los nuevos espectadores descubran los comandos de interacción en el chat.
-                </div>
-                <div>
-                  <span class="cmd-scope-pill" style="background: rgba(6,182,212,0.18); color: #cffafe; border: 1px solid rgba(6,182,212,0.4);">💡 Ayuda</span>
-                </div>
+                <span class="cmd-scope-pill" style="background: rgba(16,185,129,0.18); color: #a7f3d0; border: 1px solid rgba(16,185,129,0.4);">🗓️ Mes</span>
               </div>
             </div>
           </div>
 
-          <!-- CATEGORÍA 4: RESPUESTAS EDITABLES POR LA STREAMER -->
-          <div class="cmd-category" style="border-color: rgba(99,102,241,0.35); background: linear-gradient(160deg, rgba(20,18,40,0.7), rgba(10,9,24,0.85));">
+          <!-- CATEGORÍA 4: RESPUESTAS EDITABLES -->
+          <div class="cmd-category" style="border-color: rgba(99,102,241,0.3); background: rgba(20,18,40,0.6);">
             <div class="cmd-cat-header">
               <div class="cmd-cat-title-wrap">
-                <span style="font-size: 1.4rem;">📝</span>
-                <div>
-                  <h4 class="cmd-cat-title" style="color: #818cf8;">4. Difusión y Respuestas Editables</h4>
-                  <div style="font-size: 0.78rem; color: #94a3b8;">Personaliza el texto exacto que el bot enviará al chat. Se guarda automáticamente en el servidor.</div>
-                </div>
+                <span style="font-size: 1.2rem;">📝</span>
+                <h4 class="cmd-cat-title" style="color: #818cf8;">4. Difusión y Respuestas Editables</h4>
               </div>
-              <span class="cmd-cat-badge" style="background: rgba(99,102,241,0.15); color: #c7d2fe; border: 1px solid rgba(99,102,241,0.35);">Editor de Respuestas</span>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 18px;">
-              <!-- Editor 1: !regcumple -->
-              <div class="cmd-editor-box">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <code style="color: #818cf8; font-weight: 800; font-size: 0.95rem;">!regcumple</code>
-                    <span style="font-size: 0.75rem; color: #94a3b8;">Invitación al registro</span>
-                  </div>
-                  <button type="button" class="btn-save-cmd-response btn-copy" data-cmd="regcumple" style="padding: 5px 12px; font-size: 0.75rem; background: rgba(99,102,241,0.25); border-color: rgba(99,102,241,0.5); color: #c7d2fe;">💾 Guardar</button>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+              <div class="cmd-editor-box" style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; border: 1px solid rgba(99,102,241,0.25);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                  <code style="color: #818cf8; font-weight: 800; font-size: 0.88rem;">!regcumple</code>
+                  <button type="button" class="btn-save-cmd-response btn-copy" data-cmd="regcumple" style="padding: 4px 10px; font-size: 0.72rem; background: rgba(99,102,241,0.25); border-color: rgba(99,102,241,0.5); color: #c7d2fe;">💾 Guardar</button>
                 </div>
-                <textarea id="cmd-response-regcumple" rows="3" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(99,102,241,0.3); color: #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 0.82rem; font-family: monospace; resize: vertical; box-sizing: border-box; line-height: 1.5;">🎂 ¿Quieres que el stream de Yocapi explote con tu música y alerta personalizada en pantalla el día de tu cumpleaños? ¡Regístrate 100% gratis aquí! 👉 {URL} 🎈✨</textarea>
-                <div style="font-size: 0.73rem; color: #64748b; margin-top: 5px;">Variable <code style="color: #a5b4fc;">{URL}</code> se reemplaza por el enlace del sistema.</div>
+                <textarea id="cmd-response-regcumple" rows="2" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(99,102,241,0.3); color: #e2e8f0; border-radius: 6px; padding: 6px 8px; font-size: 0.78rem; font-family: monospace; resize: vertical; box-sizing: border-box; line-height: 1.4;">🎂 ¿Quieres que el stream de Yocapi explote con tu música y alerta personalizada en pantalla el día de tu cumpleaños? ¡Regístrate 100% gratis aquí! 👉 {URL} 🎈✨</textarea>
               </div>
 
-              <!-- Editor 2: !felicitar -->
-              <div class="cmd-editor-box">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <code style="color: #f472b6; font-weight: 800; font-size: 0.95rem;">!felicitar</code>
-                    <span style="font-size: 0.75rem; color: #94a3b8;">Invitación a felicitar</span>
-                  </div>
-                  <button type="button" class="btn-save-cmd-response btn-copy" data-cmd="felicitar" style="padding: 5px 12px; font-size: 0.75rem; background: rgba(236,72,153,0.25); border-color: rgba(236,72,153,0.5); color: #fbcfe8;">💾 Guardar</button>
+              <div class="cmd-editor-box" style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; border: 1px solid rgba(236,72,153,0.25);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                  <code style="color: #f472b6; font-weight: 800; font-size: 0.88rem;">!felicitar</code>
+                  <button type="button" class="btn-save-cmd-response btn-copy" data-cmd="felicitar" style="padding: 4px 10px; font-size: 0.72rem; background: rgba(236,72,153,0.25); border-color: rgba(236,72,153,0.5); color: #fbcfe8;">💾 Guardar</button>
                 </div>
-                <textarea id="cmd-response-felicitar" rows="3" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(236,72,153,0.3); color: #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 0.82rem; font-family: monospace; resize: vertical; box-sizing: border-box; line-height: 1.5;">💌 ¿Alguien cumple años hoy? ¡Mándale una felicitación en directo con tarjeta en pantalla entrando a: {URL} 🎉🥳</textarea>
-                <div style="font-size: 0.73rem; color: #64748b; margin-top: 5px;">Variable <code style="color: #f472b6;">{URL}</code> se reemplaza automáticamente.</div>
+                <textarea id="cmd-response-felicitar" rows="2" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(236,72,153,0.3); color: #e2e8f0; border-radius: 6px; padding: 6px 8px; font-size: 0.78rem; font-family: monospace; resize: vertical; box-sizing: border-box; line-height: 1.4;">💌 ¿Alguien cumple años hoy? ¡Mándale una felicitación en directo con tarjeta en pantalla entrando a: {URL} 🎉🥳</textarea>
               </div>
             </div>
           </div>
 
-          <!-- CATEGORÍA 5: TIMER Y RECORDATORIOS AUTOMÁTICOS -->
-          <div class="cmd-category" style="border-color: rgba(245,158,11,0.35); background: linear-gradient(160deg, rgba(28,20,10,0.7), rgba(14,10,6,0.85));">
+          <!-- CATEGORÍA 5: TIMER PROGRAMADO -->
+          <div class="cmd-category" id="sec-cmd-timer" style="border-color: rgba(245,158,11,0.3); background: rgba(28,20,10,0.6);">
             <div class="cmd-cat-header">
               <div class="cmd-cat-title-wrap">
-                <span style="font-size: 1.4rem;">⏰</span>
-                <div>
-                  <h4 class="cmd-cat-title" style="color: #fbbf24;">5. Sistema de Timer y Anuncios Automáticos</h4>
-                  <div style="font-size: 0.78rem; color: #94a3b8;">El bot envía anuncios programados en stream según la actividad de cumpleaños.</div>
-                </div>
+                <span style="font-size: 1.2rem;">⏰</span>
+                <h4 class="cmd-cat-title" style="color: #fbbf24;">5. Temporizador y Anuncios de Chat</h4>
               </div>
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 0.8rem; color: #cbd5e1;">Frecuencia actual: <strong id="timer-interval-display" style="color: #fbbf24;">1 hora</strong></span>
-                <button type="button" id="btn-bot-trigger-timer-2" class="btn-copy" style="padding: 6px 14px; font-size: 0.78rem; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5); color: #fde047;">⏰ Disparar Ahora</button>
-              </div>
-            </div>
-
-            <div style="background: rgba(0,0,0,0.3); border-radius: 12px; padding: 14px 18px; border: 1px solid rgba(245,158,11,0.2);">
-              <div style="font-size: 0.72rem; color: #fcd34d; font-weight: 800; margin-bottom: 8px; letter-spacing: 0.05em;">LÓGICA INTELIGENTE DE SELECCIÓN (PRIORIDADES):</div>
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; font-size: 0.8rem; color: #e2e8f0;">
-                <div style="background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                  <span style="color: #fbbf24; font-weight: 700;">🥇 Prioridad 1: Hoy</span><br>
-                  <span style="color: #94a3b8; font-size: 0.76rem;">Anuncia con fiesta a los cumpleañeros del día actual.</span>
-                </div>
-                <div style="background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                  <span style="color: #fbbf24; font-weight: 700;">🥈 Prioridad 2: Gracia</span><br>
-                  <span style="color: #94a3b8; font-size: 0.76rem;">Recuerda a quienes cumplieron hace poco y no han lanzado alerta.</span>
-                </div>
-                <div style="background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                  <span style="color: #fbbf24; font-weight: 700;">🥉 Prioridad 3: Próximos</span><br>
-                  <span style="color: #94a3b8; font-size: 0.76rem;">Anticipa cumpleaños cercanos en los siguientes 1 a 3 días.</span>
-                </div>
-                <div style="background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                  <span style="color: #94a3b8; font-weight: 700;">📣 Prioridad 4: Registro</span><br>
-                  <span style="color: #94a3b8; font-size: 0.76rem;">Invita rotativamente a la comunidad a registrarse gratis.</span>
-                </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 0.76rem; color: #cbd5e1;">Frecuencia: <strong id="timer-interval-display" style="color: #fbbf24;">1 hora</strong></span>
+                <button type="button" id="btn-bot-trigger-timer-2" class="btn-copy" style="padding: 5px 12px; font-size: 0.74rem; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5); color: #fde047;">⏰ Disparar Ahora</button>
               </div>
             </div>
           </div>
 
-          <!-- SECCIÓN: Probar Respuesta en Vivo -->
-          <div class="glass-card" style="padding: 22px; margin-bottom: 28px; border: 1px solid rgba(255,255,255,0.08);">
-            <h4 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
+          <!-- Simulador de Respuesta del Bot -->
+          <div class="glass-card" style="padding: 16px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.08);">
+            <h4 style="font-family: var(--font-h); font-size: 0.95rem; font-weight: 800; color: #fff; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
               <span>🔬</span> Probar Respuesta del Bot en Tiempo Real
             </h4>
-            <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap;">
-              <input type="text" id="input-test-user" placeholder="Escribe un nick de Twitch para simular !cumple @usuario (déjalo vacío para tu propio cumple)..." style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; box-sizing: border-box; min-width: 0;">
-              <button type="button" id="btn-test-check-custom" class="btn-copy" style="padding: 10px 16px; font-size: 0.83rem; background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.4); color: #34d399; white-space: nowrap;">▶️ Probar !cumple</button>
-              <button type="button" class="btn-copy btn-test-nb" data-endpoint="/api/bot/timer" data-preview="preview-timer-live" style="padding: 10px 16px; font-size: 0.83rem; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.4); color: #fde047; white-space: nowrap;">⏰ Probar Timer</button>
+            <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap;">
+              <input type="text" id="input-test-user" placeholder="Escribe un nick para simular !cumple @usuario..." style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 6px; padding: 7px 10px; font-size: 0.8rem; box-sizing: border-box; min-width: 0;">
+              <button type="button" id="btn-test-check-custom" class="btn-copy" style="padding: 7px 12px; font-size: 0.76rem; background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.4); color: #34d399; white-space: nowrap;">▶️ Probar !cumple</button>
+              <button type="button" class="btn-test-nb btn-copy" data-endpoint="/api/bot/timer" data-preview="preview-timer-live" style="padding: 7px 12px; font-size: 0.76rem; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.4); color: #fde047; white-space: nowrap;">⏰ Probar Timer</button>
             </div>
-            <div style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 14px 16px; border: 1px solid rgba(255,255,255,0.06); min-height: 54px;">
-              <div style="font-size: 0.7rem; color: #64748b; margin-bottom: 6px; font-weight: 700; letter-spacing: 0.04em;">💬 RESPUESTA QUE ENVIARÁ EL BOT AL CHAT:</div>
-              <div id="preview-check" style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.5; font-style: italic;">Ingresa un usuario y presiona "Probar !cumple" para ver la respuesta exacta del bot...</div>
-              <div id="preview-timer-live" style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.5; font-style: italic; display: none;"></div>
+            <div style="background: rgba(0,0,0,0.3); border-radius: 6px; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.06); min-height: 40px;">
+              <div id="preview-check" style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.4; font-style: italic;">Ingresa un usuario y presiona "Probar !cumple" para ver la respuesta exacta del bot...</div>
+              <div id="preview-timer-live" style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.4; font-style: italic; display: none;"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================================================================
+             APARTADO 6: HISTORIAL DE ALERTAS (LOGS)
+             ================================================================== -->
+        <div id="tab-logs" class="dash-tab-content" style="display: none;">
+
+          <!-- Cabecera Compacta de Sección 6 -->
+          <div class="section-compact-header">
+            <div class="sec-left-group">
+              <div class="sec-icon-badge" style="background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.2);">📜</div>
+              <div>
+                <h2 class="sec-title-text">Historial de Alertas &amp; Auditoría de Stream</h2>
+                <p class="sec-desc-text">Registro cronológico de todas las alertas detonadas en OBS</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="dash-table-wrap">
+            <div class="table-toolbar">
+              <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 700;">Últimas alertas disparadas en vivo:</span>
+            </div>
+            <div class="table-responsive-container">
+              <table class="bday-table">
+                <thead>
+                  <tr>
+                    <th>Usuario</th>
+                    <th>Sonido</th>
+                    <th>Mensaje</th>
+                    <th>Lanzada el</th>
+                  </tr>
+                </thead>
+                <tbody id="logs-table-body">
+                  <!-- Filas dinámicas cargadas por dashboard.js -->
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -1059,109 +1292,84 @@
 
       </div>
     </main>
+
   </div>
 
-  <!-- MODAL: PREVISUALIZADOR Y DESCARGA DE IMAGEN DE COMANDOS -->
+  <!-- ====================================================================
+       MODAL: PREVISUALIZADOR Y DESCARGA DE IMAGEN DE COMANDOS
+       ==================================================================== -->
   <div id="modal-cmd-image-preview" class="sim-modal-overlay" style="display: none;">
-    <div class="sim-modal-dialog" style="max-width: 960px; width: 95%;">
-      <!-- Header -->
+    <div class="sim-modal-dialog" style="max-width: 900px; width: 95%;">
       <div class="sim-modal-header">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <span style="font-size: 1.8rem;" id="cmd-img-modal-icon">📸</span>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.5rem;" id="cmd-img-modal-icon">📸</span>
           <div>
-            <h2 id="cmd-img-modal-title" style="font-family: var(--font-h); font-size: 1.25rem; font-weight: 800; margin: 0; color: #fff;">
-              Imagen de Comandos Generada
+            <h2 id="cmd-img-modal-title" style="font-family: var(--font-h); font-size: 1.15rem; font-weight: 800; margin: 0; color: #fff;">
+              Previsualización de Tarjeta de Comandos
             </h2>
-            <p id="cmd-img-modal-sub" style="color: #94a3b8; font-size: 0.82rem; margin: 2px 0 0 0;">
-              Vista previa en alta resolución optimizada para paneles de Twitch, Discord o compartir en stream.
+            <p id="cmd-img-modal-sub" style="color: #94a3b8; font-size: 0.78rem; margin: 1px 0 0 0;">
+              Resolución HD (1200 × 630px). Lista para descargar o compartir en Discord/Twitch.
             </p>
           </div>
         </div>
         <button type="button" id="btn-close-cmd-img-modal" class="sim-close-btn" title="Cerrar ventana">✖</button>
       </div>
 
-      <!-- Body -->
-      <div style="padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 16px; max-height: calc(85vh - 120px); overflow-y: auto;">
-        <div style="width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 10px 30px rgba(0,0,0,0.6); background: #0b0813; text-align: center;">
-          <img id="cmd-img-preview-tag" src="" alt="Comandos Bot Twitch" style="max-width: 100%; height: auto; display: block; margin: 0 auto;" />
-        </div>
-        <div style="display: flex; gap: 12px; justify-content: flex-end; width: 100%; flex-wrap: wrap; align-items: center;">
-          <span id="cmd-img-info-text" style="font-size: 0.82rem; color: #94a3b8; margin-right: auto;">Resolución HD optimizada para PNG</span>
-          <button type="button" id="btn-download-cmd-img" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 700; padding: 10px 22px; font-size: 0.92rem; border-radius: 10px; border: none; cursor: pointer; color: white; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(16,185,129,0.4); transition: transform 0.15s ease;">
-            📥 Descargar Imagen PNG
-          </button>
-          <button type="button" id="btn-close-cmd-img-modal-btn" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); padding: 10px 18px; font-size: 0.9rem; border-radius: 10px; cursor: pointer; color: #cbd5e1;">
-            Cerrar
-          </button>
+      <div style="padding: 16px; overflow-y: auto; text-align: center; background: #080612;">
+        <canvas id="cmd-img-canvas-preview" style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1);"></canvas>
+      </div>
+
+      <div style="padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; background: rgba(14, 10, 26, 0.7); flex-wrap: wrap; gap: 8px;">
+        <span style="font-size: 0.76rem; color: #94a3b8;">💡 Lista para compartir en tus paneles o chat.</span>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="btn-close-cmd-img-modal-btn" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); padding: 8px 14px; font-size: 0.82rem; border-radius: 8px; cursor: pointer; color: #cbd5e1;">Cerrar</button>
+          <button type="button" id="btn-download-cmd-img" class="btn-primary" style="padding: 8px 18px; font-size: 0.82rem; font-weight: 800; border-radius: 8px;">📥 Descargar PNG</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: SIMULADOR Y DISEÑADOR VISUAL DE OBS (1920x1080) -->
+  <!-- ====================================================================
+       MODAL: DISEÑADOR Y SIMULADOR VISUAL DE OBS STUDIO (1920x1080p)
+       ==================================================================== -->
   <div id="obs-sim-modal" class="sim-modal-overlay" style="display: none;">
     <div class="sim-modal-dialog">
-      <!-- Header -->
       <div class="sim-modal-header">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <span style="font-size: 1.8rem;">🎨</span>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.5rem;">🎨</span>
           <div>
-            <h2 style="font-family: var(--font-h); font-size: 1.25rem; font-weight: 800; margin: 0; color: #fff;">
-              Diseñador y Simulador Visual de OBS (1920 × 1080p)
+            <h2 style="font-family: var(--font-h); font-size: 1.15rem; font-weight: 800; margin: 0; color: #fff;">
+              Diseñador y Simulador Visual de OBS Studio
             </h2>
-            <p style="color: #94a3b8; font-size: 0.82rem; margin: 2px 0 0 0;">
-              Haz clic y arrastra la tarjeta con el ratón por el lienzo. Lo que configures aquí se aplicará en tu OBS en tiempo real.
+            <p style="color: #94a3b8; font-size: 0.78rem; margin: 1px 0 0 0;">
+              Lienzo 1920 × 1080p — Arrastra libremente los elementos para ubicarlos en pantalla
             </p>
           </div>
         </div>
         <button id="btn-close-sim-modal" class="sim-close-btn" title="Cerrar simulador">✖</button>
       </div>
 
-      <!-- Body (2 Columnas) -->
       <div class="sim-modal-body">
-        <!-- Columna Izquierda: El Canvas 16:9 de OBS -->
+        <!-- Columna Izquierda: Canvas 16:9 -->
         <div class="sim-canvas-column">
-          <div class="sim-canvas-toolbar">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="sim-pill">📺 Pantalla Stream 1920×1080</span>
-              <span id="sim-coords-badge" class="sim-pill coords">X: 50% | Y: 85%</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <label style="font-size: 0.78rem; color: #94a3b8; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="sim-toggle-webcam" style="accent-color: #9146ff;">
-                <span>Simular Marco de Cámara</span>
-              </label>
-            </div>
-          </div>
-
-          <div id="sim-canvas" class="sim-canvas-viewport">
-            <!-- Guías de alineación -->
-            <div class="sim-guide-line horizontal"></div>
-            <div class="sim-guide-line vertical"></div>
-
-            <!-- Cámara simulada de referencia -->
-            <div id="sim-webcam-box" class="sim-webcam-mock" style="display: none;">
-              <span>📷 Tu Cámara Web (Referencia)</span>
-            </div>
-
-            <!-- Tarjeta Arrastrable con el Ratón -->
+          <div id="sim-canvas-viewport" class="sim-canvas-viewport">
+            <!-- Tarjeta Arrastrable en el Canvas -->
             <div id="sim-card-wrapper" class="sim-card-wrapper">
               <div class="sim-drag-handle-tag">
                 <span>✥</span>
                 <span id="sim-card-pos-text">50%, 85%</span>
-                <span style="opacity: 0.75; font-size: 0.65rem;">(Arrastra aquí)</span>
               </div>
 
               <!-- Globos a la izquierda -->
               <div class="sim-balloons left">
                 <span>🎈</span>
-                <span style="font-size: 1rem;">✨</span>
+                <span style="font-size: 0.9rem;">✨</span>
               </div>
 
               <!-- Tarjeta de muestra -->
               <div class="sim-bday-card">
                 <div class="sim-avatar-box">
-                  <img src="/img/yocapi.png" alt="Avatar" class="sim-avatar-img">
+                  <img src="img/yocapi.png" alt="Avatar" class="sim-avatar-img">
                 </div>
                 <div class="sim-card-details">
                   <div class="sim-tagline">¡Hoy es su Cumpleaños! 🎉</div>
@@ -1172,7 +1380,7 @@
 
               <!-- Globos a la derecha -->
               <div class="sim-balloons right">
-                <span style="font-size: 1rem;">⭐</span>
+                <span style="font-size: 0.9rem;">⭐</span>
                 <span>🎈</span>
               </div>
             </div>
@@ -1182,275 +1390,206 @@
               <div class="sim-drag-handle-tag" style="background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #1a1035;">
                 <span>✥</span>
                 <span id="sim-pinata-pos-text">50%, 25%</span>
-                <span style="opacity: 0.8; font-size: 0.65rem;">(Arrastra la Piñata)</span>
               </div>
 
               <!-- Mini Guirnalda -->
-              <div style="font-size: 0.95rem; margin-bottom: -4px; display: flex; gap: 6px;">
-                <span>🚩</span><span>🎉</span><span>✨</span><span>🎈</span><span>🪅</span><span>🎊</span>
+              <div style="font-size: 0.85rem; margin-bottom: -4px; display: flex; gap: 4px;">
+                <span>🚩</span><span>🎉</span><span>✨</span><span>🎈</span><span>🪅</span>
               </div>
 
               <!-- Mini HUD -->
-              <div style="background: linear-gradient(135deg, rgba(22,12,44,0.98), rgba(10,8,24,0.99)); border: 2px solid #fbbf24; border-radius: 16px; padding: 6px 16px; box-shadow: 0 0 16px rgba(251,191,36,0.35); text-align: center; min-width: 260px;">
-                <div style="font-size: 0.68rem; font-weight: 900; color: #fde047; letter-spacing: 1px;">🪅 ¡PIÑATA DE CAPIBARA! ✨</div>
-                <div style="font-weight: 800; font-size: 0.95rem; color: #fff; margin: 2px 0;">Cumpleaños de @Comunidad</div>
-                <div style="height: 12px; background: rgba(0,0,0,0.6); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); position: relative;">
+              <div style="background: linear-gradient(135deg, rgba(22,12,44,0.98), rgba(10,8,24,0.99)); border: 1.5px solid #fbbf24; border-radius: 12px; padding: 4px 12px; box-shadow: 0 0 12px rgba(251,191,36,0.3); text-align: center; min-width: 220px;">
+                <div style="font-size: 0.65rem; font-weight: 900; color: #fde047; letter-spacing: 1px;">🪅 ¡PIÑATA DE CAPIBARA!</div>
+                <div style="font-weight: 800; font-size: 0.88rem; color: #fff; margin: 1px 0;">Cumpleaños de @Comunidad</div>
+                <div style="height: 10px; background: rgba(0,0,0,0.6); border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); position: relative;">
                   <div style="width: 100%; height: 100%; background: linear-gradient(90deg, #10b981, #fbbf24, #f43f5e);"></div>
-                  <span style="position: absolute; inset: 0; font-size: 0.6rem; font-weight: 800; color: #fff; display: flex; align-items: center; justify-content: center; text-shadow: 0 1px 2px #000;">35 / 35 HP</span>
+                  <span style="position: absolute; inset: 0; font-size: 0.58rem; font-weight: 800; color: #fff; display: flex; align-items: center; justify-content: center;">35 / 35 HP</span>
                 </div>
               </div>
 
               <!-- Mini Cuerda -->
-              <div style="width: 4px; height: 20px; background: repeating-linear-gradient(45deg, #fbbf24, #fbbf24 4px, #f43f5e 4px, #f43f5e 8px); border-radius: 2px; margin: 0 auto;"></div>
+              <div style="width: 3px; height: 16px; background: repeating-linear-gradient(45deg, #fbbf24, #fbbf24 3px, #f43f5e 3px, #f43f5e 6px); border-radius: 2px; margin: 0 auto;"></div>
 
               <!-- Capibaras -->
-              <div style="display: flex; align-items: flex-end; justify-content: center; gap: 8px; margin-top: -4px;">
-                <img src="/img/capi_cheer_bat.png" style="width: 65px; height: 65px; object-fit: contain;" alt="Porrista">
-                <img src="/img/pinata_capi.png" style="width: 110px; height: 110px; object-fit: contain;" alt="Piñata">
-                <img src="/img/capi_cheer_horn.png" style="width: 65px; height: 65px; object-fit: contain;" alt="Porrista">
+              <div style="display: flex; align-items: flex-end; justify-content: center; gap: 6px; margin-top: -3px;">
+                <img src="img/capi_cheer_bat.png" style="width: 50px; height: 50px; object-fit: contain;" alt="Porrista">
+                <img src="img/pinata_capi.png" style="width: 85px; height: 85px; object-fit: contain;" alt="Piñata">
+                <img src="img/capi_cheer_horn.png" style="width: 50px; height: 50px; object-fit: contain;" alt="Porrista">
               </div>
             </div>
           </div>
 
-          <!-- Barra inferior del canvas con tip y sugerencia inteligente -->
-          <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; color: #64748b; flex-wrap: wrap; gap: 6px;">
-            <span>💡 <strong>Tip:</strong> Puedes arrastrar libremente la tarjeta con el ratón a cualquier punto de la pantalla.</span>
+          <div style="margin-top: 8px; display: flex; align-items: center; justify-content: space-between; font-size: 0.74rem; color: #64748b; flex-wrap: wrap; gap: 4px;">
+            <span>💡 <strong>Tip:</strong> Puedes arrastrar libremente la tarjeta con el ratón.</span>
             <span id="sim-anim-hint" style="color: #bf94ff; font-weight: 700;"></span>
           </div>
         </div>
 
         <!-- Columna Derecha: Panel de Controles -->
         <div class="sim-controls-column">
-          <!-- Selector de Modo: Tarjeta vs Piñata -->
-          <div class="sim-selector-tabs" style="display: flex; gap: 6px; margin-bottom: 12px; background: rgba(0,0,0,0.35); padding: 4px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-            <button type="button" id="tab-sim-card" class="btn-sim-tab active" style="flex: 1; padding: 7px 10px; border-radius: 8px; border: none; font-size: 0.82rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: #9146ff; color: #fff; transition: all 0.2s ease;">
+          <div class="sim-selector-tabs" style="display: flex; gap: 4px; margin-bottom: 8px; background: rgba(0,0,0,0.35); padding: 3px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
+            <button type="button" id="tab-sim-card" class="btn-sim-tab active" style="flex: 1; padding: 6px 8px; border-radius: 7px; border: none; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; background: #9146ff; color: #fff; transition: all 0.15s;">
               <span>🎂</span>
-              <span>Tarjeta Alerta</span>
+              <span>Tarjeta</span>
             </button>
-            <button type="button" id="tab-sim-pinata" class="btn-sim-tab" style="flex: 1; padding: 7px 10px; border-radius: 8px; border: none; font-size: 0.82rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: transparent; color: #94a3b8; transition: all 0.2s ease;">
+            <button type="button" id="tab-sim-pinata" class="btn-sim-tab" style="flex: 1; padding: 6px 8px; border-radius: 7px; border: none; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; background: transparent; color: #94a3b8; transition: all 0.15s;">
               <span>🪅</span>
-              <span>Piñata Capibara</span>
+              <span>Piñata</span>
             </button>
           </div>
 
           <!-- CONTROLES: TARJETA DE CUMPLEAÑOS -->
           <div id="sim-card-controls">
-            <!-- Anclaje Rápido 3x3 -->
             <div class="sim-control-group">
-              <label class="sim-group-label">📍 Anclaje Rápido en Pantalla:</label>
+              <label class="sim-group-label">📍 Anclaje Rápido:</label>
               <div class="sim-grid-presets">
-                <button type="button" class="btn-snap" data-x="24" data-y="16" title="Superior Izquierda">↖️ Sup. Izq</button>
-                <button type="button" class="btn-snap" data-x="50" data-y="16" title="Superior Centro">⬆️ Superior</button>
-                <button type="button" class="btn-snap" data-x="76" data-y="16" title="Superior Derecha">↗️ Sup. Der</button>
+                <button type="button" class="btn-snap" data-x="24" data-y="16">↖️ Sup. Izq</button>
+                <button type="button" class="btn-snap" data-x="50" data-y="16">⬆️ Superior</button>
+                <button type="button" class="btn-snap" data-x="76" data-y="16">↗️ Sup. Der</button>
 
-                <button type="button" class="btn-snap" data-x="24" data-y="50" title="Centro Izquierda">⬅️ Izquierda</button>
-                <button type="button" class="btn-snap" data-x="50" data-y="50" title="Centro Total">🎯 Centro</button>
-                <button type="button" class="btn-snap" data-x="76" data-y="50" title="Centro Derecha">➡️ Derecha</button>
+                <button type="button" class="btn-snap" data-x="24" data-y="50">⬅️ Izquierda</button>
+                <button type="button" class="btn-snap" data-x="50" data-y="50">🎯 Centro</button>
+                <button type="button" class="btn-snap" data-x="76" data-y="50">➡️ Derecha</button>
 
-                <button type="button" class="btn-snap" data-x="24" data-y="85" title="Inferior Izquierda">↙️ Inf. Izq</button>
-                <button type="button" class="btn-snap active" data-x="50" data-y="85" title="Inferior Centro">⬇️ Inferior</button>
-                <button type="button" class="btn-snap" data-x="76" data-y="85" title="Inferior Derecha">↘️ Inf. Der</button>
+                <button type="button" class="btn-snap" data-x="24" data-y="85">↙️ Inf. Izq</button>
+                <button type="button" class="btn-snap active" data-x="50" data-y="85">⬇️ Inferior</button>
+                <button type="button" class="btn-snap" data-x="76" data-y="85">↘️ Inf. Der</button>
               </div>
             </div>
 
-            <!-- Slider de Escala -->
             <div class="sim-control-group">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <label class="sim-group-label" style="margin: 0;">📏 Tamaño de la Tarjeta:</label>
-                <span id="sim-scale-val" style="font-size: 0.85rem; font-weight: 800; color: #a855f7;">85%</span>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <label class="sim-group-label" style="margin: 0;">📏 Tamaño Tarjeta:</label>
+                <span id="sim-scale-val" style="font-size: 0.8rem; font-weight: 800; color: #a855f7;">85%</span>
               </div>
-              <input type="range" id="sim-scale-slider" min="50" max="130" step="5" value="85" class="sim-slider">
-              <div style="display: flex; gap: 6px; margin-top: 8px;">
-                <button type="button" class="btn-scale-quick" data-scale="0.65">65% (Compacta)</button>
-                <button type="button" class="btn-scale-quick active" data-scale="0.85">85% (Equilibrada)</button>
-                <button type="button" class="btn-scale-quick" data-scale="1.0">100% (Grande)</button>
+              <input type="range" id="sim-scale-slider" min="50" max="130" step="5" value="85" class="sim-slider" style="width: 100%;">
+              <div style="display: flex; gap: 4px; margin-top: 6px;">
+                <button type="button" class="btn-scale-quick" data-scale="0.65">65%</button>
+                <button type="button" class="btn-scale-quick active" data-scale="0.85">85%</button>
+                <button type="button" class="btn-scale-quick" data-scale="1.0">100%</button>
               </div>
             </div>
 
-            <!-- Slider de Volumen de Audio OBS -->
             <div class="sim-control-group">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <label class="sim-group-label" style="margin: 0;">🔊 Volumen del Overlay en OBS:</label>
-                <span id="sim-vol-val" style="font-size: 0.85rem; font-weight: 800; color: #10b981;">85%</span>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <label class="sim-group-label" style="margin: 0;">🔊 Volumen OBS:</label>
+                <span id="sim-vol-val" style="font-size: 0.8rem; font-weight: 800; color: #10b981;">85%</span>
               </div>
-              <input type="range" id="sim-vol-slider" min="0" max="100" step="5" value="85" class="sim-slider">
+              <input type="range" id="sim-vol-slider" min="0" max="100" step="5" value="85" class="sim-slider" style="width: 100%;">
             </div>
 
-            <!-- Dirección y Tipo de Animación -->
             <div class="sim-control-group">
-              <label class="sim-group-label">🎬 Por Dónde y Cómo Aparece:</label>
+              <label class="sim-group-label">🎬 Animación de Entrada:</label>
               <div class="sim-anim-list">
                 <button type="button" class="btn-anim-choice" data-anim="slide-down">
                   <span class="anim-icon">⬇️</span>
                   <div class="anim-info">
-                    <strong>Desde Arriba hacia Abajo</strong>
-                    <small>Baja suavemente desde el techo del stream</small>
+                    <strong>Desde Arriba</strong>
                   </div>
                 </button>
                 <button type="button" class="btn-anim-choice active" data-anim="slide-up">
                   <span class="anim-icon">⬆️</span>
                   <div class="anim-info">
-                    <strong>Desde Abajo hacia Arriba</strong>
-                    <small>Sube desde el borde inferior de la pantalla</small>
+                    <strong>Desde Abajo</strong>
                   </div>
                 </button>
                 <button type="button" class="btn-anim-choice" data-anim="slide-right">
                   <span class="anim-icon">➡️</span>
                   <div class="anim-info">
                     <strong>Desde la Izquierda</strong>
-                    <small>Entra deslizándose por el lateral izquierdo</small>
                   </div>
                 </button>
                 <button type="button" class="btn-anim-choice" data-anim="slide-left">
                   <span class="anim-icon">⬅️</span>
                   <div class="anim-info">
                     <strong>Desde la Derecha</strong>
-                    <small>Entra deslizándose por el lateral derecho</small>
                   </div>
                 </button>
                 <button type="button" class="btn-anim-choice" data-anim="pop-zoom">
                   <span class="anim-icon">💥</span>
                   <div class="anim-info">
-                    <strong>Zoom / Pop In Central</strong>
-                    <small>Emerge desde el centro con impacto brillante</small>
+                    <strong>Zoom Central</strong>
                   </div>
                 </button>
                 <button type="button" class="btn-anim-choice" data-anim="bounce-drop">
                   <span class="anim-icon">🎪</span>
                   <div class="anim-info">
-                    <strong>Rebote Festivo (Bounce Drop)</strong>
-                    <small>Cae con rebote elástico estilo fiesta</small>
+                    <strong>Rebote Festivo</strong>
                   </div>
                 </button>
                 <button type="button" class="btn-anim-choice" data-anim="fade-glow">
                   <span class="anim-icon">✨</span>
                   <div class="anim-info">
-                    <strong>Fade & Glow Suave</strong>
-                    <small>Aparece elegantemente con resplandor</small>
+                    <strong>Fade & Glow</strong>
                   </div>
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- CONTROLES: PIÑATA DE CAPIBARA -->
+          <!-- CONTROLES: PIÑATA -->
           <div id="sim-pinata-controls" style="display: none;">
-
-            <!-- Anclaje Rápido Piñata 3x3 -->
             <div class="sim-control-group">
-              <label class="sim-group-label">📍 Posición en Pantalla:</label>
+              <label class="sim-group-label">📍 Posición:</label>
               <div class="sim-grid-presets">
-                <button type="button" class="btn-pinata-snap" data-x="28" data-y="25" title="Superior Izquierda">↖️ Sup. Izq</button>
-                <button type="button" class="btn-pinata-snap active" data-x="50" data-y="25" title="Superior Centro — Recomendado para streams">⬆️ Superior</button>
-                <button type="button" class="btn-pinata-snap" data-x="72" data-y="25" title="Superior Derecha">↗️ Sup. Der</button>
+                <button type="button" class="btn-pinata-snap" data-x="28" data-y="25">↖️ Sup. Izq</button>
+                <button type="button" class="btn-pinata-snap active" data-x="50" data-y="25">⬆️ Superior</button>
+                <button type="button" class="btn-pinata-snap" data-x="72" data-y="25">↗️ Sup. Der</button>
 
-                <button type="button" class="btn-pinata-snap" data-x="28" data-y="50" title="Centro Izquierda">⬅️ Izquierda</button>
-                <button type="button" class="btn-pinata-snap" data-x="50" data-y="50" title="Centro Total">🎯 Centro</button>
-                <button type="button" class="btn-pinata-snap" data-x="72" data-y="50" title="Centro Derecha">➡️ Derecha</button>
+                <button type="button" class="btn-pinata-snap" data-x="28" data-y="50">⬅️ Izquierda</button>
+                <button type="button" class="btn-pinata-snap" data-x="50" data-y="50">🎯 Centro</button>
+                <button type="button" class="btn-pinata-snap" data-x="72" data-y="50">➡️ Derecha</button>
 
-                <button type="button" class="btn-pinata-snap" data-x="28" data-y="75" title="Inferior Izquierda">↙️ Inf. Izq</button>
-                <button type="button" class="btn-pinata-snap" data-x="50" data-y="75" title="Inferior Centro">⬇️ Inferior</button>
-                <button type="button" class="btn-pinata-snap" data-x="72" data-y="75" title="Inferior Derecha">↘️ Inf. Der</button>
+                <button type="button" class="btn-pinata-snap" data-x="28" data-y="75">↙️ Inf. Izq</button>
+                <button type="button" class="btn-pinata-snap" data-x="50" data-y="75">⬇️ Inferior</button>
+                <button type="button" class="btn-pinata-snap" data-x="72" data-y="75">↘️ Inf. Der</button>
               </div>
             </div>
 
-            <!-- Slider de Escala Piñata -->
             <div class="sim-control-group">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <label class="sim-group-label" style="margin: 0;">📏 Tamaño de la Piñata:</label>
-                <span id="sim-pinata-scale-val" style="font-size: 0.85rem; font-weight: 800; color: #f59e0b;">85%</span>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <label class="sim-group-label" style="margin: 0;">📏 Tamaño Piñata:</label>
+                <span id="sim-pinata-scale-val" style="font-size: 0.8rem; font-weight: 800; color: #f59e0b;">85%</span>
               </div>
-              <input type="range" id="sim-pinata-scale-slider" min="50" max="130" step="5" value="85" class="sim-slider-amber">
-              <div style="display: flex; gap: 6px; margin-top: 8px;">
-                <button type="button" class="btn-pinata-scale-quick" data-scale="0.65">65% Compacta</button>
-                <button type="button" class="btn-pinata-scale-quick active" data-scale="0.85">85% Equilibrada</button>
-                <button type="button" class="btn-pinata-scale-quick" data-scale="1.0">100% Grande</button>
-                <button type="button" class="btn-pinata-scale-quick" data-scale="1.15">115% Épica</button>
+              <input type="range" id="sim-pinata-scale-slider" min="50" max="130" step="5" value="85" style="width: 100%;">
+              <div style="display: flex; gap: 4px; margin-top: 6px;">
+                <button type="button" class="btn-pinata-scale-quick" data-scale="0.65">65%</button>
+                <button type="button" class="btn-pinata-scale-quick active" data-scale="0.85">85%</button>
+                <button type="button" class="btn-pinata-scale-quick" data-scale="1.0">100%</button>
               </div>
             </div>
 
-            <!-- Selector de Golpes (HP) -->
             <div class="sim-control-group">
-              <label class="sim-group-label">🏑 Resistencia de la Piñata (Golpes):</label>
-              <div class="pinata-hp-selector">
-                <button type="button" class="btn-pinata-hp" data-hp="20" title="~45s de duración">20 🐾 Fácil</button>
-                <button type="button" class="btn-pinata-hp active" data-hp="30" title="~60s de duración">30 🪅 Normal</button>
-                <button type="button" class="btn-pinata-hp" data-hp="50" title="~75s de duración">50 💪 Difícil</button>
-                <button type="button" class="btn-pinata-hp" data-hp="75" title="~98s de duración">75 🔥 Extremo</button>
-                <button type="button" class="btn-pinata-hp" data-hp="100" title="~112s de duración">100 👑 Jefe</button>
-              </div>
-              <div style="margin-top: 8px; font-size: 0.73rem; color: #94a3b8; line-height: 1.4;">
-                💡 El tiempo se calcula automáticamente: ~1 min para 30 golpes, ~1.5 min para 60.
+              <label class="sim-group-label">🏑 Resistencia (HP):</label>
+              <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                <button type="button" class="btn-pinata-hp" data-hp="20">20 HP</button>
+                <button type="button" class="btn-pinata-hp active" data-hp="30">30 HP</button>
+                <button type="button" class="btn-pinata-hp" data-hp="50">50 HP</button>
+                <button type="button" class="btn-pinata-hp" data-hp="75">75 HP</button>
               </div>
             </div>
-
-            <!-- Tabla de referencia: Golpes → Duración -->
-            <div class="sim-control-group">
-              <label class="sim-group-label">⏱️ Referencia de Duración:</label>
-              <div style="display: flex; flex-direction: column; gap: 4px;">
-                <div class="pinata-info-row">
-                  <span class="pi-label">20 golpes</span>
-                  <span class="pi-value">~45s</span>
-                  <span style="font-size: 0.7rem; color: #6b7280; margin-left: auto;">Streams pequeños</span>
-                </div>
-                <div class="pinata-info-row">
-                  <span class="pi-label">30 golpes</span>
-                  <span class="pi-value">~60s</span>
-                  <span style="font-size: 0.7rem; color: #6b7280; margin-left: auto;">✅ Recomendado</span>
-                </div>
-                <div class="pinata-info-row">
-                  <span class="pi-label">50 golpes</span>
-                  <span class="pi-value">~75s</span>
-                  <span style="font-size: 0.7rem; color: #6b7280; margin-left: auto;">Chat activo</span>
-                </div>
-                <div class="pinata-info-row">
-                  <span class="pi-label">75 golpes</span>
-                  <span class="pi-value">~98s</span>
-                  <span style="font-size: 0.7rem; color: #6b7280; margin-left: auto;">Alta actividad</span>
-                </div>
-                <div class="pinata-info-row">
-                  <span class="pi-label">100 golpes</span>
-                  <span class="pi-value">~112s</span>
-                  <span style="font-size: 0.7rem; color: #6b7280; margin-left: auto;">Máximo</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Tip informativo -->
-            <div class="pinata-info-card">
-              <strong>🪅 ¿Cómo funciona el minijuego?</strong>
-              <div style="margin-top: 6px; color: #fde68a; font-size: 0.76rem; line-height: 1.55;">
-                La streamer escribe <code style="background: rgba(0,0,0,0.4); padding: 1px 5px; border-radius: 4px; color: #fbbf24;">!piñata [nombre] [golpes]</code> en el chat de Twitch.<br>
-                El chat participa con <code style="background: rgba(0,0,0,0.4); padding: 1px 5px; border-radius: 4px; color: #fbbf24;">!dale</code> o <code style="background: rgba(0,0,0,0.4); padding: 1px 5px; border-radius: 4px; color: #fbbf24;">!pegar</code> para golpear.<br>
-                Al romperse, aparece el ranking de golpeadores más entusiastas 🏆
-              </div>
-            </div>
-
           </div>
 
           <!-- Botones de Acción -->
-          <div style="display: flex; flex-direction: column; gap: 10px; margin-top: auto; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-              <button type="button" id="btn-sim-test-anim" class="btn-sim-test" title="Reproduce la animación de entrada dentro de este simulador">
-                ▶️ Probar Simulador
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: auto; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+              <button type="button" id="btn-sim-test-anim" class="btn-sim-test" title="Prueba animación">
+                ▶️ Simular
               </button>
-              <button type="button" id="btn-sim-test-obs" class="btn-sim-test-obs" title="Lanza una tarjeta de prueba con sonido y confeti directo a OBS Studio">
-                🚀 Lanzar a OBS
+              <button type="button" id="btn-sim-test-obs" class="btn-sim-test-obs" title="Lanzar a OBS">
+                🚀 OBS
               </button>
             </div>
-            <div style="display: flex; gap: 8px;">
+            <div style="display: flex; gap: 6px;">
               <button type="button" id="btn-sim-save" class="btn-sim-save">
-                💾 Guardar y Aplicar en OBS en Tiempo Real
+                💾 Guardar en OBS
               </button>
-              <button type="button" id="btn-sim-reset" class="btn-sim-reset" title="Restablecer posición inicial">
+              <button type="button" id="btn-sim-reset" class="btn-sim-reset" title="Restablecer">
                 🔄
               </button>
             </div>
-            <div style="font-size: 0.74rem; color: #6ee7b7; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 2px;">
-              <span>☁️</span>
-              <span>Sincronización en la nube activa: los cambios se guardan permanentemente en Firebase Firestore y nunca se pierden al actualizar en Render.</span>
-            </div>
           </div>
+
         </div>
       </div>
     </div>
