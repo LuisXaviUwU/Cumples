@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Streamer — Yocapi Birthday Cockpit v3.0</title>
+  <title>Dashboard Streamer — Yocapi Birthday</title>
   <link rel="icon" href="img/HB.png" type="image/png">
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="css/style.css">
@@ -29,17 +29,19 @@
         <div class="brand-title-group">
           <h2>yocapi_pr</h2>
           <div class="brand-tag">
-            <span>✨</span> Cockpit v3.0
+            <span>✨</span>
           </div>
         </div>
 
         <!-- Píldoras de Estado en Tiempo Real (Compactas) -->
         <div class="navbar-status-pills">
-          <div id="obs-status-pill" class="nav-status-pill" title="Estado de la conexión SSE con Browser Source de OBS Studio">
+          <div id="obs-status-pill" class="nav-status-pill"
+            title="Estado de la conexión SSE con Browser Source de OBS Studio">
             <span id="obs-dot" style="width: 7px; height: 7px; border-radius: 50%; background: #64748b;"></span>
             <span id="obs-status-text">OBS: Desconectado</span>
           </div>
-          <div id="cloud-status-pill" class="nav-status-pill cloud" title="Tu configuración está respaldada en la nube permanentemente en Firebase Firestore">
+          <div id="cloud-status-pill" class="nav-status-pill cloud"
+            title="Tu configuración está respaldada en la nube permanentemente en Firebase Firestore">
             <span>☁️</span>
             <span>Nube</span>
           </div>
@@ -329,21 +331,25 @@
 
       <!-- Derecha: Acciones Críticas Streamer (Compactas) -->
       <div class="navbar-actions-section">
-        <button type="button" id="btn-panic-stop" class="btn-nav-action btn-panic-stop" title="Detiene y silencia inmediatamente cualquier alerta en directo">
+        <button type="button" id="btn-panic-stop" class="btn-nav-action btn-panic-stop"
+          title="Detiene y silencia inmediatamente cualquier alerta en directo">
           <span>🛑</span>
           <span>Detener</span>
         </button>
 
-        <button type="button" id="btn-pause-alerts" class="btn-nav-action btn-pause-alerts" title="Pausa la aparición de alertas en stream (se guardarán en cola)">
+        <button type="button" id="btn-pause-alerts" class="btn-nav-action btn-pause-alerts"
+          title="Pausa la aparición de alertas en stream (se guardarán en cola)">
           <span>⏸️</span>
           <span id="pause-alerts-label">Pausar</span>
         </button>
 
-        <button type="button" id="btn-refresh" class="btn-nav-action btn-nav-refresh" title="Actualizar datos del panel">
+        <button type="button" id="btn-refresh" class="btn-nav-action btn-nav-refresh"
+          title="Actualizar datos del panel">
           <span>🔄</span>
         </button>
 
-        <a href="/" target="_blank" class="btn-nav-action btn-nav-portal" title="Abrir portal público en una nueva pestaña">
+        <a href="/" target="_blank" class="btn-nav-action btn-nav-portal"
+          title="Abrir portal público en una nueva pestaña">
           <span>🌐</span>
           <span>Portal</span>
         </a>
@@ -363,34 +369,53 @@
 
     <!-- Menú Desplegable Móvil (Drawer) -->
     <div id="mobile-nav-drawer" class="mobile-nav-drawer">
-      <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+      <div
+        style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <img src="img/yocapi.png" alt="yocapi_pr" style="width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--c-purple);">
+          <img src="img/yocapi.png" alt="yocapi_pr"
+            style="width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--c-purple);">
           <div>
             <h3 style="font-family: var(--font-h); font-size: 0.95rem; margin: 0; color: #fff;">yocapi_pr</h3>
             <span style="font-size: 0.7rem; color: #a855f7;">Menú Móvil</span>
           </div>
         </div>
-        <button type="button" id="btn-close-sidebar-mobile" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; width: 30px; height: 30px; color: #fff; cursor: pointer; font-size: 14px;">✕</button>
+        <button type="button" id="btn-close-sidebar-mobile"
+          style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; width: 30px; height: 30px; color: #fff; cursor: pointer; font-size: 14px;">✕</button>
       </div>
 
       <div class="mobile-nav-group">
         <div class="mobile-nav-title">Navegación</div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-          <button type="button" class="btn-act nav-item" data-tab="overview" style="padding: 8px; background: rgba(145,70,255,0.15); color: #fff; border: 1px solid rgba(145,70,255,0.3);">📊 Resumen</button>
-          <button type="button" class="btn-act nav-item" data-tab="today" style="padding: 8px; background: rgba(244,63,94,0.15); color: #fff; border: 1px solid rgba(244,63,94,0.3);">🎉 Cumpleaños</button>
-          <button type="button" class="btn-act nav-item" data-tab="birthdays" style="padding: 8px; background: rgba(16,185,129,0.15); color: #fff; border: 1px solid rgba(16,185,129,0.3);">👥 Base Datos</button>
-          <button type="button" class="btn-act nav-item" data-tab="overlay-test" style="padding: 8px; background: rgba(59,130,246,0.15); color: #fff; border: 1px solid rgba(59,130,246,0.3);">📺 OBS & Overlay</button>
-          <button type="button" class="btn-act nav-item" data-tab="nightbot" style="padding: 8px; background: rgba(245,158,11,0.15); color: #fff; border: 1px solid rgba(245,158,11,0.3);">🤖 YocapiBot</button>
-          <button type="button" class="btn-act nav-item" data-tab="logs" style="padding: 8px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15);">📜 Historial</button>
+          <button type="button" class="btn-act nav-item" data-tab="overview"
+            style="padding: 8px; background: rgba(145,70,255,0.15); color: #fff; border: 1px solid rgba(145,70,255,0.3);">📊
+            Resumen</button>
+          <button type="button" class="btn-act nav-item" data-tab="today"
+            style="padding: 8px; background: rgba(244,63,94,0.15); color: #fff; border: 1px solid rgba(244,63,94,0.3);">🎉
+            Cumpleaños</button>
+          <button type="button" class="btn-act nav-item" data-tab="birthdays"
+            style="padding: 8px; background: rgba(16,185,129,0.15); color: #fff; border: 1px solid rgba(16,185,129,0.3);">👥
+            Base Datos</button>
+          <button type="button" class="btn-act nav-item" data-tab="overlay-test"
+            style="padding: 8px; background: rgba(59,130,246,0.15); color: #fff; border: 1px solid rgba(59,130,246,0.3);">📺
+            OBS & Overlay</button>
+          <button type="button" class="btn-act nav-item" data-tab="nightbot"
+            style="padding: 8px; background: rgba(245,158,11,0.15); color: #fff; border: 1px solid rgba(245,158,11,0.3);">🤖
+            YocapiBot</button>
+          <button type="button" class="btn-act nav-item" data-tab="logs"
+            style="padding: 8px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15);">📜
+            Historial</button>
         </div>
       </div>
 
       <div class="mobile-nav-group">
         <div class="mobile-nav-title">Acciones Directas</div>
         <div style="display: flex; flex-direction: column; gap: 6px;">
-          <button type="button" id="mobile-btn-open-sim" class="btn-primary" style="padding: 9px; font-weight: 800; border-radius: 8px; font-size: 0.82rem;">🎨 Abrir Diseñador 1080p</button>
-          <a href="/" target="_blank" class="btn-copy" style="padding: 9px; text-decoration: none; justify-content: center; border-radius: 8px; font-size: 0.82rem;">🌐 Ver Portal de Seguidores ↗</a>
+          <button type="button" id="mobile-btn-open-sim" class="btn-primary"
+            style="padding: 9px; font-weight: 800; border-radius: 8px; font-size: 0.82rem;">🎨 Abrir Diseñador
+            1080p</button>
+          <a href="/" target="_blank" class="btn-copy"
+            style="padding: 9px; text-decoration: none; justify-content: center; border-radius: 8px; font-size: 0.82rem;">🌐
+            Ver Portal de Seguidores ↗</a>
         </div>
       </div>
     </div>
@@ -425,7 +450,8 @@
               <a href="#sec-felic-control" class="subnav-pill">🎊 Felicitaciones</a>
               <a href="#sec-pinata-control" class="subnav-pill">🪅 Piñata</a>
               <a href="#sec-obs-url" class="subnav-pill">📺 Fuente OBS</a>
-              <button type="button" id="btn-hero-open-sim" class="subnav-pill active" style="background: linear-gradient(135deg, #9146ff, #ec4899); color: #fff; border: none; font-weight: 800;">
+              <button type="button" id="btn-hero-open-sim" class="subnav-pill active"
+                style="background: linear-gradient(135deg, #9146ff, #ec4899); color: #fff; border: none; font-weight: 800;">
                 🎨 Simulador 1080p
               </button>
             </div>
@@ -464,12 +490,15 @@
           </div>
 
           <!-- Banner de Alertas Pausadas / Cola (Modo Partida) -->
-          <div id="paused-queue-banner" class="glass-card" style="display: none; padding: 14px 18px; margin-bottom: 16px; border: 1.5px solid #f59e0b; background: rgba(245, 158, 11, 0.12);">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div id="paused-queue-banner" class="glass-card"
+            style="display: none; padding: 14px 18px; margin-bottom: 16px; border: 1.5px solid #f59e0b; background: rgba(245, 158, 11, 0.12);">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
               <div style="display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 1.6rem;">⏸️</span>
                 <div>
-                  <h4 style="font-family: var(--font-h); font-size: 0.98rem; font-weight: 800; color: #fcd34d; margin: 0 0 2px 0;">
+                  <h4
+                    style="font-family: var(--font-h); font-size: 0.98rem; font-weight: 800; color: #fcd34d; margin: 0 0 2px 0;">
                     Alertas Pausadas en Cola (<span id="paused-queue-count">0</span> pendientes)
                   </h4>
                   <p style="color: #fef3c7; font-size: 0.78rem; margin: 0;">
@@ -478,28 +507,34 @@
                 </div>
               </div>
               <div style="display: flex; gap: 6px;">
-                <button type="button" id="btn-release-next-alert" class="btn-copy" style="padding: 6px 12px; font-size: 0.78rem; background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5); color: #34d399; font-weight: 700;">
+                <button type="button" id="btn-release-next-alert" class="btn-copy"
+                  style="padding: 6px 12px; font-size: 0.78rem; background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5); color: #34d399; font-weight: 700;">
                   ▶️ Soltar Siguiente
                 </button>
-                <button type="button" id="btn-release-all-alerts" class="btn-primary" style="padding: 6px 14px; font-size: 0.78rem; font-weight: 800; border-radius: 8px;">
+                <button type="button" id="btn-release-all-alerts" class="btn-primary"
+                  style="padding: 6px 14px; font-size: 0.78rem; font-weight: 800; border-radius: 8px;">
                   🚀 Soltar Todas
                 </button>
               </div>
             </div>
-            <div id="paused-queue-items" style="margin-top: 10px; display: flex; flex-direction: column; gap: 5px;"></div>
+            <div id="paused-queue-items" style="margin-top: 10px; display: flex; flex-direction: column; gap: 5px;">
+            </div>
           </div>
 
           <!-- Controles Rápidos en Directo: 3 Columnas Proporcionadas -->
           <div class="live-controls-grid">
 
             <!-- Módulo 1: Alertas del Cumpleañero (!hoyesmicumple) & Modo Grabación -->
-            <div class="glass-card control-module-card" id="sec-bday-alerts" style="border: 1.5px solid rgba(234, 179, 8, 0.35); background: linear-gradient(135deg, rgba(234, 179, 8, 0.08), rgba(28, 18, 10, 0.5));">
+            <div class="glass-card control-module-card" id="sec-bday-alerts"
+              style="border: 1.5px solid rgba(234, 179, 8, 0.35); background: linear-gradient(135deg, rgba(234, 179, 8, 0.08), rgba(28, 18, 10, 0.5));">
               <div>
-                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px;">
+                <div
+                  style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px;">
                   <div style="display: flex; align-items: center; gap: 10px;">
                     <span style="font-size: 1.8rem; line-height: 1;">👑</span>
                     <div>
-                      <h3 style="font-family: var(--font-h); font-size: 1.0rem; font-weight: 800; margin: 0; color: #fff;">
+                      <h3
+                        style="font-family: var(--font-h); font-size: 1.0rem; font-weight: 800; margin: 0; color: #fff;">
                         Alertas del Cumpleañero
                       </h3>
                       <div style="font-size: 0.72rem; color: #fde68a;">
@@ -507,7 +542,8 @@
                       </div>
                     </div>
                   </div>
-                  <span id="bday-alerts-status-badge" style="padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">
+                  <span id="bday-alerts-status-badge"
+                    style="padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">
                     🟢 Permitidas
                   </span>
                 </div>
@@ -516,23 +552,29 @@
                 </p>
               </div>
               <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto;">
-                <button type="button" id="btn-toggle-bday-alerts" class="btn-primary" style="padding: 7px 14px; font-size: 0.78rem; font-weight: 800; border-radius: 8px; flex: 1; white-space: nowrap;">
+                <button type="button" id="btn-toggle-bday-alerts" class="btn-primary"
+                  style="padding: 7px 14px; font-size: 0.78rem; font-weight: 800; border-radius: 8px; flex: 1; white-space: nowrap;">
                   🔒 Bloquear Alertas
                 </button>
-                <button type="button" id="btn-quick-rec-mode" class="btn-copy" style="padding: 7px 12px; font-size: 0.78rem; font-weight: 800; border-radius: 8px; background: rgba(239, 68, 68, 0.16); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; white-space: nowrap;" title="Activa silencio total para videos de YouTube/TikTok">
+                <button type="button" id="btn-quick-rec-mode" class="btn-copy"
+                  style="padding: 7px 12px; font-size: 0.78rem; font-weight: 800; border-radius: 8px; background: rgba(239, 68, 68, 0.16); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; white-space: nowrap;"
+                  title="Activa silencio total para videos de YouTube/TikTok">
                   🎬 Modo Grabación
                 </button>
               </div>
             </div>
 
             <!-- Módulo 2: Felicitaciones en Directo (!felicidades) -->
-            <div class="glass-card control-module-card" id="sec-felic-control" style="border: 1.5px solid rgba(244, 63, 94, 0.35); background: linear-gradient(135deg, rgba(244, 63, 94, 0.08), rgba(145, 70, 255, 0.08));">
+            <div class="glass-card control-module-card" id="sec-felic-control"
+              style="border: 1.5px solid rgba(244, 63, 94, 0.35); background: linear-gradient(135deg, rgba(244, 63, 94, 0.08), rgba(145, 70, 255, 0.08));">
               <div>
-                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px;">
+                <div
+                  style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px;">
                   <div style="display: flex; align-items: center; gap: 10px;">
                     <span style="font-size: 1.8rem; line-height: 1;">🎊</span>
                     <div>
-                      <h3 style="font-family: var(--font-h); font-size: 1.0rem; font-weight: 800; margin: 0; color: #fff;">
+                      <h3
+                        style="font-family: var(--font-h); font-size: 1.0rem; font-weight: 800; margin: 0; color: #fff;">
                         Lluvia de Felicitaciones
                       </h3>
                       <div style="font-size: 0.72rem; color: #fbcfe8;">
@@ -540,7 +582,8 @@
                       </div>
                     </div>
                   </div>
-                  <span id="felic-status-badge" style="padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);">
+                  <span id="felic-status-badge"
+                    style="padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);">
                     🔴 Desactivadas
                   </span>
                 </div>
@@ -549,20 +592,24 @@
                 </p>
               </div>
               <div style="margin-top: auto;">
-                <button type="button" id="btn-toggle-felic" class="btn-primary" style="padding: 7px 16px; font-size: 0.78rem; font-weight: 800; border-radius: 8px; width: 100%;">
+                <button type="button" id="btn-toggle-felic" class="btn-primary"
+                  style="padding: 7px 16px; font-size: 0.78rem; font-weight: 800; border-radius: 8px; width: 100%;">
                   🎊 Activar Felicitaciones
                 </button>
               </div>
             </div>
 
             <!-- Módulo 3: Minijuego Piñata Comunitaria de Capibara -->
-            <div class="glass-card control-module-card" id="sec-pinata-control" style="border: 1.5px solid rgba(251, 191, 36, 0.45); background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(20, 14, 38, 0.7));">
+            <div class="glass-card control-module-card" id="sec-pinata-control"
+              style="border: 1.5px solid rgba(251, 191, 36, 0.45); background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(20, 14, 38, 0.7));">
               <div>
-                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px;">
+                <div
+                  style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px;">
                   <div style="display: flex; align-items: center; gap: 10px;">
                     <span style="font-size: 1.8rem; line-height: 1;">🪅</span>
                     <div>
-                      <h3 style="font-family: var(--font-h); font-size: 1.0rem; font-weight: 800; margin: 0; color: #fff;">
+                      <h3
+                        style="font-family: var(--font-h); font-size: 1.0rem; font-weight: 800; margin: 0; color: #fff;">
                         Piñata de Capibara en Vivo
                       </h3>
                       <div style="font-size: 0.72rem; color: #fef08a;">
@@ -570,7 +617,8 @@
                       </div>
                     </div>
                   </div>
-                  <span id="pinata-status-badge" style="padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.4);">
+                  <span id="pinata-status-badge"
+                    style="padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.4);">
                     ⚪ Inactiva
                   </span>
                 </div>
@@ -581,21 +629,27 @@
 
               <div style="display: flex; flex-direction: column; gap: 6px; margin-top: auto;">
                 <div style="display: flex; gap: 6px;">
-                  <input type="text" id="dash-pinata-target" placeholder="Nombre (ej: cumpleañero)" style="flex: 2; min-width: 110px; background: rgba(0,0,0,0.4); border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 6px; padding: 5px 8px; color: #fff; font-size: 0.78rem;">
-                  <select id="dash-pinata-hp" style="flex: 1; min-width: 90px; background: #1e1537; border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 6px; padding: 5px 6px; color: #fff; font-size: 0.78rem; cursor: pointer;">
+                  <input type="text" id="dash-pinata-target" placeholder="Nombre (ej: cumpleañero)"
+                    style="flex: 2; min-width: 110px; background: rgba(0,0,0,0.4); border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 6px; padding: 5px 8px; color: #fff; font-size: 0.78rem;">
+                  <select id="dash-pinata-hp"
+                    style="flex: 1; min-width: 90px; background: #1e1537; border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 6px; padding: 5px 6px; color: #fff; font-size: 0.78rem; cursor: pointer;">
                     <option value="20">⚡ 20 HP</option>
                     <option value="35" selected>🪅 35 HP</option>
                     <option value="60">🔥 60 HP</option>
                   </select>
                 </div>
                 <div style="display: flex; gap: 6px;">
-                  <button type="button" id="btn-start-pinata" class="btn-primary" style="flex: 2; padding: 7px 10px; font-size: 0.78rem; font-weight: 800; background: linear-gradient(135deg, #f59e0b, #ef4444); border-radius: 8px; cursor: pointer;">
+                  <button type="button" id="btn-start-pinata" class="btn-primary"
+                    style="flex: 2; padding: 7px 10px; font-size: 0.78rem; font-weight: 800; background: linear-gradient(135deg, #f59e0b, #ef4444); border-radius: 8px; cursor: pointer;">
                     🪅 Iniciar
                   </button>
-                  <button type="button" id="btn-test-hit-pinata" class="btn-copy" style="flex: 1; padding: 7px 8px; font-size: 0.76rem; font-weight: 700; background: rgba(56, 189, 248, 0.2); border-color: rgba(56, 189, 248, 0.5); color: #38bdf8; cursor: pointer;">
+                  <button type="button" id="btn-test-hit-pinata" class="btn-copy"
+                    style="flex: 1; padding: 7px 8px; font-size: 0.76rem; font-weight: 700; background: rgba(56, 189, 248, 0.2); border-color: rgba(56, 189, 248, 0.5); color: #38bdf8; cursor: pointer;">
                     🏏 Batear
                   </button>
-                  <button type="button" id="btn-stop-pinata" class="btn-copy" style="padding: 7px 10px; font-size: 0.76rem; font-weight: 700; background: rgba(239, 68, 68, 0.16); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; cursor: pointer;" title="Detiene la piñata en pantalla">
+                  <button type="button" id="btn-stop-pinata" class="btn-copy"
+                    style="padding: 7px 10px; font-size: 0.76rem; font-weight: 700; background: rgba(239, 68, 68, 0.16); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; cursor: pointer;"
+                    title="Detiene la piñata en pantalla">
                     🛑
                   </button>
                 </div>
@@ -605,17 +659,22 @@
           </div>
 
           <!-- OBS Quick Setup Card & Diseñador Visual (Compacto) -->
-          <div class="glass-card" id="sec-obs-url" style="padding: 16px 20px; margin-bottom: 16px; border: 1px solid rgba(145, 70, 255, 0.3); background: linear-gradient(135deg, rgba(145, 70, 255, 0.08), rgba(244, 63, 94, 0.04));">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div class="glass-card" id="sec-obs-url"
+            style="padding: 16px 20px; margin-bottom: 16px; border: 1px solid rgba(145, 70, 255, 0.3); background: linear-gradient(135deg, rgba(145, 70, 255, 0.08), rgba(244, 63, 94, 0.04));">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
               <div>
-                <h3 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; margin: 0 0 2px 0; color: #fff;">
+                <h3
+                  style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; margin: 0 0 2px 0; color: #fff;">
                   📺 Fuente de Navegador para OBS Studio (1920 × 1080p)
                 </h3>
                 <p style="color: #cbd5e1; font-size: 0.78rem; margin: 0;">
-                  Agrega esta URL como <strong>Browser Source</strong> en OBS. Soporta SSE en vivo sin recargar la fuente.
+                  Agrega esta URL como <strong>Browser Source</strong> en OBS. Soporta SSE en vivo sin recargar la
+                  fuente.
                 </p>
               </div>
-              <button type="button" id="btn-open-sim-modal" class="btn-primary" style="background: linear-gradient(135deg, #9146ff, #ec4899); padding: 7px 16px; font-size: 0.8rem; font-weight: 800; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border: none; color: #fff; white-space: nowrap;">
+              <button type="button" id="btn-open-sim-modal" class="btn-primary"
+                style="background: linear-gradient(135deg, #9146ff, #ec4899); padding: 7px 16px; font-size: 0.8rem; font-weight: 800; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border: none; color: #fff; white-space: nowrap;">
                 <span>🖱️</span>
                 <span>Abrir Simulador Interactivo</span>
               </button>
@@ -624,7 +683,9 @@
             <div class="obs-copy-row" style="margin-top: 10px;">
               <input type="text" id="obs-url-display" class="obs-url-input" readonly>
               <button id="btn-copy-obs" class="btn-copy">📋 Copiar URL</button>
-              <button type="button" id="btn-test-obs-direct" class="btn-copy" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #34d399;" title="Dispara alerta de prueba directamente a OBS Studio">
+              <button type="button" id="btn-test-obs-direct" class="btn-copy"
+                style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #34d399;"
+                title="Dispara alerta de prueba directamente a OBS Studio">
                 <span>🚀</span>
                 <span>Probar en OBS</span>
               </button>
@@ -632,25 +693,33 @@
           </div>
 
           <!-- Respaldo y Persistencia en la Nube (Compacto) -->
-          <div class="glass-card" id="sec-cloud-backup" style="padding: 14px 18px; margin-bottom: 16px; border: 1px solid rgba(16, 185, 129, 0.35); background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(6, 182, 212, 0.05));">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div class="glass-card" id="sec-cloud-backup"
+            style="padding: 14px 18px; margin-bottom: 16px; border: 1px solid rgba(16, 185, 129, 0.35); background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(6, 182, 212, 0.05));">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
               <div style="display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 1.6rem;">☁️</span>
                 <div>
-                  <h4 style="font-family: var(--font-h); font-size: 0.95rem; font-weight: 800; color: #fff; margin: 0 0 1px 0;">
+                  <h4
+                    style="font-family: var(--font-h); font-size: 0.95rem; font-weight: 800; color: #fff; margin: 0 0 1px 0;">
                     Persistencia en la Nube &amp; Respaldos de Seguridad
                   </h4>
                   <p style="color: #cbd5e1; font-size: 0.76rem; margin: 0;">
-                    Tu diseño visual de OBS, preferencias y credenciales están sincronizados en <strong>Firestore Cloud</strong>.
+                    Tu diseño visual de OBS, preferencias y credenciales están sincronizados en <strong>Firestore
+                      Cloud</strong>.
                   </p>
                 </div>
               </div>
               <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <button type="button" id="btn-backup-config" class="btn-copy" style="background: rgba(255,255,255,0.08); padding: 6px 12px; font-size: 0.76rem; font-weight: 700; border-radius: 8px;" title="Descargar un archivo .json con toda tu configuración">
+                <button type="button" id="btn-backup-config" class="btn-copy"
+                  style="background: rgba(255,255,255,0.08); padding: 6px 12px; font-size: 0.76rem; font-weight: 700; border-radius: 8px;"
+                  title="Descargar un archivo .json con toda tu configuración">
                   <span>📥</span>
                   <span>Descargar Copia (.json)</span>
                 </button>
-                <button type="button" id="btn-restore-config" class="btn-copy" style="background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.5); color: #6ee7b7; padding: 6px 12px; font-size: 0.76rem; font-weight: 700; border-radius: 8px;" title="Subir un archivo .json para restaurar tu configuración">
+                <button type="button" id="btn-restore-config" class="btn-copy"
+                  style="background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.5); color: #6ee7b7; padding: 6px 12px; font-size: 0.76rem; font-weight: 700; border-radius: 8px;"
+                  title="Subir un archivo .json para restaurar tu configuración">
                   <span>📤</span>
                   <span>Restaurar Copia</span>
                 </button>
@@ -660,12 +729,15 @@
           </div>
 
           <!-- Banner Acceso Rápido a Nightbot -->
-          <div class="glass-card" style="padding: 14px 18px; border: 1px solid rgba(59, 130, 246, 0.3); background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(145, 70, 255, 0.06));">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div class="glass-card"
+            style="padding: 14px 18px; border: 1px solid rgba(59, 130, 246, 0.3); background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(145, 70, 255, 0.06));">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
               <div style="display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 1.6rem;">🤖</span>
                 <div>
-                  <h4 style="font-family: var(--font-h); font-size: 0.95rem; font-weight: 800; color: #fff; margin: 0 0 1px 0;">
+                  <h4
+                    style="font-family: var(--font-h); font-size: 0.95rem; font-weight: 800; color: #fff; margin: 0 0 1px 0;">
                     YocapiBot — Automatización del Chat de Twitch
                   </h4>
                   <p style="color: #cbd5e1; font-size: 0.76rem; margin: 0;">
@@ -673,7 +745,8 @@
                   </p>
                 </div>
               </div>
-              <button type="button" id="btn-goto-nightbot" class="btn-primary" style="background: linear-gradient(135deg, #3b82f6, #9146ff); padding: 7px 16px; font-size: 0.78rem; font-weight: 800; border-radius: 8px; cursor: pointer; border: none; color: #fff; display: inline-flex; align-items: center; gap: 6px;">
+              <button type="button" id="btn-goto-nightbot" class="btn-primary"
+                style="background: linear-gradient(135deg, #3b82f6, #9146ff); padding: 7px 16px; font-size: 0.78rem; font-weight: 800; border-radius: 8px; cursor: pointer; border: none; color: #fff; display: inline-flex; align-items: center; gap: 6px;">
                 <span>🤖</span>
                 <span>Abrir Panel de YocapiBot ➔</span>
               </button>
@@ -690,7 +763,8 @@
           <!-- Cabecera Compacta de Sección 2 -->
           <div class="section-compact-header">
             <div class="sec-left-group">
-              <div class="sec-icon-badge" style="background: rgba(244, 63, 94, 0.2); border-color: rgba(244, 63, 94, 0.4);">🎉</div>
+              <div class="sec-icon-badge"
+                style="background: rgba(244, 63, 94, 0.2); border-color: rgba(244, 63, 94, 0.4);">🎉</div>
               <div>
                 <h2 class="sec-title-text">Celebrantes Activos &amp; Próximos Cumpleaños</h2>
                 <p class="sec-desc-text">Seguidores que celebran su día especial hoy o en las próximas semanas</p>
@@ -706,7 +780,8 @@
           <!-- Bloque: Celebrantes de Hoy & Gracia -->
           <div id="sec-today-celebrants" style="margin-bottom: 24px;">
             <div style="margin-bottom: 10px;">
-              <h3 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0 0 2px 0;">
+              <h3
+                style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0 0 2px 0;">
                 🎂 Celebrantes de Hoy &amp; Período de Gracia (14 Días)
               </h3>
               <p style="color: #94a3b8; font-size: 0.76rem; margin: 0;">
@@ -721,7 +796,8 @@
           <!-- Bloque: Próximos Cumpleaños -->
           <div id="sec-upcoming-celebrants">
             <div style="margin-bottom: 10px;">
-              <h3 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #c084fc; margin: 0 0 2px 0;">
+              <h3
+                style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #c084fc; margin: 0 0 2px 0;">
                 🎈 Próximos Cumpleaños (Siguientes 14 días)
               </h3>
               <p style="color: #94a3b8; font-size: 0.76rem; margin: 0;">
@@ -743,14 +819,16 @@
           <!-- Cabecera Compacta de Sección 3 -->
           <div class="section-compact-header">
             <div class="sec-left-group">
-              <div class="sec-icon-badge" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4);">👥</div>
+              <div class="sec-icon-badge"
+                style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4);">👥</div>
               <div>
                 <h2 class="sec-title-text">Base de Datos Maestra de Seguidores</h2>
                 <p class="sec-desc-text">Gestión de registros, fechas, frases, sonidos y relanzamientos</p>
               </div>
             </div>
             <div class="sec-right-subnav">
-              <button type="button" id="btn-export-csv" class="subnav-pill active" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5); color: #34d399; font-weight: 700;">
+              <button type="button" id="btn-export-csv" class="subnav-pill active"
+                style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5); color: #34d399; font-weight: 700;">
                 <span>📥</span> Descargar CSV (Excel)
               </button>
             </div>
@@ -760,7 +838,8 @@
           <div class="dash-table-wrap">
             <div class="table-toolbar">
               <div style="display: flex; gap: 8px; align-items: center; flex: 1; min-width: 240px; flex-wrap: wrap;">
-                <input type="text" id="filter-search" class="search-input" placeholder="🔍 Buscar por usuario de Twitch...">
+                <input type="text" id="filter-search" class="search-input"
+                  placeholder="🔍 Buscar por usuario de Twitch...">
                 <select id="filter-month" class="filter-select">
                   <option value="">📅 Todos los Meses</option>
                   <option value="1">Enero</option>
@@ -779,7 +858,8 @@
               </div>
             </div>
 
-            <div class="table-scroll-hint" style="padding: 6px 14px; font-size: 0.72rem; color: #64748b; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.04);">
+            <div class="table-scroll-hint"
+              style="padding: 6px 14px; font-size: 0.72rem; color: #64748b; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.04);">
               💡 <em>Desliza horizontalmente la tabla para ver todas las acciones de cada fila</em>
             </div>
 
@@ -812,14 +892,16 @@
           <!-- Cabecera Compacta de Sección 4 -->
           <div class="section-compact-header">
             <div class="sec-left-group">
-              <div class="sec-icon-badge" style="background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.4);">📺</div>
+              <div class="sec-icon-badge"
+                style="background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.4);">📺</div>
               <div>
                 <h2 class="sec-title-text">OBS Studio &amp; Simulador de Overlay</h2>
                 <p class="sec-desc-text">Prueba animaciones, sonidos y diseña la posición visual en 1080p</p>
               </div>
             </div>
             <div class="sec-right-subnav">
-              <button type="button" id="btn-tab-open-sim" class="subnav-pill active" style="background: linear-gradient(135deg, #9146ff, #ec4899); color: #fff; border: none; font-weight: 800;">
+              <button type="button" id="btn-tab-open-sim" class="subnav-pill active"
+                style="background: linear-gradient(135deg, #9146ff, #ec4899); color: #fff; border: none; font-weight: 800;">
                 🎨 Abrir Diseñador 1080p
               </button>
             </div>
@@ -841,18 +923,28 @@
 
               <form id="test-alert-form">
                 <div class="input-group" style="margin-bottom: 10px;">
-                  <label class="input-label" style="display: block; font-size: 0.72rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Nombre del Usuario</label>
-                  <input type="text" id="test-user" class="custom-input" value="SeguidorVIP" required style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 7px 10px; color: #fff; font-size: 0.8rem; box-sizing: border-box;">
+                  <label class="input-label"
+                    style="display: block; font-size: 0.72rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Nombre
+                    del Usuario</label>
+                  <input type="text" id="test-user" class="custom-input" value="SeguidorVIP" required
+                    style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 7px 10px; color: #fff; font-size: 0.8rem; box-sizing: border-box;">
                 </div>
 
                 <div class="input-group" style="margin-bottom: 10px;">
-                  <label class="input-label" style="display: block; font-size: 0.72rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Mensaje en Pantalla</label>
-                  <input type="text" id="test-message" class="custom-input" value="¡Festejando con toda la comunidad! 🎉" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 7px 10px; color: #fff; font-size: 0.8rem; box-sizing: border-box;">
+                  <label class="input-label"
+                    style="display: block; font-size: 0.72rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Mensaje
+                    en Pantalla</label>
+                  <input type="text" id="test-message" class="custom-input"
+                    value="¡Festejando con toda la comunidad! 🎉"
+                    style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 7px 10px; color: #fff; font-size: 0.8rem; box-sizing: border-box;">
                 </div>
 
                 <div class="input-group" style="margin-bottom: 10px;">
-                  <label class="input-label" style="display: block; font-size: 0.72rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Sonido de Celebración</label>
-                  <select id="test-sound" class="custom-select" style="width: 100%; background: #120e1e; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 7px 10px; color: #fff; font-size: 0.8rem; box-sizing: border-box; cursor: pointer;">
+                  <label class="input-label"
+                    style="display: block; font-size: 0.72rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Sonido
+                    de Celebración</label>
+                  <select id="test-sound" class="custom-select"
+                    style="width: 100%; background: #120e1e; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 7px 10px; color: #fff; font-size: 0.8rem; box-sizing: border-box; cursor: pointer;">
                     <option value="HBSilbato.mp3">🎺 Silbato Festivo (HBSilbato.mp3)</option>
                     <option value="HBVoz.mp3">🎤 Felicitación de Voz (HBVoz.mp3)</option>
                     <option value="MBMusica.mp3">🎵 Música de Fiesta (MBMusica.mp3)</option>
@@ -860,15 +952,19 @@
                 </div>
 
                 <div class="input-group" style="margin-bottom: 14px;">
-                  <label class="input-label" style="display: block; font-size: 0.72rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Tema Visual</label>
-                  <select id="test-theme" class="custom-select" style="width: 100%; background: #120e1e; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 7px 10px; color: #fff; font-size: 0.8rem; box-sizing: border-box; cursor: pointer;">
+                  <label class="input-label"
+                    style="display: block; font-size: 0.72rem; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Tema
+                    Visual</label>
+                  <select id="test-theme" class="custom-select"
+                    style="width: 100%; background: #120e1e; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 7px 10px; color: #fff; font-size: 0.8rem; box-sizing: border-box; cursor: pointer;">
                     <option value="purple">🟣 Morado Neón (Twitch Classic)</option>
                     <option value="pink">💖 Rosa Cyberpunk</option>
                     <option value="gold">⭐ Dorado Celebración</option>
                   </select>
                 </div>
 
-                <button type="submit" class="btn-primary" style="width: 100%; padding: 9px; font-size: 0.82rem; font-weight: 800; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <button type="submit" class="btn-primary"
+                  style="width: 100%; padding: 9px; font-size: 0.82rem; font-weight: 800; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                   <span>🚀</span>
                   <span>Enviar Alerta de Prueba a OBS</span>
                 </button>
@@ -877,27 +973,33 @@
 
             <!-- Información y Diseñador Visual Destacado -->
             <div style="display: flex; flex-direction: column; gap: 14px;">
-              <div class="glass-card" style="padding: 18px; border: 1px solid rgba(145, 70, 255, 0.35); background: linear-gradient(135deg, rgba(145, 70, 255, 0.1), rgba(244, 63, 94, 0.05));">
+              <div class="glass-card"
+                style="padding: 18px; border: 1px solid rgba(145, 70, 255, 0.35); background: linear-gradient(135deg, rgba(145, 70, 255, 0.1), rgba(244, 63, 94, 0.05));">
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
                   <span style="font-size: 1.8rem;">🎨</span>
                   <div>
-                    <h3 style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0;">
+                    <h3
+                      style="font-family: var(--font-h); font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0;">
                       Diseñador Visual 1080p
                     </h3>
-                    <p style="color: #cbd5e1; font-size: 0.76rem; margin: 0;">Arrastra con el ratón la tarjeta en canvas</p>
+                    <p style="color: #cbd5e1; font-size: 0.76rem; margin: 0;">Arrastra con el ratón la tarjeta en canvas
+                    </p>
                   </div>
                 </div>
                 <p style="color: #cbd5e1; font-size: 0.78rem; line-height: 1.45; margin-bottom: 12px;">
-                  Abre el simulador interactivo para arrastrar libremente la tarjeta o la piñata sobre la pantalla de 1920x1080.
+                  Abre el simulador interactivo para arrastrar libremente la tarjeta o la piñata sobre la pantalla de
+                  1920x1080.
                   Los cambios se sincronizan en tiempo real con OBS vía Server-Sent Events (SSE).
                 </p>
-                <button type="button" id="btn-card-open-sim" class="btn-primary" style="width: 100%; padding: 9px; font-size: 0.82rem; font-weight: 800; border-radius: 8px; cursor: pointer;">
+                <button type="button" id="btn-card-open-sim" class="btn-primary"
+                  style="width: 100%; padding: 9px; font-size: 0.82rem; font-weight: 800; border-radius: 8px; cursor: pointer;">
                   🖱️ Abrir Lienzo de Diseño
                 </button>
               </div>
 
               <div class="glass-card" style="padding: 14px 16px; border: 1px solid rgba(255,255,255,0.08);">
-                <h4 style="font-family: var(--font-h); font-size: 0.88rem; font-weight: 800; color: #fff; margin: 0 0 6px 0;">
+                <h4
+                  style="font-family: var(--font-h); font-size: 0.88rem; font-weight: 800; color: #fff; margin: 0 0 6px 0;">
                   💡 Tips de Configuración en OBS:
                 </h4>
                 <ul style="color: #94a3b8; font-size: 0.74rem; line-height: 1.5; padding-left: 18px; margin: 0;">
@@ -920,14 +1022,17 @@
           <!-- Cabecera Compacta de Sección 5 -->
           <div class="section-compact-header">
             <div class="sec-left-group">
-              <div class="sec-icon-badge" style="background: rgba(145, 70, 255, 0.2); border-color: rgba(145, 70, 255, 0.4);">🤖</div>
+              <div class="sec-icon-badge"
+                style="background: rgba(145, 70, 255, 0.2); border-color: rgba(145, 70, 255, 0.4);">🤖</div>
               <div>
                 <h2 class="sec-title-text">YocapiBot — Bot Oficial de Twitch</h2>
-                <p class="sec-desc-text">Conexión IRC, comandos en vivo, temporizador y exportador de infografías PNG</p>
+                <p class="sec-desc-text">Conexión IRC, comandos en vivo, temporizador y exportador de infografías PNG
+                </p>
               </div>
             </div>
             <div class="sec-right-subnav">
-              <button type="button" id="btn-bot-toggle-connect" class="subnav-pill active" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; font-weight: 800;">
+              <button type="button" id="btn-bot-toggle-connect" class="subnav-pill active"
+                style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; font-weight: 800;">
                 <span>🟢</span><span id="btn-bot-toggle-label">Conectar Bot</span>
               </button>
               <button type="button" id="btn-bot-test-msg" class="subnav-pill">🧪 Probar Chat</button>
@@ -936,41 +1041,62 @@
           </div>
 
           <!-- Cabecera de Estado y Credenciales (Compacta) -->
-          <div class="glass-card" id="sec-bot-config" style="padding: 16px 20px; margin-bottom: 16px; border: 1px solid rgba(145, 70, 255, 0.35); background: linear-gradient(135deg, rgba(22,16,42,0.9), rgba(12,9,24,0.95));">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
-              <h3 style="font-family: var(--font-h); font-size: 1.0rem; font-weight: 800; color: #fff; margin: 0;">Configuración de Conexión IRC de Twitch</h3>
-              <span id="twitch-bot-status-badge" style="padding: 2px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4);">🔴 Desconectado</span>
+          <div class="glass-card" id="sec-bot-config"
+            style="padding: 16px 20px; margin-bottom: 16px; border: 1px solid rgba(145, 70, 255, 0.35); background: linear-gradient(135deg, rgba(22,16,42,0.9), rgba(12,9,24,0.95));">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+              <h3 style="font-family: var(--font-h); font-size: 1.0rem; font-weight: 800; color: #fff; margin: 0;">
+                Configuración de Conexión IRC de Twitch</h3>
+              <span id="twitch-bot-status-badge"
+                style="padding: 2px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4);">🔴
+                Desconectado</span>
             </div>
 
             <!-- Formulario de credenciales -->
-            <form id="form-twitch-bot-config" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 12px;">
+            <form id="form-twitch-bot-config"
+              style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 12px;">
               <div>
-                <label style="display: block; font-size: 0.68rem; color: #94a3b8; margin-bottom: 4px; font-weight: 700; letter-spacing: 0.04em;">USUARIO BOT</label>
+                <label
+                  style="display: block; font-size: 0.68rem; color: #94a3b8; margin-bottom: 4px; font-weight: 700; letter-spacing: 0.04em;">USUARIO
+                  BOT</label>
                 <div style="position: relative;">
-                  <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 0.8rem;">@</span>
-                  <input type="text" id="bot-input-username" placeholder="yocapibot" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 6px; padding: 7px 10px 7px 22px; font-size: 0.8rem; box-sizing: border-box;">
+                  <span
+                    style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 0.8rem;">@</span>
+                  <input type="text" id="bot-input-username" placeholder="yocapibot"
+                    style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 6px; padding: 7px 10px 7px 22px; font-size: 0.8rem; box-sizing: border-box;">
                 </div>
               </div>
               <div>
-                <label style="display: flex; align-items: center; justify-content: space-between; font-size: 0.68rem; color: #94a3b8; margin-bottom: 4px; font-weight: 700; letter-spacing: 0.04em;">
+                <label
+                  style="display: flex; align-items: center; justify-content: space-between; font-size: 0.68rem; color: #94a3b8; margin-bottom: 4px; font-weight: 700; letter-spacing: 0.04em;">
                   <span>OAUTH TOKEN</span>
-                  <a href="https://twitchtokengenerator.com/" target="_blank" style="color: #38bdf8; text-decoration: none; font-size: 0.7rem;">🔑 Generar ↗</a>
+                  <a href="https://twitchtokengenerator.com/" target="_blank"
+                    style="color: #38bdf8; text-decoration: none; font-size: 0.7rem;">🔑 Generar ↗</a>
                 </label>
                 <div style="display: flex;">
-                  <input type="password" id="bot-input-token" placeholder="oauth:xxxx" style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 6px 0 0 6px; padding: 7px 10px; font-size: 0.8rem; box-sizing: border-box;">
-                  <button type="button" id="btn-toggle-token-vis" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-left: none; border-radius: 0 6px 6px 0; padding: 0 10px; color: #94a3b8; cursor: pointer; font-size: 0.8rem;">👁️</button>
+                  <input type="password" id="bot-input-token" placeholder="oauth:xxxx"
+                    style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 6px 0 0 6px; padding: 7px 10px; font-size: 0.8rem; box-sizing: border-box;">
+                  <button type="button" id="btn-toggle-token-vis"
+                    style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-left: none; border-radius: 0 6px 6px 0; padding: 0 10px; color: #94a3b8; cursor: pointer; font-size: 0.8rem;">👁️</button>
                 </div>
               </div>
               <div>
-                <label style="display: block; font-size: 0.68rem; color: #94a3b8; margin-bottom: 4px; font-weight: 700; letter-spacing: 0.04em;">CANAL (STREAM)</label>
+                <label
+                  style="display: block; font-size: 0.68rem; color: #94a3b8; margin-bottom: 4px; font-weight: 700; letter-spacing: 0.04em;">CANAL
+                  (STREAM)</label>
                 <div style="position: relative;">
-                  <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 0.8rem;">#</span>
-                  <input type="text" id="bot-input-channel" value="yocapi_pr" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 6px; padding: 7px 10px 7px 22px; font-size: 0.8rem; box-sizing: border-box;">
+                  <span
+                    style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 0.8rem;">#</span>
+                  <input type="text" id="bot-input-channel" value="yocapi_pr"
+                    style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 6px; padding: 7px 10px 7px 22px; font-size: 0.8rem; box-sizing: border-box;">
                 </div>
               </div>
               <div>
-                <label style="display: block; font-size: 0.68rem; color: #94a3b8; margin-bottom: 4px; font-weight: 700; letter-spacing: 0.04em;">AVISO CADA</label>
-                <select id="bot-select-interval" style="width: 100%; background: #120e1e; border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 6px; padding: 7px 10px; font-size: 0.8rem; box-sizing: border-box;">
+                <label
+                  style="display: block; font-size: 0.68rem; color: #94a3b8; margin-bottom: 4px; font-weight: 700; letter-spacing: 0.04em;">AVISO
+                  CADA</label>
+                <select id="bot-select-interval"
+                  style="width: 100%; background: #120e1e; border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 6px; padding: 7px 10px; font-size: 0.8rem; box-sizing: border-box;">
                   <option value="15">15 min</option>
                   <option value="20">20 min</option>
                   <option value="30">30 min</option>
@@ -982,24 +1108,31 @@
               </div>
             </form>
 
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06);">
-              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.78rem; color: #cbd5e1;">
-                <input type="checkbox" id="bot-check-timer-enabled" checked style="accent-color: #9146ff; width: 14px; height: 14px;">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06);">
+              <label
+                style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.78rem; color: #cbd5e1;">
+                <input type="checkbox" id="bot-check-timer-enabled" checked
+                  style="accent-color: #9146ff; width: 14px; height: 14px;">
                 <span>Recordatorios automáticos en el chat de Twitch</span>
               </label>
-              <button type="button" id="btn-save-bot-config" class="btn-primary" style="padding: 7px 18px; font-size: 0.8rem; font-weight: 800; border-radius: 8px;">
+              <button type="button" id="btn-save-bot-config" class="btn-primary"
+                style="padding: 7px 18px; font-size: 0.8rem; font-weight: 800; border-radius: 8px;">
                 💾 Guardar Configuración
               </button>
             </div>
           </div>
 
           <!-- Barra de Exportación de Banners Gráficos (PNG) -->
-          <div class="glass-card" id="sec-cmd-export" style="padding: 12px 18px; margin-bottom: 16px; border: 1px solid rgba(139, 92, 246, 0.35); background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(236, 72, 153, 0.06));">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+          <div class="glass-card" id="sec-cmd-export"
+            style="padding: 12px 18px; margin-bottom: 16px; border: 1px solid rgba(139, 92, 246, 0.35); background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(236, 72, 153, 0.06));">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
               <div style="display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 1.5rem;">📸</span>
                 <div>
-                  <h4 style="font-family: var(--font-h); font-size: 0.95rem; font-weight: 800; color: #fff; margin: 0 0 1px 0;">
+                  <h4
+                    style="font-family: var(--font-h); font-size: 0.95rem; font-weight: 800; color: #fff; margin: 0 0 1px 0;">
                     Exportador de Banners HD (PNG)
                   </h4>
                   <p style="color: #cbd5e1; font-size: 0.76rem; margin: 0;">
@@ -1008,13 +1141,16 @@
                 </div>
               </div>
               <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                <button type="button" id="btn-export-cmd-img-chat" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); font-size: 0.74rem; padding: 5px 10px; border-radius: 6px; border: none; cursor: pointer; color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                <button type="button" id="btn-export-cmd-img-chat"
+                  style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); font-size: 0.74rem; padding: 5px 10px; border-radius: 6px; border: none; cursor: pointer; color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
                   <span>📸</span> Chat (PNG)
                 </button>
-                <button type="button" id="btn-export-cmd-img-mods" style="background: linear-gradient(135deg, #ef4444, #b91c1c); font-size: 0.74rem; padding: 5px 10px; border-radius: 6px; border: none; cursor: pointer; color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                <button type="button" id="btn-export-cmd-img-mods"
+                  style="background: linear-gradient(135deg, #ef4444, #b91c1c); font-size: 0.74rem; padding: 5px 10px; border-radius: 6px; border: none; cursor: pointer; color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
                   <span>🛡️</span> Mods (PNG)
                 </button>
-                <button type="button" id="btn-export-cmd-img-all" style="background: rgba(255,255,255,0.08); font-size: 0.74rem; padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; color: #e2e8f0; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                <button type="button" id="btn-export-cmd-img-all"
+                  style="background: rgba(255,255,255,0.08); font-size: 0.74rem; padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; color: #e2e8f0; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
                   <span>🖼️</span> Ambos (HD)
                 </button>
               </div>
@@ -1022,93 +1158,134 @@
           </div>
 
           <!-- CATEGORÍA 0: STREAMER Y MODS -->
-          <div class="cmd-category" id="sec-cmd-mod" style="border-color: rgba(239,68,68,0.4); background: linear-gradient(160deg, rgba(38,12,18,0.7), rgba(18,6,10,0.85));">
+          <div class="cmd-category" id="sec-cmd-mod"
+            style="border-color: rgba(239,68,68,0.4); background: linear-gradient(160deg, rgba(38,12,18,0.7), rgba(18,6,10,0.85));">
             <div class="cmd-cat-header">
               <div class="cmd-cat-title-wrap">
                 <span style="font-size: 1.2rem;">🛡️</span>
-                <h4 class="cmd-cat-title" style="color: #f87171;">0. Control Exclusivo para Streamer &amp; Moderadores</h4>
+                <h4 class="cmd-cat-title" style="color: #f87171;">0. Control Exclusivo para Streamer &amp; Moderadores
+                </h4>
               </div>
-              <span class="cmd-scope-pill" style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.5);">🛡️ Streamer & Mods Only</span>
+              <span class="cmd-scope-pill"
+                style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.5);">🛡️
+                Streamer & Mods Only</span>
             </div>
 
             <div class="cmd-list">
               <div class="cmd-item" style="border-left: 3px solid #ef4444;">
                 <div>
-                  <span class="cmd-badge-code" style="color: #fca5a5; background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.5);" onclick="navigator.clipboard.writeText('!hbgrabacion on')" title="Clic para copiar">!hbgrabacion [on|off]</span>
+                  <span class="cmd-badge-code"
+                    style="color: #fca5a5; background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.5);"
+                    onclick="navigator.clipboard.writeText('!hbgrabacion on')" title="Clic para copiar">!hbgrabacion
+                    [on|off]</span>
                 </div>
                 <div class="cmd-desc">
                   <strong>Modo Grabación Cero Interrupciones</strong> para videos de TikTok/YouTube.
                 </div>
-                <span class="cmd-scope-pill" style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.5);">🎬 Video</span>
+                <span class="cmd-scope-pill"
+                  style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.5);">🎬
+                  Video</span>
               </div>
 
               <div class="cmd-item" style="border-left: 3px solid #f59e0b;">
                 <div>
-                  <span class="cmd-badge-code" style="color: #fde68a; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5);" onclick="navigator.clipboard.writeText('!hbalertas on')" title="Clic para copiar">!hbalertas [on|off]</span>
+                  <span class="cmd-badge-code"
+                    style="color: #fde68a; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5);"
+                    onclick="navigator.clipboard.writeText('!hbalertas on')" title="Clic para copiar">!hbalertas
+                    [on|off]</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Activa o bloquea</strong> que el cumpleañero pueda detonar su alerta en stream con <code>!hoyesmicumple</code>.
+                  <strong>Activa o bloquea</strong> que el cumpleañero pueda detonar su alerta en stream con
+                  <code>!hoyesmicumple</code>.
                 </div>
-                <span class="cmd-scope-pill" style="background: rgba(245,158,11,0.2); color: #fde68a; border: 1px solid rgba(245,158,11,0.5);">👑 Alertas</span>
+                <span class="cmd-scope-pill"
+                  style="background: rgba(245,158,11,0.2); color: #fde68a; border: 1px solid rgba(245,158,11,0.5);">👑
+                  Alertas</span>
               </div>
 
               <div class="cmd-item" style="border-left: 3px solid #ec4899;">
                 <div>
-                  <span class="cmd-badge-code" style="color: #fbcfe8; background: rgba(236,72,153,0.2); border-color: rgba(236,72,153,0.5);" onclick="navigator.clipboard.writeText('!hbfelicitar on')" title="Clic para copiar">!hbfelicitar [on|off]</span>
+                  <span class="cmd-badge-code"
+                    style="color: #fbcfe8; background: rgba(236,72,153,0.2); border-color: rgba(236,72,153,0.5);"
+                    onclick="navigator.clipboard.writeText('!hbfelicitar on')" title="Clic para copiar">!hbfelicitar
+                    [on|off]</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Abre o cierra</strong> la lluvia de tarjetas de felicitación de los espectadores con <code>!felicidades</code>.
+                  <strong>Abre o cierra</strong> la lluvia de tarjetas de felicitación de los espectadores con
+                  <code>!felicidades</code>.
                 </div>
-                <span class="cmd-scope-pill" style="background: rgba(236,72,153,0.2); color: #fbcfe8; border: 1px solid rgba(236,72,153,0.5);">💌 Festejo</span>
+                <span class="cmd-scope-pill"
+                  style="background: rgba(236,72,153,0.2); color: #fbcfe8; border: 1px solid rgba(236,72,153,0.5);">💌
+                  Festejo</span>
               </div>
 
               <div class="cmd-item" style="border-left: 3px solid #3b82f6;">
                 <div>
-                  <span class="cmd-badge-code" style="color: #93c5fd; background: rgba(59,130,246,0.2); border-color: rgba(59,130,246,0.5);" onclick="navigator.clipboard.writeText('!hbmod')" title="Clic para copiar">!hbmod</span>
+                  <span class="cmd-badge-code"
+                    style="color: #93c5fd; background: rgba(59,130,246,0.2); border-color: rgba(59,130,246,0.5);"
+                    onclick="navigator.clipboard.writeText('!hbmod')" title="Clic para copiar">!hbmod</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Muestra en chat</strong> el estado de grabación, alertas VIP, felicitaciones y frecuencia del bot.
+                  <strong>Muestra en chat</strong> el estado de grabación, alertas VIP, felicitaciones y frecuencia del
+                  bot.
                 </div>
-                <span class="cmd-scope-pill" style="background: rgba(59,130,246,0.2); color: #93c5fd; border: 1px solid rgba(59,130,246,0.5);">📋 Mod Panel</span>
+                <span class="cmd-scope-pill"
+                  style="background: rgba(59,130,246,0.2); color: #93c5fd; border: 1px solid rgba(59,130,246,0.5);">📋
+                  Mod Panel</span>
               </div>
             </div>
           </div>
 
           <!-- CATEGORÍA 1: ALERTAS E INTERACCIÓN -->
-          <div class="cmd-category" id="sec-cmd-live" style="border-color: rgba(234,179,8,0.3); background: linear-gradient(160deg, rgba(30,22,10,0.6), rgba(15,12,8,0.8));">
+          <div class="cmd-category" id="sec-cmd-live"
+            style="border-color: rgba(234,179,8,0.3); background: linear-gradient(160deg, rgba(30,22,10,0.6), rgba(15,12,8,0.8));">
             <div class="cmd-cat-header">
               <div class="cmd-cat-title-wrap">
                 <span style="font-size: 1.2rem;">🎮</span>
                 <h4 class="cmd-cat-title" style="color: #facc15;">1. Alertas e Interacción en Directo</h4>
               </div>
-              <span class="cmd-scope-pill" style="background: rgba(234,179,8,0.15); color: #fde047; border: 1px solid rgba(234,179,8,0.35);">OBS & Audio</span>
+              <span class="cmd-scope-pill"
+                style="background: rgba(234,179,8,0.15); color: #fde047; border: 1px solid rgba(234,179,8,0.35);">OBS &
+                Audio</span>
             </div>
 
             <div class="cmd-list">
               <div class="cmd-item" style="border-left: 3px solid #facc15;">
                 <div>
-                  <span class="cmd-badge-code" style="color: #fef08a; background: rgba(234,179,8,0.18); border-color: rgba(234,179,8,0.4);" onclick="navigator.clipboard.writeText('!hoyesmicumple')" title="Clic para copiar">!hoyesmicumple</span>
+                  <span class="cmd-badge-code"
+                    style="color: #fef08a; background: rgba(234,179,8,0.18); border-color: rgba(234,179,8,0.4);"
+                    onclick="navigator.clipboard.writeText('!hoyesmicumple')"
+                    title="Clic para copiar">!hoyesmicumple</span>
                 </div>
                 <div class="cmd-desc">
                   <strong>Detona la alerta VIP del cumpleañero</strong> en OBS con confeti y sonido personalizado.
                 </div>
-                <span class="cmd-scope-pill" style="background: rgba(234,179,8,0.18); color: #fef08a; border: 1px solid rgba(234,179,8,0.4);">👑 Cumpleañero</span>
+                <span class="cmd-scope-pill"
+                  style="background: rgba(234,179,8,0.18); color: #fef08a; border: 1px solid rgba(234,179,8,0.4);">👑
+                  Cumpleañero</span>
               </div>
 
               <div class="cmd-item" style="border-left: 3px solid #ec4899;">
                 <div>
-                  <span class="cmd-badge-code" style="color: #f472b6; background: rgba(236,72,153,0.18); border-color: rgba(236,72,153,0.4);" onclick="navigator.clipboard.writeText('!felicidades')" title="Clic para copiar">!felicidades [mensaje]</span>
+                  <span class="cmd-badge-code"
+                    style="color: #f472b6; background: rgba(236,72,153,0.18); border-color: rgba(236,72,153,0.4);"
+                    onclick="navigator.clipboard.writeText('!felicidades')" title="Clic para copiar">!felicidades
+                    [mensaje]</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Envía tarjeta de felicitación al stream</strong>. Variantes: <code>!felicidades1</code> (Música) &bull; <code>!felicidades2</code> (Silbato) &bull; <code>!felicidades3</code> (Voz).
+                  <strong>Envía tarjeta de felicitación al stream</strong>. Variantes: <code>!felicidades1</code>
+                  (Música) &bull; <code>!felicidades2</code> (Silbato) &bull; <code>!felicidades3</code> (Voz).
                 </div>
-                <span class="cmd-scope-pill" style="background: rgba(236,72,153,0.18); color: #fbcfe8; border: 1px solid rgba(236,72,153,0.4);">📺 Chat</span>
+                <span class="cmd-scope-pill"
+                  style="background: rgba(236,72,153,0.18); color: #fbcfe8; border: 1px solid rgba(236,72,153,0.4);">📺
+                  Chat</span>
               </div>
             </div>
           </div>
 
           <!-- CATEGORÍA 2: PERSONALIZACIÓN EN CHAT -->
-          <div class="cmd-category" id="sec-cmd-chat" style="border-color: rgba(168,85,247,0.3); background: linear-gradient(160deg, rgba(28,14,38,0.6), rgba(14,8,22,0.8));">
+          <div class="cmd-category" id="sec-cmd-chat"
+            style="border-color: rgba(168,85,247,0.3); background: linear-gradient(160deg, rgba(28,14,38,0.6), rgba(14,8,22,0.8));">
             <div class="cmd-cat-header">
               <div class="cmd-cat-title-wrap">
                 <span style="font-size: 1.2rem;">🎨</span>
@@ -1119,38 +1296,54 @@
             <div class="cmd-list">
               <div class="cmd-item" style="border-left: 3px solid #10b981;">
                 <div>
-                  <span class="cmd-badge-code" style="color: #6ee7b7; background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.4);" onclick="navigator.clipboard.writeText('!registro 11-06')" title="Clic para copiar">!registro DD-MM [usuario]</span>
+                  <span class="cmd-badge-code"
+                    style="color: #6ee7b7; background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.4);"
+                    onclick="navigator.clipboard.writeText('!registro 11-06')" title="Clic para copiar">!registro DD-MM
+                    [usuario]</span>
                 </div>
                 <div class="cmd-desc">
                   <strong>Registra tu cumpleaños</strong> o el de un amigo (ej: <code>!registro 11-06 @amigo</code>).
                 </div>
-                <span class="cmd-scope-pill" style="background: rgba(16,185,129,0.18); color: #a7f3d0; border: 1px solid rgba(16,185,129,0.4);">✨ Registro</span>
+                <span class="cmd-scope-pill"
+                  style="background: rgba(16,185,129,0.18); color: #a7f3d0; border: 1px solid rgba(16,185,129,0.4);">✨
+                  Registro</span>
               </div>
 
               <div class="cmd-item" style="border-left: 3px solid #a855f7;">
                 <div>
-                  <span class="cmd-badge-code" style="color: #d8b4fe; background: rgba(168,85,247,0.18); border-color: rgba(168,85,247,0.4);" onclick="navigator.clipboard.writeText('!hbcambio')" title="Clic para copiar">!hbcambio &lt;frase&gt;</span>
+                  <span class="cmd-badge-code"
+                    style="color: #d8b4fe; background: rgba(168,85,247,0.18); border-color: rgba(168,85,247,0.4);"
+                    onclick="navigator.clipboard.writeText('!hbcambio')" title="Clic para copiar">!hbcambio
+                    &lt;frase&gt;</span>
                 </div>
                 <div class="cmd-desc">
                   <strong>Cambia la dedicatoria</strong> que saldrá en OBS al lanzar el festejo (máx. 60 letras).
                 </div>
-                <span class="cmd-scope-pill" style="background: rgba(168,85,247,0.18); color: #e9d5ff; border: 1px solid rgba(168,85,247,0.4);">💬 Frase</span>
+                <span class="cmd-scope-pill"
+                  style="background: rgba(168,85,247,0.18); color: #e9d5ff; border: 1px solid rgba(168,85,247,0.4);">💬
+                  Frase</span>
               </div>
 
               <div class="cmd-item" style="border-left: 3px solid #8b5cf6;">
                 <div>
-                  <span class="cmd-badge-code" style="color: #c4b5fd; background: rgba(139,92,246,0.18); border-color: rgba(139,92,246,0.4);" onclick="navigator.clipboard.writeText('!hbsonido 1')" title="Clic para copiar">!hbsonido &lt;1|2|3&gt;</span>
+                  <span class="cmd-badge-code"
+                    style="color: #c4b5fd; background: rgba(139,92,246,0.18); border-color: rgba(139,92,246,0.4);"
+                    onclick="navigator.clipboard.writeText('!hbsonido 1')" title="Clic para copiar">!hbsonido
+                    &lt;1|2|3&gt;</span>
                 </div>
                 <div class="cmd-desc">
                   <strong>Elige sonido</strong>: 1 = Silbato Festivo, 2 = Música de Fiesta, 3 = Felicitación con Voz.
                 </div>
-                <span class="cmd-scope-pill" style="background: rgba(139,92,246,0.18); color: #ddd6fe; border: 1px solid rgba(139,92,246,0.4);">🎵 Sonido</span>
+                <span class="cmd-scope-pill"
+                  style="background: rgba(139,92,246,0.18); color: #ddd6fe; border: 1px solid rgba(139,92,246,0.4);">🎵
+                  Sonido</span>
               </div>
             </div>
           </div>
 
           <!-- CATEGORÍA 3: CONSULTAS -->
-          <div class="cmd-category" id="sec-cmd-queries" style="border-color: rgba(59,130,246,0.25); background: linear-gradient(160deg, rgba(14,22,38,0.6), rgba(8,12,22,0.8));">
+          <div class="cmd-category" id="sec-cmd-queries"
+            style="border-color: rgba(59,130,246,0.25); background: linear-gradient(160deg, rgba(14,22,38,0.6), rgba(8,12,22,0.8));">
             <div class="cmd-cat-header">
               <div class="cmd-cat-title-wrap">
                 <span style="font-size: 1.2rem;">📊</span>
@@ -1161,32 +1354,45 @@
             <div class="cmd-list">
               <div class="cmd-item" style="border-left: 3px solid #3b82f6;">
                 <div>
-                  <span class="cmd-badge-code" style="color: #93c5fd; background: rgba(59,130,246,0.18); border-color: rgba(59,130,246,0.4);" onclick="navigator.clipboard.writeText('!cumple')" title="Clic para copiar">!cumple [@usuario]</span>
+                  <span class="cmd-badge-code"
+                    style="color: #93c5fd; background: rgba(59,130,246,0.18); border-color: rgba(59,130,246,0.4);"
+                    onclick="navigator.clipboard.writeText('!cumple')" title="Clic para copiar">!cumple
+                    [@usuario]</span>
                 </div>
                 <div class="cmd-desc">
                   <strong>Consulta inteligente</strong>: hoy, días restantes o período de gracia.
                 </div>
-                <span class="cmd-scope-pill" style="background: rgba(59,130,246,0.18); color: #bfdbfe; border: 1px solid rgba(59,130,246,0.4);">🌟 Consulta</span>
+                <span class="cmd-scope-pill"
+                  style="background: rgba(59,130,246,0.18); color: #bfdbfe; border: 1px solid rgba(59,130,246,0.4);">🌟
+                  Consulta</span>
               </div>
 
               <div class="cmd-item" style="border-left: 3px solid #38bdf8;">
                 <div>
-                  <span class="cmd-badge-code" style="color: #7dd3fc; background: rgba(56,189,248,0.18); border-color: rgba(56,189,248,0.4);" onclick="navigator.clipboard.writeText('!proximos')" title="Clic para copiar">!proximos</span>
+                  <span class="cmd-badge-code"
+                    style="color: #7dd3fc; background: rgba(56,189,248,0.18); border-color: rgba(56,189,248,0.4);"
+                    onclick="navigator.clipboard.writeText('!proximos')" title="Clic para copiar">!proximos</span>
                 </div>
                 <div class="cmd-desc">
                   <strong>Próximos 15 días</strong> ordenados cronológicamente.
                 </div>
-                <span class="cmd-scope-pill" style="background: rgba(56,189,248,0.18); color: #bae6fd; border: 1px solid rgba(56,189,248,0.4);">📅 15 Días</span>
+                <span class="cmd-scope-pill"
+                  style="background: rgba(56,189,248,0.18); color: #bae6fd; border: 1px solid rgba(56,189,248,0.4);">📅
+                  15 Días</span>
               </div>
 
               <div class="cmd-item" style="border-left: 3px solid #10b981;">
                 <div>
-                  <span class="cmd-badge-code" style="color: #6ee7b7; background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.4);" onclick="navigator.clipboard.writeText('!cumplemes')" title="Clic para copiar">!cumplemes</span>
+                  <span class="cmd-badge-code"
+                    style="color: #6ee7b7; background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.4);"
+                    onclick="navigator.clipboard.writeText('!cumplemes')" title="Clic para copiar">!cumplemes</span>
                 </div>
                 <div class="cmd-desc">
                   <strong>Cartelera completa</strong> del mes actual.
                 </div>
-                <span class="cmd-scope-pill" style="background: rgba(16,185,129,0.18); color: #a7f3d0; border: 1px solid rgba(16,185,129,0.4);">🗓️ Mes</span>
+                <span class="cmd-scope-pill"
+                  style="background: rgba(16,185,129,0.18); color: #a7f3d0; border: 1px solid rgba(16,185,129,0.4);">🗓️
+                  Mes</span>
               </div>
             </div>
           </div>
@@ -1201,51 +1407,74 @@
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
-              <div class="cmd-editor-box" style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; border: 1px solid rgba(99,102,241,0.25);">
+              <div class="cmd-editor-box"
+                style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; border: 1px solid rgba(99,102,241,0.25);">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
                   <code style="color: #818cf8; font-weight: 800; font-size: 0.88rem;">!regcumple</code>
-                  <button type="button" class="btn-save-cmd-response btn-copy" data-cmd="regcumple" style="padding: 4px 10px; font-size: 0.72rem; background: rgba(99,102,241,0.25); border-color: rgba(99,102,241,0.5); color: #c7d2fe;">💾 Guardar</button>
+                  <button type="button" class="btn-save-cmd-response btn-copy" data-cmd="regcumple"
+                    style="padding: 4px 10px; font-size: 0.72rem; background: rgba(99,102,241,0.25); border-color: rgba(99,102,241,0.5); color: #c7d2fe;">💾
+                    Guardar</button>
                 </div>
-                <textarea id="cmd-response-regcumple" rows="2" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(99,102,241,0.3); color: #e2e8f0; border-radius: 6px; padding: 6px 8px; font-size: 0.78rem; font-family: monospace; resize: vertical; box-sizing: border-box; line-height: 1.4;">🎂 ¿Quieres que el stream de Yocapi explote con tu música y alerta personalizada en pantalla el día de tu cumpleaños? ¡Regístrate 100% gratis aquí! 👉 {URL} 🎈✨</textarea>
+                <textarea id="cmd-response-regcumple" rows="2"
+                  style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(99,102,241,0.3); color: #e2e8f0; border-radius: 6px; padding: 6px 8px; font-size: 0.78rem; font-family: monospace; resize: vertical; box-sizing: border-box; line-height: 1.4;">🎂 ¿Quieres que el stream de Yocapi explote con tu música y alerta personalizada en pantalla el día de tu cumpleaños? ¡Regístrate 100% gratis aquí! 👉 {URL} 🎈✨</textarea>
               </div>
 
-              <div class="cmd-editor-box" style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; border: 1px solid rgba(236,72,153,0.25);">
+              <div class="cmd-editor-box"
+                style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; border: 1px solid rgba(236,72,153,0.25);">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
                   <code style="color: #f472b6; font-weight: 800; font-size: 0.88rem;">!felicitar</code>
-                  <button type="button" class="btn-save-cmd-response btn-copy" data-cmd="felicitar" style="padding: 4px 10px; font-size: 0.72rem; background: rgba(236,72,153,0.25); border-color: rgba(236,72,153,0.5); color: #fbcfe8;">💾 Guardar</button>
+                  <button type="button" class="btn-save-cmd-response btn-copy" data-cmd="felicitar"
+                    style="padding: 4px 10px; font-size: 0.72rem; background: rgba(236,72,153,0.25); border-color: rgba(236,72,153,0.5); color: #fbcfe8;">💾
+                    Guardar</button>
                 </div>
-                <textarea id="cmd-response-felicitar" rows="2" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(236,72,153,0.3); color: #e2e8f0; border-radius: 6px; padding: 6px 8px; font-size: 0.78rem; font-family: monospace; resize: vertical; box-sizing: border-box; line-height: 1.4;">💌 ¿Alguien cumple años hoy? ¡Mándale una felicitación en directo con tarjeta en pantalla entrando a: {URL} 🎉🥳</textarea>
+                <textarea id="cmd-response-felicitar" rows="2"
+                  style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(236,72,153,0.3); color: #e2e8f0; border-radius: 6px; padding: 6px 8px; font-size: 0.78rem; font-family: monospace; resize: vertical; box-sizing: border-box; line-height: 1.4;">💌 ¿Alguien cumple años hoy? ¡Mándale una felicitación en directo con tarjeta en pantalla entrando a: {URL} 🎉🥳</textarea>
               </div>
             </div>
           </div>
 
           <!-- CATEGORÍA 5: TIMER PROGRAMADO -->
-          <div class="cmd-category" id="sec-cmd-timer" style="border-color: rgba(245,158,11,0.3); background: rgba(28,20,10,0.6);">
+          <div class="cmd-category" id="sec-cmd-timer"
+            style="border-color: rgba(245,158,11,0.3); background: rgba(28,20,10,0.6);">
             <div class="cmd-cat-header">
               <div class="cmd-cat-title-wrap">
                 <span style="font-size: 1.2rem;">⏰</span>
                 <h4 class="cmd-cat-title" style="color: #fbbf24;">5. Temporizador y Anuncios de Chat</h4>
               </div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 0.76rem; color: #cbd5e1;">Frecuencia: <strong id="timer-interval-display" style="color: #fbbf24;">1 hora</strong></span>
-                <button type="button" id="btn-bot-trigger-timer-2" class="btn-copy" style="padding: 5px 12px; font-size: 0.74rem; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5); color: #fde047;">⏰ Disparar Ahora</button>
+                <span style="font-size: 0.76rem; color: #cbd5e1;">Frecuencia: <strong id="timer-interval-display"
+                    style="color: #fbbf24;">1 hora</strong></span>
+                <button type="button" id="btn-bot-trigger-timer-2" class="btn-copy"
+                  style="padding: 5px 12px; font-size: 0.74rem; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5); color: #fde047;">⏰
+                  Disparar Ahora</button>
               </div>
             </div>
           </div>
 
           <!-- Simulador de Respuesta del Bot -->
           <div class="glass-card" style="padding: 16px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.08);">
-            <h4 style="font-family: var(--font-h); font-size: 0.95rem; font-weight: 800; color: #fff; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
+            <h4
+              style="font-family: var(--font-h); font-size: 0.95rem; font-weight: 800; color: #fff; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
               <span>🔬</span> Probar Respuesta del Bot en Tiempo Real
             </h4>
-            <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap;">
-              <input type="text" id="input-test-user" placeholder="Escribe un nick para simular !cumple @usuario..." style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 6px; padding: 7px 10px; font-size: 0.8rem; box-sizing: border-box; min-width: 0;">
-              <button type="button" id="btn-test-check-custom" class="btn-copy" style="padding: 7px 12px; font-size: 0.76rem; background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.4); color: #34d399; white-space: nowrap;">▶️ Probar !cumple</button>
-              <button type="button" class="btn-test-nb btn-copy" data-endpoint="/api/bot/timer" data-preview="preview-timer-live" style="padding: 7px 12px; font-size: 0.76rem; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.4); color: #fde047; white-space: nowrap;">⏰ Probar Timer</button>
+            <div
+              style="display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap;">
+              <input type="text" id="input-test-user" placeholder="Escribe un nick para simular !cumple @usuario..."
+                style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 6px; padding: 7px 10px; font-size: 0.8rem; box-sizing: border-box; min-width: 0;">
+              <button type="button" id="btn-test-check-custom" class="btn-copy"
+                style="padding: 7px 12px; font-size: 0.76rem; background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.4); color: #34d399; white-space: nowrap;">▶️
+                Probar !cumple</button>
+              <button type="button" class="btn-test-nb btn-copy" data-endpoint="/api/bot/timer"
+                data-preview="preview-timer-live"
+                style="padding: 7px 12px; font-size: 0.76rem; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.4); color: #fde047; white-space: nowrap;">⏰
+                Probar Timer</button>
             </div>
-            <div style="background: rgba(0,0,0,0.3); border-radius: 6px; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.06); min-height: 40px;">
-              <div id="preview-check" style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.4; font-style: italic;">Ingresa un usuario y presiona "Probar !cumple" para ver la respuesta exacta del bot...</div>
-              <div id="preview-timer-live" style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.4; font-style: italic; display: none;"></div>
+            <div
+              style="background: rgba(0,0,0,0.3); border-radius: 6px; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.06); min-height: 40px;">
+              <div id="preview-check" style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.4; font-style: italic;">
+                Ingresa un usuario y presiona "Probar !cumple" para ver la respuesta exacta del bot...</div>
+              <div id="preview-timer-live"
+                style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.4; font-style: italic; display: none;"></div>
             </div>
           </div>
 
@@ -1259,7 +1488,8 @@
           <!-- Cabecera Compacta de Sección 6 -->
           <div class="section-compact-header">
             <div class="sec-left-group">
-              <div class="sec-icon-badge" style="background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.2);">📜</div>
+              <div class="sec-icon-badge"
+                style="background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.2);">📜</div>
               <div>
                 <h2 class="sec-title-text">Historial de Alertas &amp; Auditoría de Stream</h2>
                 <p class="sec-desc-text">Registro cronológico de todas las alertas detonadas en OBS</p>
@@ -1269,7 +1499,8 @@
 
           <div class="dash-table-wrap">
             <div class="table-toolbar">
-              <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 700;">Últimas alertas disparadas en vivo:</span>
+              <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 700;">Últimas alertas disparadas en
+                vivo:</span>
             </div>
             <div class="table-responsive-container">
               <table class="bday-table">
@@ -1304,7 +1535,8 @@
         <div style="display: flex; align-items: center; gap: 10px;">
           <span style="font-size: 1.5rem;" id="cmd-img-modal-icon">📸</span>
           <div>
-            <h2 id="cmd-img-modal-title" style="font-family: var(--font-h); font-size: 1.15rem; font-weight: 800; margin: 0; color: #fff;">
+            <h2 id="cmd-img-modal-title"
+              style="font-family: var(--font-h); font-size: 1.15rem; font-weight: 800; margin: 0; color: #fff;">
               Previsualización de Tarjeta de Comandos
             </h2>
             <p id="cmd-img-modal-sub" style="color: #94a3b8; font-size: 0.78rem; margin: 1px 0 0 0;">
@@ -1316,14 +1548,19 @@
       </div>
 
       <div style="padding: 16px; overflow-y: auto; text-align: center; background: #080612;">
-        <canvas id="cmd-img-canvas-preview" style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1);"></canvas>
+        <canvas id="cmd-img-canvas-preview"
+          style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1);"></canvas>
       </div>
 
-      <div style="padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; background: rgba(14, 10, 26, 0.7); flex-wrap: wrap; gap: 8px;">
+      <div
+        style="padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; background: rgba(14, 10, 26, 0.7); flex-wrap: wrap; gap: 8px;">
         <span style="font-size: 0.76rem; color: #94a3b8;">💡 Lista para compartir en tus paneles o chat.</span>
         <div style="display: flex; gap: 8px;">
-          <button type="button" id="btn-close-cmd-img-modal-btn" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); padding: 8px 14px; font-size: 0.82rem; border-radius: 8px; cursor: pointer; color: #cbd5e1;">Cerrar</button>
-          <button type="button" id="btn-download-cmd-img" class="btn-primary" style="padding: 8px 18px; font-size: 0.82rem; font-weight: 800; border-radius: 8px;">📥 Descargar PNG</button>
+          <button type="button" id="btn-close-cmd-img-modal-btn"
+            style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); padding: 8px 14px; font-size: 0.82rem; border-radius: 8px; cursor: pointer; color: #cbd5e1;">Cerrar</button>
+          <button type="button" id="btn-download-cmd-img" class="btn-primary"
+            style="padding: 8px 18px; font-size: 0.82rem; font-weight: 800; border-radius: 8px;">📥 Descargar
+            PNG</button>
         </div>
       </div>
     </div>
@@ -1387,7 +1624,8 @@
 
             <!-- Piñata de Capibara Arrastrable en el Canvas -->
             <div id="sim-pinata-wrapper" class="sim-pinata-wrapper" style="display: none;">
-              <div class="sim-drag-handle-tag" style="background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #1a1035;">
+              <div class="sim-drag-handle-tag"
+                style="background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #1a1035;">
                 <span>✥</span>
                 <span id="sim-pinata-pos-text">50%, 25%</span>
               </div>
@@ -1398,28 +1636,41 @@
               </div>
 
               <!-- Mini HUD -->
-              <div style="background: linear-gradient(135deg, rgba(22,12,44,0.98), rgba(10,8,24,0.99)); border: 1.5px solid #fbbf24; border-radius: 12px; padding: 4px 12px; box-shadow: 0 0 12px rgba(251,191,36,0.3); text-align: center; min-width: 220px;">
-                <div style="font-size: 0.65rem; font-weight: 900; color: #fde047; letter-spacing: 1px;">🪅 ¡PIÑATA DE CAPIBARA!</div>
-                <div style="font-weight: 800; font-size: 0.88rem; color: #fff; margin: 1px 0;">Cumpleaños de @Comunidad</div>
-                <div style="height: 10px; background: rgba(0,0,0,0.6); border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); position: relative;">
-                  <div style="width: 100%; height: 100%; background: linear-gradient(90deg, #10b981, #fbbf24, #f43f5e);"></div>
-                  <span style="position: absolute; inset: 0; font-size: 0.58rem; font-weight: 800; color: #fff; display: flex; align-items: center; justify-content: center;">35 / 35 HP</span>
+              <div
+                style="background: linear-gradient(135deg, rgba(22,12,44,0.98), rgba(10,8,24,0.99)); border: 1.5px solid #fbbf24; border-radius: 12px; padding: 4px 12px; box-shadow: 0 0 12px rgba(251,191,36,0.3); text-align: center; min-width: 220px;">
+                <div style="font-size: 0.65rem; font-weight: 900; color: #fde047; letter-spacing: 1px;">🪅 ¡PIÑATA DE
+                  CAPIBARA!</div>
+                <div style="font-weight: 800; font-size: 0.88rem; color: #fff; margin: 1px 0;">Cumpleaños de @Comunidad
+                </div>
+                <div
+                  style="height: 10px; background: rgba(0,0,0,0.6); border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); position: relative;">
+                  <div
+                    style="width: 100%; height: 100%; background: linear-gradient(90deg, #10b981, #fbbf24, #f43f5e);">
+                  </div>
+                  <span
+                    style="position: absolute; inset: 0; font-size: 0.58rem; font-weight: 800; color: #fff; display: flex; align-items: center; justify-content: center;">35
+                    / 35 HP</span>
                 </div>
               </div>
 
               <!-- Mini Cuerda -->
-              <div style="width: 3px; height: 16px; background: repeating-linear-gradient(45deg, #fbbf24, #fbbf24 3px, #f43f5e 3px, #f43f5e 6px); border-radius: 2px; margin: 0 auto;"></div>
+              <div
+                style="width: 3px; height: 16px; background: repeating-linear-gradient(45deg, #fbbf24, #fbbf24 3px, #f43f5e 3px, #f43f5e 6px); border-radius: 2px; margin: 0 auto;">
+              </div>
 
               <!-- Capibaras -->
               <div style="display: flex; align-items: flex-end; justify-content: center; gap: 6px; margin-top: -3px;">
-                <img src="img/capi_cheer_bat.png" style="width: 50px; height: 50px; object-fit: contain;" alt="Porrista">
+                <img src="img/capi_cheer_bat.png" style="width: 50px; height: 50px; object-fit: contain;"
+                  alt="Porrista">
                 <img src="img/pinata_capi.png" style="width: 85px; height: 85px; object-fit: contain;" alt="Piñata">
-                <img src="img/capi_cheer_horn.png" style="width: 50px; height: 50px; object-fit: contain;" alt="Porrista">
+                <img src="img/capi_cheer_horn.png" style="width: 50px; height: 50px; object-fit: contain;"
+                  alt="Porrista">
               </div>
             </div>
           </div>
 
-          <div style="margin-top: 8px; display: flex; align-items: center; justify-content: space-between; font-size: 0.74rem; color: #64748b; flex-wrap: wrap; gap: 4px;">
+          <div
+            style="margin-top: 8px; display: flex; align-items: center; justify-content: space-between; font-size: 0.74rem; color: #64748b; flex-wrap: wrap; gap: 4px;">
             <span>💡 <strong>Tip:</strong> Puedes arrastrar libremente la tarjeta con el ratón.</span>
             <span id="sim-anim-hint" style="color: #bf94ff; font-weight: 700;"></span>
           </div>
@@ -1427,12 +1678,15 @@
 
         <!-- Columna Derecha: Panel de Controles -->
         <div class="sim-controls-column">
-          <div class="sim-selector-tabs" style="display: flex; gap: 4px; margin-bottom: 8px; background: rgba(0,0,0,0.35); padding: 3px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
-            <button type="button" id="tab-sim-card" class="btn-sim-tab active" style="flex: 1; padding: 6px 8px; border-radius: 7px; border: none; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; background: #9146ff; color: #fff; transition: all 0.15s;">
+          <div class="sim-selector-tabs"
+            style="display: flex; gap: 4px; margin-bottom: 8px; background: rgba(0,0,0,0.35); padding: 3px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
+            <button type="button" id="tab-sim-card" class="btn-sim-tab active"
+              style="flex: 1; padding: 6px 8px; border-radius: 7px; border: none; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; background: #9146ff; color: #fff; transition: all 0.15s;">
               <span>🎂</span>
               <span>Tarjeta</span>
             </button>
-            <button type="button" id="tab-sim-pinata" class="btn-sim-tab" style="flex: 1; padding: 6px 8px; border-radius: 7px; border: none; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; background: transparent; color: #94a3b8; transition: all 0.15s;">
+            <button type="button" id="tab-sim-pinata" class="btn-sim-tab"
+              style="flex: 1; padding: 6px 8px; border-radius: 7px; border: none; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; background: transparent; color: #94a3b8; transition: all 0.15s;">
               <span>🪅</span>
               <span>Piñata</span>
             </button>
@@ -1462,7 +1716,8 @@
                 <label class="sim-group-label" style="margin: 0;">📏 Tamaño Tarjeta:</label>
                 <span id="sim-scale-val" style="font-size: 0.8rem; font-weight: 800; color: #a855f7;">85%</span>
               </div>
-              <input type="range" id="sim-scale-slider" min="50" max="130" step="5" value="85" class="sim-slider" style="width: 100%;">
+              <input type="range" id="sim-scale-slider" min="50" max="130" step="5" value="85" class="sim-slider"
+                style="width: 100%;">
               <div style="display: flex; gap: 4px; margin-top: 6px;">
                 <button type="button" class="btn-scale-quick" data-scale="0.65">65%</button>
                 <button type="button" class="btn-scale-quick active" data-scale="0.85">85%</button>
@@ -1475,7 +1730,8 @@
                 <label class="sim-group-label" style="margin: 0;">🔊 Volumen OBS:</label>
                 <span id="sim-vol-val" style="font-size: 0.8rem; font-weight: 800; color: #10b981;">85%</span>
               </div>
-              <input type="range" id="sim-vol-slider" min="0" max="100" step="5" value="85" class="sim-slider" style="width: 100%;">
+              <input type="range" id="sim-vol-slider" min="0" max="100" step="5" value="85" class="sim-slider"
+                style="width: 100%;">
             </div>
 
             <div class="sim-control-group">
@@ -1551,7 +1807,8 @@
                 <label class="sim-group-label" style="margin: 0;">📏 Tamaño Piñata:</label>
                 <span id="sim-pinata-scale-val" style="font-size: 0.8rem; font-weight: 800; color: #f59e0b;">85%</span>
               </div>
-              <input type="range" id="sim-pinata-scale-slider" min="50" max="130" step="5" value="85" style="width: 100%;">
+              <input type="range" id="sim-pinata-scale-slider" min="50" max="130" step="5" value="85"
+                style="width: 100%;">
               <div style="display: flex; gap: 4px; margin-top: 6px;">
                 <button type="button" class="btn-pinata-scale-quick" data-scale="0.65">65%</button>
                 <button type="button" class="btn-pinata-scale-quick active" data-scale="0.85">85%</button>
@@ -1571,7 +1828,8 @@
           </div>
 
           <!-- Botones de Acción -->
-          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: auto; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
+          <div
+            style="display: flex; flex-direction: column; gap: 8px; margin-top: auto; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
               <button type="button" id="btn-sim-test-anim" class="btn-sim-test" title="Prueba animación">
                 ▶️ Simular
