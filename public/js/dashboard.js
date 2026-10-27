@@ -41,8 +41,8 @@ async function authFetch(url, options = {}) {
   return fetch(url, options);
 }
 
-// Cambiar de Pestaña
-function switchTab(tabId) {
+// Cambiar de Pestaña con soporte para sub-secciones y scroll automático
+function switchTab(tabId, targetSectionId = null) {
   currentTab = tabId;
   document.querySelectorAll('.nav-item').forEach(item => {
     item.classList.toggle('active', item.dataset.tab === tabId);
@@ -54,26 +54,64 @@ function switchTab(tabId) {
   const activeContent = document.getElementById(`tab-${tabId}`);
   if (activeContent) activeContent.style.display = 'block';
 
-  // Título
+  // Sincronizar hash en la URL sin recargar
+  if (window.location.hash !== `#${tabId}` && history.pushState) {
+    history.pushState(null, null, `#${tabId}`);
+  }
+
+  // Título e indicador de contexto
   const titleEl = document.getElementById('page-title');
-  if (tabId === 'overview') titleEl.innerHTML = '<span>📊</span> Resumen del Sistema';
+  const contextEl = document.getElementById('page-context-indicator');
+  const hintEl = document.getElementById('page-hint-text');
+
+  if (tabId === 'overview') {
+    if (titleEl) titleEl.innerHTML = '<span>📊</span> Resumen del Sistema & Cockpit en Directo';
+    if (contextEl) contextEl.textContent = 'En Vivo';
+    if (hintEl) hintEl.textContent = 'Monitoreo general, KPIs y mandos de stream';
+  }
   if (tabId === 'today') {
-    titleEl.innerHTML = '<span>🎉</span> Cumpleañeros de Hoy & Período de Gracia';
+    if (titleEl) titleEl.innerHTML = '<span>🎉</span> Cumpleañeros de Hoy & Período de Gracia';
+    if (contextEl) contextEl.textContent = 'Celebraciones';
+    if (hintEl) hintEl.textContent = 'Festejos activos y próximas 2 semanas';
     loadTodayCelebrants();
   }
   if (tabId === 'birthdays') {
-    titleEl.innerHTML = '<span>👥</span> Registro Completo de Cumpleaños';
+    if (titleEl) titleEl.innerHTML = '<span>👥</span> Registro Completo de Cumpleaños';
+    if (contextEl) contextEl.textContent = 'Comunidad';
+    if (hintEl) hintEl.textContent = 'Búsqueda, filtros, edición y exportación';
     loadBirthdays();
   }
-  if (tabId === 'overlay-test') titleEl.innerHTML = '<span>🚀</span> Lanzador y Pruebas de Overlay';
+  if (tabId === 'overlay-test') {
+    if (titleEl) titleEl.innerHTML = '<span>🚀</span> Lanzador y Pruebas de Overlay';
+    if (contextEl) contextEl.textContent = 'OBS Studio';
+    if (hintEl) hintEl.textContent = 'Simulación de tarjetas, temas y sonido';
+  }
   if (tabId === 'nightbot') {
-    titleEl.innerHTML = '<span>🤖</span> Bots de Twitch & Automatización';
+    if (titleEl) titleEl.innerHTML = '<span>🤖</span> YocapiBot & Automatización de Twitch';
+    if (contextEl) contextEl.textContent = 'Twitch IRC';
+    if (hintEl) hintEl.textContent = '16 comandos, respuestas editables y banners';
     updateNightbotHost();
     if (typeof window._loadTwitchBotStatus === 'function') window._loadTwitchBotStatus();
   }
   if (tabId === 'logs') {
-    titleEl.innerHTML = '<span>📜</span> Historial de Alertas en Stream';
+    if (titleEl) titleEl.innerHTML = '<span>📜</span> Historial de Alertas en Stream';
+    if (contextEl) contextEl.textContent = 'Auditoría';
+    if (hintEl) hintEl.textContent = 'Registro de eventos detonados en stream';
     loadLogs();
+  }
+
+  // Scroll suave hacia sección específica si se solicitó
+  if (targetSectionId) {
+    setTimeout(() => {
+      const targetEl = document.getElementById(targetSectionId);
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        targetEl.classList.remove('highlight-pulse');
+        void targetEl.offsetWidth; // forzar reflow
+        targetEl.classList.add('highlight-pulse');
+        setTimeout(() => targetEl.classList.remove('highlight-pulse'), 1800);
+      }
+    }, 120);
   }
 }
 
@@ -894,10 +932,51 @@ function showLaunchAlertModal(username, displayName, avatar, message, defaultSou
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Manejo de tabs
+  // Manejo de tabs principales
   document.querySelectorAll('.nav-item[data-tab]').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
+
+  // Soporte para items de mega-dropdowns con data-target-tab y data-target-sec
+  document.querySelectorAll('.nav-dropdown-item[data-target-tab]').forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      const tab = item.dataset.targetTab;
+      const sec = item.dataset.targetSec;
+      switchTab(tab, sec);
+      if (document.activeElement) document.activeElement.blur();
+    });
+  });
+
+  // Atajos directos de dropdown
+  const ddCsv = document.getElementById('dd-action-export-csv');
+  if (ddCsv) {
+    ddCsv.addEventListener('click', () => {
+      switchTab('birthdays');
+      const btnExport = document.getElementById('btn-export-csv');
+      if (btnExport) btnExport.click();
+    });
+  }
+
+  const ddRefreshLogs = document.getElementById('dd-action-refresh-logs');
+  if (ddRefreshLogs) {
+    ddRefreshLogs.addEventListener('click', () => {
+      switchTab('logs');
+      loadLogs();
+      showToast('Historial actualizado', 'info');
+    });
+  }
+
+  // Soporte para Hash URL routing (ej: #today, #birthdays, #nightbot, etc.)
+  function handleUrlHash() {
+    const hash = (window.location.hash || '').replace('#', '').trim();
+    const validTabs = ['overview', 'today', 'birthdays', 'overlay-test', 'nightbot', 'logs'];
+    if (hash && validTabs.includes(hash)) {
+      switchTab(hash);
+    }
+  }
+  handleUrlHash();
+  window.addEventListener('hashchange', handleUrlHash);
 
   // Copiar URL de OBS
   document.getElementById('btn-copy-obs').addEventListener('click', () => {
@@ -1887,32 +1966,43 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // ─── Control del Menú Lateral Móvil (Drawer) ──────────────────────────────
+  // ─── Control del Menú Móvil (Drawer Superior) ──────────────────────────────
   const mobileToggle = document.getElementById('btn-mobile-sidebar-toggle');
-  const sidebar = document.querySelector('.dash-sidebar');
+  const drawer = document.getElementById('mobile-nav-drawer') || document.querySelector('.dash-sidebar');
   const sidebarBackdrop = document.getElementById('sidebar-backdrop');
   const btnCloseSidebar = document.getElementById('btn-close-sidebar-mobile');
 
   function openMobileSidebar() {
-    if (sidebar) sidebar.classList.add('open');
-    if (sidebarBackdrop) sidebarBackdrop.classList.add('active');
+    if (drawer) drawer.classList.add('open');
+    if (sidebarBackdrop) {
+      sidebarBackdrop.style.display = 'block';
+      sidebarBackdrop.classList.add('active');
+    }
     document.body.classList.add('mobile-nav-open');
   }
 
   function closeMobileSidebar() {
-    if (sidebar) sidebar.classList.remove('open');
-    if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+    if (drawer) drawer.classList.remove('open');
+    if (sidebarBackdrop) {
+      sidebarBackdrop.style.display = 'none';
+      sidebarBackdrop.classList.remove('active');
+    }
     document.body.classList.remove('mobile-nav-open');
   }
 
-  if (mobileToggle) mobileToggle.addEventListener('click', openMobileSidebar);
+  if (mobileToggle) {
+    mobileToggle.addEventListener('click', () => {
+      if (drawer && drawer.classList.contains('open')) closeMobileSidebar();
+      else openMobileSidebar();
+    });
+  }
   if (btnCloseSidebar) btnCloseSidebar.addEventListener('click', closeMobileSidebar);
   if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeMobileSidebar);
 
   // Cerrar el drawer en móvil al seleccionar cualquier pestaña
-  document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
+  document.querySelectorAll('.nav-item[data-tab], #mobile-nav-drawer .btn-act').forEach(item => {
     item.addEventListener('click', () => {
-      if (window.innerWidth <= 900) closeMobileSidebar();
+      closeMobileSidebar();
     });
   });
 
@@ -2097,7 +2187,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ─── Abrir / Cerrar Modal ──────────────────────────────────────────────────
-  btnOpen.addEventListener('click', () => {
+  function openSimModalHandler() {
     modal.style.display = 'flex';
     setTimeout(() => {
       setSimMode('card');
@@ -2106,6 +2196,10 @@ document.addEventListener('DOMContentLoaded', () => {
       refreshAnimHint();
     }, 80);
     loadServerConfig();
+  }
+
+  document.querySelectorAll('#btn-open-sim-modal, #btn-hero-open-sim, #btn-tab-open-sim, #btn-card-open-sim, #mobile-btn-open-sim, #dd-action-open-sim').forEach(btn => {
+    btn.addEventListener('click', openSimModalHandler);
   });
 
   function closeModal() {
