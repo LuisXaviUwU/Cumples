@@ -1035,6 +1035,10 @@
                 style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; font-weight: 800;">
                 <span>🟢</span><span id="btn-bot-toggle-label">Conectar Bot</span>
               </button>
+              <button type="button" id="btn-bot-toggle-silent" class="subnav-pill"
+                style="background: rgba(234, 179, 8, 0.2); border-color: rgba(234, 179, 8, 0.5); color: #fde047; font-weight: 800;">
+                <span>🔇</span><span id="btn-bot-silent-label">Modo Pruebas: Silencioso</span>
+              </button>
               <button type="button" id="btn-bot-test-msg" class="subnav-pill">🧪 Probar Chat</button>
               <button type="button" id="btn-bot-trigger-timer" class="subnav-pill">⏰ Avisar Ahora</button>
             </div>
@@ -1110,16 +1114,83 @@
 
             <div
               style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06);">
-              <label
-                style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.78rem; color: #cbd5e1;">
-                <input type="checkbox" id="bot-check-timer-enabled" checked
-                  style="accent-color: #9146ff; width: 14px; height: 14px;">
-                <span>Recordatorios automáticos en el chat de Twitch</span>
-              </label>
+              <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+                <label
+                  style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.78rem; color: #cbd5e1;">
+                  <input type="checkbox" id="bot-check-timer-enabled" checked
+                    style="accent-color: #9146ff; width: 14px; height: 14px;">
+                  <span>Recordatorios automáticos en el chat de Twitch</span>
+                </label>
+                <label
+                  style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.78rem; color: #fde047; font-weight: 700;"
+                  title="Permite probar comandos y alertas sin que el bot envíe mensajes al chat de Twitch (evita spam a la streamer)">
+                  <input type="checkbox" id="bot-check-silent-mode" checked
+                    style="accent-color: #eab308; width: 14px; height: 14px;">
+                  <span>🧪 Modo Pruebas / Silencio en Chat (No enviar mensajes a Twitch)</span>
+                </label>
+              </div>
               <button type="button" id="btn-save-bot-config" class="btn-primary"
                 style="padding: 7px 18px; font-size: 0.8rem; font-weight: 800; border-radius: 8px;">
                 💾 Guardar Configuración
               </button>
+            </div>
+          </div>
+
+          <!-- NUEVO: SIMULADOR DE COMANDOS Y CONSOLA DE PRUEBAS -->
+          <div class="glass-card" id="sec-bot-simulator"
+            style="padding: 16px 20px; margin-bottom: 16px; border: 1px solid rgba(234, 179, 8, 0.4); background: linear-gradient(135deg, rgba(30, 24, 12, 0.95), rgba(16, 13, 8, 0.95));">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.3rem;">🧪</span>
+                <div>
+                  <h4 style="font-family: var(--font-h); font-size: 0.96rem; font-weight: 800; color: #fde047; margin: 0;">
+                    Simulador de Comandos y Pruebas en Vivo (Cero Spam en Twitch)
+                  </h4>
+                  <p style="color: #cbd5e1; font-size: 0.74rem; margin: 0;">
+                    Ejecuta comandos de chat directamente desde aquí. En Modo Pruebas se activan OBS, audio y la BD sin enviar mensajes a Twitch.
+                  </p>
+                </div>
+              </div>
+              <span id="badge-silent-indicator" style="padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid rgba(234, 179, 8, 0.5);">
+                🔇 MODO PRUEBAS ACTIVO
+              </span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 8px; margin-bottom: 12px; align-items: center;">
+              <div style="position: relative;">
+                <input type="text" id="sim-cmd-input" placeholder="Escribe o elige un comando: ej. !hoyesmicumple, !piñata, !dale, !cumple"
+                  value="!hoyesmicumple"
+                  style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(234, 179, 8, 0.4); color: #fff; border-radius: 8px; padding: 9px 12px; font-size: 0.85rem; box-sizing: border-box; font-family: monospace;">
+              </div>
+              <select id="sim-cmd-quick-select"
+                style="background: #1a1628; border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; border-radius: 8px; padding: 8px 10px; font-size: 0.78rem; cursor: pointer;">
+                <option value="">⚡ Ejemplos rápidos...</option>
+                <option value="!hoyesmicumple">👑 !hoyesmicumple (Alerta VIP OBS)</option>
+                <option value="!piñata capiluisxavihdx 30">🪅 !piñata capiluisxavihdx 30 (Minijuego)</option>
+                <option value="!dale">🏑 !dale (Batear piñata)</option>
+                <option value="!cumple">🎂 !cumple (Consultar fecha)</option>
+                <option value="!proximos">📅 !proximos (Próximos 15 días)</option>
+                <option value="!cumplemes">🗓️ !cumplemes (Mes actual)</option>
+                <option value="!felicidades1 ¡Feliz cumple!">💌 !felicidades1 (Tarjeta con Música)</option>
+                <option value="!registro 11-06 capiluisxavihdx">✨ !registro 11-06 (Registrar fecha)</option>
+                <option value="!hbmod">🛡️ !hbmod (Panel Mod en Chat)</option>
+                <option value="!hbpruebas on">🧪 !hbpruebas on (Activar Silencio)</option>
+                <option value="!hbpruebas off">🔊 !hbpruebas off (Desactivar Silencio)</option>
+                <option value="bang">💥 bang (Easter egg)</option>
+              </select>
+              <button type="button" id="btn-run-sim-cmd" class="btn-primary"
+                style="background: linear-gradient(135deg, #eab308, #ca8a04); color: #000; font-weight: 800; padding: 9px 18px; border-radius: 8px; border: none; cursor: pointer; white-space: nowrap;">
+                ▶️ Probar Comando
+              </button>
+            </div>
+
+            <!-- Consola de Respuestas del Bot -->
+            <div style="background: #090710; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 12px; font-family: monospace; font-size: 0.78rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 4px;">
+                <span style="color: #94a3b8; font-weight: 700; font-size: 0.72rem;">📟 CONSOLA DE RESPUESTAS DEL BOT (LO QUE RESPONDERÍA EN TWITCH):</span>
+                <button type="button" id="btn-clear-sim-logs" style="background: none; border: none; color: #64748b; cursor: pointer; font-size: 0.7rem;">Limpiar</button>
+              </div>
+              <div id="sim-cmd-terminal" style="max-height: 140px; overflow-y: auto; color: #6ee7b7; line-height: 1.5; white-space: pre-wrap;">[Sistema]: Modo pruebas listo. Ejecuta un comando arriba o pruébalo directamente desde Twitch.</div>
             </div>
           </div>
 
@@ -1232,6 +1303,20 @@
                 <span class="cmd-scope-pill"
                   style="background: rgba(59,130,246,0.2); color: #93c5fd; border: 1px solid rgba(59,130,246,0.5);">📋
                   Mod Panel</span>
+              </div>
+
+              <div class="cmd-item" style="border-left: 3px solid #eab308;">
+                <div>
+                  <span class="cmd-badge-code"
+                    style="color: #fef08a; background: rgba(234,179,8,0.2); border-color: rgba(234,179,8,0.5);"
+                    onclick="navigator.clipboard.writeText('!hbpruebas on')" title="Clic para copiar">!hbpruebas [on|off]</span>
+                </div>
+                <div class="cmd-desc">
+                  <strong>Activa/Desactiva el Modo Pruebas</strong>. Al activarse, el bot procesa alertas en OBS y comandos pero no envía mensajes a Twitch.
+                </div>
+                <span class="cmd-scope-pill"
+                  style="background: rgba(234,179,8,0.2); color: #fde047; border: 1px solid rgba(234,179,8,0.5);">🧪
+                  Silencio</span>
               </div>
             </div>
           </div>
@@ -1610,7 +1695,7 @@
                 </div>
                 <div class="sim-card-details">
                   <div class="sim-tagline">¡Hoy es su Cumpleaños! 🎉</div>
-                  <div class="sim-username">capiluisxavi</div>
+                  <div class="sim-username">capiluisxavihdx</div>
                   <div class="sim-quote">“¡Festejando en directo con la comunidad!”</div>
                 </div>
               </div>
