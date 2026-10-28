@@ -2810,7 +2810,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const COMMUNITY_SECTION_ALERT = {
-    title: '2. Cuando ya es tu Cumpleaños (¡Festejo en Directo!)',
+    title: '2. En Directo (Festejos, Piñata y Felicitaciones)',
     icon: '🎉',
     color: '#f59e0b',
     items: [
@@ -2822,10 +2822,17 @@ document.addEventListener('DOMContentLoaded', () => {
         color: '#f59e0b'
       },
       {
-        name: '!felicitar [usuario]',
-        aliases: '!hbfelicitar · !felicitaciones',
-        desc: 'Envía felicitaciones con lluvia de confeti en pantalla al cumpleañero festejado hoy en stream.',
-        tag: '🎉 EN VIVO',
+        name: '!dale',
+        aliases: '!pegar · !hit · !palo · !golpe · !batear',
+        desc: 'Batea la piñata de capibara activa en la pantalla. ¡Todo el chat puede batear para reventarla!',
+        tag: '🪅 PIÑATA',
+        color: '#eab308'
+      },
+      {
+        name: '!felicidades [mensaje]',
+        aliases: '!felicidades1 (Música) · !felicidades2 (Silbato) · !felicidades3 (Voz)',
+        desc: 'Envía tarjeta flotante con tu mensaje y confeti en pantalla felicitando al cumpleañero festejado.',
+        tag: '💌 EN VIVO',
         color: '#ec4899'
       }
     ]
@@ -2880,39 +2887,53 @@ document.addEventListener('DOMContentLoaded', () => {
     color: '#ef4444',
     items: [
       {
+        name: '!hbpruebas [on|off]',
+        aliases: '!hbsilencio · !hbsilent · !hbmodoprueba',
+        desc: 'Modo Pruebas / Silencioso: Ejecuta comandos y alertas en OBS sin enviar mensajes a Twitch para evitar spam.',
+        tag: '🧪 MODO PRUEBAS',
+        color: '#eab308'
+      },
+      {
+        name: '!piñata [nombre] [golpes]',
+        aliases: '!piñata capiluisxavihdx 30 · !piñata 50',
+        desc: 'Inicia el minijuego de la Piñata de Capibara con barra de vida en pantalla para festejar al cumpleañero.',
+        tag: '🪅 INICIAR PIÑATA',
+        color: '#f59e0b'
+      },
+      {
+        name: '!piñata stop',
+        aliases: '!piñatastop · !piñata detener · !piñata cancelar',
+        desc: 'Detiene de forma inmediata la piñata de capibara activa en la pantalla.',
+        tag: '⛔ DETENER PIÑATA',
+        color: '#ef4444'
+      },
+      {
         name: '!hbgrabacion [on|off]',
         aliases: '!hbmodovideo · !hbcine · !hbpausa',
-        desc: 'Modo Grabación: Pausa las alertas en pantalla para evitar interrupciones al grabar videos o momentos serios.',
-        tag: '🛡️ MODO VIDEO',
+        desc: 'Modo Grabación Cero Interrupciones: Silencia alertas y tarjetas en pantalla para grabar TikToks o YouTube.',
+        tag: '🎬 MODO VIDEO',
         color: '#ef4444'
       },
       {
         name: '!hbalertas [on|off]',
         aliases: '!cumplealertas · !alertascumple',
-        desc: 'Habilita o deshabilita la alerta visual de !hoyesmicumple en la pantalla de OBS Studio.',
-        tag: '🛡️ ALERTAS OBS',
+        desc: 'Habilita o pausa exclusivamente que el cumpleañero pueda detonar su alerta con !hoyesmicumple.',
+        tag: '👑 ALERTAS OBS',
         color: '#f43f5e'
       },
       {
-        name: '!hbfelicitaciones [on|off]',
-        aliases: '!hbfelicitar on|off',
-        desc: 'Activa o desactiva que los espectadores envíen felicitaciones y confeti en pantalla.',
-        tag: '🛡️ FELICITACIONES',
-        color: '#e11d48'
+        name: '!hbfelicitar [on|off]',
+        aliases: '!hbfelicitaciones · !felicitaciones on|off',
+        desc: 'Abre o cierra la lluvia de tarjetas de felicitación enviadas por los espectadores con !felicidades.',
+        tag: '💌 FELICITACIONES',
+        color: '#ec4899'
       },
       {
-        name: '!hbmod [on|off]',
-        aliases: '!hbadmin',
-        desc: 'Interruptor maestro para habilitar o deshabilitar todos los sistemas de alertas del bot a la vez.',
-        tag: '🛡️ MASTER SWITCH',
-        color: '#dc2626'
-      },
-      {
-        name: '!hbestado',
-        aliases: '',
-        desc: 'Muestra en el chat el estado actual de las alertas, modo grabación y timers automáticos.',
-        tag: '🛡️ ESTADO BOT',
-        color: '#b91c1c'
+        name: '!hbmod',
+        aliases: '!hbadmin · !hbestado',
+        desc: 'Muestra en el chat el estado en vivo de: Modo Grabación, Modo Pruebas, Alertas VIP, Felicitaciones y Timer.',
+        tag: '🛡️ PANEL MOD',
+        color: '#3b82f6'
       }
     ]
   };
@@ -3332,5 +3353,35 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // ─── Click-to-copy interactivo para comandos y ejemplos ──────────────────
+  document.addEventListener('click', (e) => {
+    const copyTarget = e.target.closest('.cmd-btn-copy') || 
+                       e.target.closest('.cmd-example-code') || 
+                       e.target.closest('.cmd-alias-pill');
+    if (!copyTarget) return;
+
+    let textToCopy = copyTarget.getAttribute('data-copy');
+    if (!textToCopy) {
+      textToCopy = copyTarget.textContent.trim().replace(/^📋\s*Copiar\s*/i, '');
+    }
+    if (!textToCopy) return;
+
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      const isBtn = copyTarget.classList.contains('cmd-btn-copy');
+      const originalHtml = copyTarget.innerHTML;
+      copyTarget.classList.add('copied');
+      if (isBtn) {
+        copyTarget.innerHTML = '<span>✓</span> ¡Copiado!';
+      }
+      showToast(`Copiado: ${textToCopy}`, 'success');
+      setTimeout(() => {
+        copyTarget.classList.remove('copied');
+        if (isBtn) copyTarget.innerHTML = originalHtml;
+      }, 2000);
+    }).catch(() => {
+      showToast('No se pudo copiar al portapapeles', 'error');
+    });
+  });
 })();
 
