@@ -1001,7 +1001,7 @@ document.addEventListener('DOMContentLoaded', () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             isTest: true,
-            user: 'capiluisxavi',
+            user: 'capiluisxavihdx',
             message: '¡Prueba en vivo de la tarjeta en OBS! 🎂✨',
             sound: 'HBSilbato.mp3'
           })
@@ -1536,7 +1536,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function testCustomUserCheck() {
     const rawNick = (inputTestUser?.value || '').trim().replace(/^@/, '');
     const isSelfSim = !rawNick;
-    const testSender = 'capiluisxavi';
+    const testSender = 'capiluisxavihdx';
 
     if (previewCheck) {
       previewCheck.textContent = isSelfSim
@@ -1665,8 +1665,65 @@ document.addEventListener('DOMContentLoaded', () => {
   const inputBotChannel = document.getElementById('bot-input-channel');
   const selectBotInterval = document.getElementById('bot-select-interval');
   const checkBotTimer = document.getElementById('bot-check-timer-enabled');
+  const checkBotSilent = document.getElementById('bot-check-silent-mode');
+  const btnToggleSilent = document.getElementById('btn-bot-toggle-silent');
+  const btnBotSilentLabel = document.getElementById('btn-bot-silent-label');
+  const badgeSilentIndicator = document.getElementById('badge-silent-indicator');
+  const simCmdInput = document.getElementById('sim-cmd-input');
+  const simCmdQuickSelect = document.getElementById('sim-cmd-quick-select');
+  const btnRunSimCmd = document.getElementById('btn-run-sim-cmd');
+  const simCmdTerminal = document.getElementById('sim-cmd-terminal');
+  const btnClearSimLogs = document.getElementById('btn-clear-sim-logs');
 
   let twitchBotIsConnected = false;
+  let isSilentMode = true; // inicialmente silencioso
+
+  // Actualizar indicadores visuales del modo pruebas/silencioso
+  function updateSilentModeUI(silent) {
+    isSilentMode = !!silent;
+    if (btnBotSilentLabel) {
+      btnBotSilentLabel.textContent = silent ? 'Modo Pruebas: Silencioso' : 'Modo Pruebas: Desactivado';
+    }
+    if (btnToggleSilent) {
+      btnToggleSilent.style.background = silent
+        ? 'rgba(234, 179, 8, 0.3)'
+        : 'rgba(100,116,139,0.15)';
+      btnToggleSilent.style.borderColor = silent
+        ? 'rgba(234, 179, 8, 0.6)'
+        : 'rgba(100,116,139,0.3)';
+      btnToggleSilent.style.color = silent ? '#fde047' : '#94a3b8';
+    }
+    if (badgeSilentIndicator) {
+      badgeSilentIndicator.textContent = silent ? '🔇 MODO PRUEBAS ACTIVO' : '🔊 MODO NORMAL';
+      badgeSilentIndicator.style.background = silent
+        ? 'rgba(234, 179, 8, 0.2)'
+        : 'rgba(100,116,139,0.15)';
+      badgeSilentIndicator.style.color = silent ? '#fde047' : '#94a3b8';
+      badgeSilentIndicator.style.borderColor = silent
+        ? 'rgba(234, 179, 8, 0.5)'
+        : 'rgba(100,116,139,0.3)';
+    }
+    if (checkBotSilent) checkBotSilent.checked = silent;
+    if (simCmdTerminal && silent) {
+      simCmdTerminal.style.borderColor = 'rgba(234,179,8,0.3)';
+    } else if (simCmdTerminal) {
+      simCmdTerminal.style.borderColor = 'rgba(255,255,255,0.08)';
+    }
+  }
+
+  // Escribir linea en la consola del simulador
+  function logToSimTerminal(line, color = '#6ee7b7') {
+    if (!simCmdTerminal) return;
+    const timestamp = new Date().toLocaleTimeString();
+    const lineEl = document.createElement('div');
+    lineEl.style.color = color;
+    lineEl.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+    lineEl.style.paddingBottom = '2px';
+    lineEl.style.marginBottom = '2px';
+    lineEl.textContent = `[${timestamp}] ${line}`;
+    simCmdTerminal.appendChild(lineEl);
+    simCmdTerminal.scrollTop = simCmdTerminal.scrollHeight;
+  }
 
   // ─── loadTwitchBotStatus: expuesta globalmente para que switchTab la pueda llamar ──
   async function loadTwitchBotStatus() {
@@ -1722,6 +1779,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.config.has_token && inputBotToken && !inputBotToken.value) {
           inputBotToken.placeholder = 'oauth:•••••••••••••••••••• (Guardado)';
         }
+        // Sincronizar modo silencioso/pruebas desde el servidor
+        if (typeof data.config.silent_mode === 'boolean') {
+          updateSilentModeUI(data.config.silent_mode);
+        }
       }
     } catch (e) {
       console.warn('Error al consultar estado del bot de Twitch:', e);
@@ -1760,6 +1821,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const payload = { bot_username, channel, timer_minutes, timer_enabled };
         if (oauth_token && !oauth_token.includes('•')) {
           payload.oauth_token = oauth_token;
+        }
+        // Incluir modo silencioso si el checkbox existe
+        if (checkBotSilent) {
+          payload.silent_mode = checkBotSilent.checked;
         }
 
         const res = await authFetch('/api/dashboard/bot/config', {
@@ -1900,6 +1965,108 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // ─── Botón Toggle Modo Pruebas/Silencioso ────────────────────────────────────
+  if (btnToggleSilent) {
+    btnToggleSilent.addEventListener('click', async () => {
+      btnToggleSilent.disabled = true;
+      try {
+        const res = await authFetch('/api/dashboard/bot/toggle-silent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ silent_mode: !isSilentMode })
+        });
+        const data = await res.json();
+        if (data.success) {
+          updateSilentModeUI(data.silent_mode);
+          showToast(data.message, data.silent_mode ? 'warning' : 'success');
+          logToSimTerminal(
+            data.silent_mode
+              ? '🔇 Modo Pruebas ACTIVADO — Sin mensajes a Twitch'
+              : '🔊 Modo Normal ACTIVADO — Bot responderá en Twitch',
+            data.silent_mode ? '#fde047' : '#6ee7b7'
+          );
+        } else {
+          showToast(data.error || 'Error al cambiar modo', 'error');
+        }
+      } catch {
+        showToast('Error conectando con el servidor', 'error');
+      } finally {
+        btnToggleSilent.disabled = false;
+      }
+    });
+  }
+
+  // Checkbox modo silencioso sincronizado
+  if (checkBotSilent) {
+    checkBotSilent.addEventListener('change', () => updateSilentModeUI(checkBotSilent.checked));
+  }
+
+  // Quick select → rellena input del simulador
+  if (simCmdQuickSelect && simCmdInput) {
+    simCmdQuickSelect.addEventListener('change', () => {
+      if (simCmdQuickSelect.value) {
+        simCmdInput.value = simCmdQuickSelect.value;
+        simCmdQuickSelect.value = '';
+      }
+    });
+  }
+
+  // Limpiar consola del simulador
+  if (btnClearSimLogs && simCmdTerminal) {
+    btnClearSimLogs.addEventListener('click', () => {
+      simCmdTerminal.innerHTML = '<span style="color:#64748b">[Sistema]: Consola limpiada.</span>';
+    });
+  }
+
+  // ▶ Ejecutar Comando Simulado
+  if (btnRunSimCmd) {
+    const runSimCmd = async () => {
+      const cmd = (simCmdInput?.value || '').trim();
+      if (!cmd) { showToast('Escribe un comando antes de ejecutar', 'warning'); return; }
+      btnRunSimCmd.disabled = true;
+      btnRunSimCmd.textContent = '⏳ Ejecutando...';
+      logToSimTerminal(`💬 [capiluisxavihdx]: ${cmd}`, '#c4b5fd');
+      try {
+        const res = await authFetch('/api/dashboard/bot/simulate-command', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ command: cmd, sender: 'capiluisxavihdx', isMod: true })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const msgs = data.result?.recentResponses || [];
+          if (msgs.length > 0) {
+            msgs.forEach(m => logToSimTerminal(
+              `🤖 [YocapiBot${m.silent ? ' (Sin enviar a Twitch)' : ''}]: ${m.text}`,
+              m.silent ? '#fde047' : '#6ee7b7'
+            ));
+          } else {
+            logToSimTerminal('✔ Comando ejecutado (sin respuesta — acción silenciosa o de OBS)', '#94a3b8');
+          }
+        } else {
+          logToSimTerminal(`❌ Error: ${data.error || 'Error desconocido'}`, '#f87171');
+          showToast(data.error || 'Error al simular', 'error');
+        }
+      } catch (err) {
+        logToSimTerminal(`❌ Red: ${err.message}`, '#f87171');
+        showToast('Error de red', 'error');
+      } finally {
+        btnRunSimCmd.disabled = false;
+        btnRunSimCmd.textContent = '▶️ Probar Comando';
+      }
+    };
+    btnRunSimCmd.addEventListener('click', runSimCmd);
+    if (simCmdInput) simCmdInput.addEventListener('keydown', e => { if (e.key === 'Enter') runSimCmd(); });
+  }
+
+  // Sincronizar modo silencioso al cargar
+  (async () => {
+    try {
+      const res = await authFetch('/api/dashboard/bot/recent-messages');
+      if (res.ok) { const d = await res.json(); updateSilentModeUI(!!d.silent_mode); }
+    } catch (_) {}
+  })();
 
   // ─── Sincronizar display del intervalo del timer ──────────────────────────
   const timerIntervalDisplay = document.getElementById('timer-interval-display');
@@ -2501,7 +2668,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const hitRes = await authFetch('/api/dashboard/pinata/hit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user: 'capiluisxavi', damage: 5 })
+            body: JSON.stringify({ user: 'capiluisxavihdx', damage: 5 })
           });
           const hitData = await hitRes.json();
           if (hitData.success) {
@@ -2516,7 +2683,7 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               isTest: true,
-              user: 'capiluisxavi',
+              user: 'capiluisxavihdx',
               message: '¡Prueba en vivo con tu diseño y animación! 🎂✨',
               sound: 'HBSilbato.mp3'
             })
