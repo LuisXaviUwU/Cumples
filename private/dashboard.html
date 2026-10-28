@@ -1228,142 +1228,300 @@
             </div>
           </div>
 
-          <!-- CATEGORÍA 0: STREAMER Y MODS -->
+          <!-- CATEGORÍA 0: STREAMER, MODS Y DESARROLLADOR -->
           <div class="cmd-category" id="sec-cmd-mod"
             style="border-color: rgba(239,68,68,0.4); background: linear-gradient(160deg, rgba(38,12,18,0.7), rgba(18,6,10,0.85));">
             <div class="cmd-cat-header">
               <div class="cmd-cat-title-wrap">
-                <span style="font-size: 1.2rem;">🛡️</span>
-                <h4 class="cmd-cat-title" style="color: #f87171;">0. Control Exclusivo para Streamer &amp; Moderadores
-                </h4>
+                <span style="font-size: 1.25rem;">🛡️</span>
+                <div>
+                  <h4 class="cmd-cat-title" style="color: #f87171;">0. Control Exclusivo para Streamer, Moderadores &amp; Dev</h4>
+                  <p style="color: #94a3b8; font-size: 0.74rem; margin: 2px 0 0 0;">Comandos de gestión, minijuegos y control de pantalla en vivo.</p>
+                </div>
               </div>
               <span class="cmd-scope-pill"
-                style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.5);">🛡️
-                Streamer & Mods Only</span>
+                style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.5);">🛡️ Streamer, Mods &amp; Dev</span>
             </div>
 
             <div class="cmd-list">
-              <div class="cmd-item" style="border-left: 3px solid #ef4444;">
-                <div>
-                  <span class="cmd-badge-code"
-                    style="color: #fca5a5; background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.5);"
-                    onclick="navigator.clipboard.writeText('!hbgrabacion on')" title="Clic para copiar">!hbgrabacion
-                    [on|off]</span>
+              <!-- !hbpruebas -->
+              <div class="cmd-item" style="border-left: 4px solid #eab308;">
+                <div class="cmd-item-header">
+                  <div class="cmd-item-header-left">
+                    <span class="cmd-badge-code" style="color: #fef08a; background: rgba(234,179,8,0.2); border-color: rgba(234,179,8,0.5);"
+                      data-copy="!hbpruebas on" title="Clic para copiar">!hbpruebas [on|off]</span>
+                    <button type="button" class="cmd-btn-copy" data-copy="!hbpruebas on">📋 Copiar</button>
+                  </div>
+                  <span class="cmd-scope-pill" style="background: rgba(234,179,8,0.18); color: #fde047; border: 1px solid rgba(234,179,8,0.4);">🧪 Modo Silencioso / Test</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Modo Grabación Cero Interrupciones</strong> para videos de TikTok/YouTube.
+                  <strong>Modo Pruebas / Silencio en Twitch</strong>: Procesa alertas en OBS, sonidos, piñatas y registros en BD normalmente, pero <strong>no envía mensajes al chat de Twitch</strong> para evitar alertas molestas y spam.
                 </div>
-                <span class="cmd-scope-pill"
-                  style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.5);">🎬
-                  Video</span>
+                <div class="cmd-aliases">
+                  <span>Sinónimos:</span>
+                  <span class="cmd-alias-pill" data-copy="!hbsilencio on">!hbsilencio</span>
+                  <span class="cmd-alias-pill" data-copy="!hbsilent on">!hbsilent</span>
+                  <span class="cmd-alias-pill" data-copy="!hbmodoprueba on">!hbmodoprueba</span>
+                </div>
+                <div class="cmd-example-box">
+                  <span>💡 <strong>Ejemplos:</strong> <code class="cmd-example-code" data-copy="!hbpruebas on">!hbpruebas on</code> (activa silencio) &bull; <code class="cmd-example-code" data-copy="!hbpruebas off">!hbpruebas off</code> (modo normal en vivo) &bull; <code class="cmd-example-code" data-copy="!hbpruebas">!hbpruebas</code> (ver estado)</span>
+                  <button type="button" class="cmd-btn-copy" data-copy="!hbpruebas on" style="font-size:0.68rem; padding: 2px 7px;">Copiar ejemplo</button>
+                </div>
               </div>
 
-              <div class="cmd-item" style="border-left: 3px solid #f59e0b;">
-                <div>
-                  <span class="cmd-badge-code"
-                    style="color: #fde68a; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5);"
-                    onclick="navigator.clipboard.writeText('!hbalertas on')" title="Clic para copiar">!hbalertas
-                    [on|off]</span>
+              <!-- !piñata -->
+              <div class="cmd-item" style="border-left: 4px solid #f59e0b;">
+                <div class="cmd-item-header">
+                  <div class="cmd-item-header-left">
+                    <span class="cmd-badge-code" style="color: #fde68a; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5);"
+                      data-copy="!piñata capiluisxavihdx 30" title="Clic para copiar">!piñata [nombre|golpes] [golpes]</span>
+                    <button type="button" class="cmd-btn-copy" data-copy="!piñata capiluisxavihdx 30">📋 Copiar</button>
+                  </div>
+                  <span class="cmd-scope-pill" style="background: rgba(245,158,11,0.18); color: #fbbf24; border: 1px solid rgba(245,158,11,0.4);">🪅 Iniciar Minijuego</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Activa o bloquea</strong> que el cumpleañero pueda detonar su alerta en stream con
-                  <code>!hoyesmicumple</code>.
+                  <strong>Inicia la Piñata de Capibara Comunitaria en Stream</strong>: Despliega la animación 3D de la piñata en OBS con barra de vida (HP) y avatar del festejado. Todo el chat se une a golpear con <code>!dale</code> para romperla.
                 </div>
-                <span class="cmd-scope-pill"
-                  style="background: rgba(245,158,11,0.2); color: #fde68a; border: 1px solid rgba(245,158,11,0.5);">👑
-                  Alertas</span>
+                <div class="cmd-example-box">
+                  <span>💡 <strong>Ejemplos:</strong> <code class="cmd-example-code" data-copy="!piñata capiluisxavihdx 30">!piñata capiluisxavihdx 30</code> (30 golpes para esa persona) &bull; <code class="cmd-example-code" data-copy="!piñata 50">!piñata 50</code> (50 golpes genérico) &bull; <code class="cmd-example-code" data-copy="!piñata">!piñata</code> (detecta al cumpleañero de hoy)</span>
+                  <button type="button" class="cmd-btn-copy" data-copy="!piñata capiluisxavihdx 30" style="font-size:0.68rem; padding: 2px 7px;">Copiar ejemplo</button>
+                </div>
               </div>
 
-              <div class="cmd-item" style="border-left: 3px solid #ec4899;">
-                <div>
-                  <span class="cmd-badge-code"
-                    style="color: #fbcfe8; background: rgba(236,72,153,0.2); border-color: rgba(236,72,153,0.5);"
-                    onclick="navigator.clipboard.writeText('!hbfelicitar on')" title="Clic para copiar">!hbfelicitar
-                    [on|off]</span>
+              <!-- !piñata stop -->
+              <div class="cmd-item" style="border-left: 4px solid #ef4444;">
+                <div class="cmd-item-header">
+                  <div class="cmd-item-header-left">
+                    <span class="cmd-badge-code" style="color: #fca5a5; background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.5);"
+                      data-copy="!piñata stop" title="Clic para copiar">!piñata stop</span>
+                    <button type="button" class="cmd-btn-copy" data-copy="!piñata stop">📋 Copiar</button>
+                  </div>
+                  <span class="cmd-scope-pill" style="background: rgba(239,68,68,0.18); color: #f87171; border: 1px solid rgba(239,68,68,0.4);">⛔ Detener Piñata</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Abre o cierra</strong> la lluvia de tarjetas de felicitación de los espectadores con
-                  <code>!felicidades</code>.
+                  <strong>Detiene y cancela</strong> de inmediato la piñata de capibara activa en la pantalla si el stream necesita avanzar o terminar el minijuego.
                 </div>
-                <span class="cmd-scope-pill"
-                  style="background: rgba(236,72,153,0.2); color: #fbcfe8; border: 1px solid rgba(236,72,153,0.5);">💌
-                  Festejo</span>
+                <div class="cmd-aliases">
+                  <span>Sinónimos:</span>
+                  <span class="cmd-alias-pill" data-copy="!piñatastop">!piñatastop</span>
+                  <span class="cmd-alias-pill" data-copy="!piñata detener">!piñata detener</span>
+                  <span class="cmd-alias-pill" data-copy="!piñata cancelar">!piñata cancelar</span>
+                </div>
+                <div class="cmd-example-box">
+                  <span>💡 <strong>Ejemplo:</strong> <code class="cmd-example-code" data-copy="!piñata stop">!piñata stop</code></span>
+                  <button type="button" class="cmd-btn-copy" data-copy="!piñata stop" style="font-size:0.68rem; padding: 2px 7px;">Copiar</button>
+                </div>
               </div>
 
-              <div class="cmd-item" style="border-left: 3px solid #3b82f6;">
-                <div>
-                  <span class="cmd-badge-code"
-                    style="color: #93c5fd; background: rgba(59,130,246,0.2); border-color: rgba(59,130,246,0.5);"
-                    onclick="navigator.clipboard.writeText('!hbmod')" title="Clic para copiar">!hbmod</span>
+              <!-- !hbgrabacion -->
+              <div class="cmd-item" style="border-left: 4px solid #dc2626;">
+                <div class="cmd-item-header">
+                  <div class="cmd-item-header-left">
+                    <span class="cmd-badge-code" style="color: #fca5a5; background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.5);"
+                      data-copy="!hbgrabacion on" title="Clic para copiar">!hbgrabacion [on|off]</span>
+                    <button type="button" class="cmd-btn-copy" data-copy="!hbgrabacion on">📋 Copiar</button>
+                  </div>
+                  <span class="cmd-scope-pill" style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.5);">🎬 Modo Grabación Video</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Muestra en chat</strong> el estado de grabación, alertas VIP, felicitaciones y frecuencia del
-                  bot.
+                  <strong>Modo Grabación Cero Interrupciones</strong>: Pausa en un solo comando las alertas VIP del cumpleañero y las tarjetas flotantes en pantalla. Ideal para grabar TikToks, YouTube o partidas importantes sin tapar la pantalla.
                 </div>
-                <span class="cmd-scope-pill"
-                  style="background: rgba(59,130,246,0.2); color: #93c5fd; border: 1px solid rgba(59,130,246,0.5);">📋
-                  Mod Panel</span>
+                <div class="cmd-aliases">
+                  <span>Sinónimos:</span>
+                  <span class="cmd-alias-pill" data-copy="!hbmodovideo on">!hbmodovideo</span>
+                  <span class="cmd-alias-pill" data-copy="!hbcine on">!hbcine</span>
+                  <span class="cmd-alias-pill" data-copy="!hbpausa on">!hbpausa</span>
+                </div>
+                <div class="cmd-example-box">
+                  <span>💡 <strong>Ejemplos:</strong> <code class="cmd-example-code" data-copy="!hbgrabacion on">!hbgrabacion on</code> (pausa total) &bull; <code class="cmd-example-code" data-copy="!hbgrabacion off">!hbgrabacion off</code> (reactiva festejos)</span>
+                  <button type="button" class="cmd-btn-copy" data-copy="!hbgrabacion on" style="font-size:0.68rem; padding: 2px 7px;">Copiar ejemplo</button>
+                </div>
               </div>
 
-              <div class="cmd-item" style="border-left: 3px solid #eab308;">
-                <div>
-                  <span class="cmd-badge-code"
-                    style="color: #fef08a; background: rgba(234,179,8,0.2); border-color: rgba(234,179,8,0.5);"
-                    onclick="navigator.clipboard.writeText('!hbpruebas on')" title="Clic para copiar">!hbpruebas [on|off]</span>
+              <!-- !hbalertas -->
+              <div class="cmd-item" style="border-left: 4px solid #f97316;">
+                <div class="cmd-item-header">
+                  <div class="cmd-item-header-left">
+                    <span class="cmd-badge-code" style="color: #fed7aa; background: rgba(249,115,22,0.2); border-color: rgba(249,115,22,0.5);"
+                      data-copy="!hbalertas on" title="Clic para copiar">!hbalertas [on|off]</span>
+                    <button type="button" class="cmd-btn-copy" data-copy="!hbalertas on">📋 Copiar</button>
+                  </div>
+                  <span class="cmd-scope-pill" style="background: rgba(249,115,22,0.2); color: #fed7aa; border: 1px solid rgba(249,115,22,0.5);">👑 Alertas VIP OBS</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Activa/Desactiva el Modo Pruebas</strong>. Al activarse, el bot procesa alertas en OBS y comandos pero no envía mensajes a Twitch.
+                  <strong>Habilita o bloquea</strong> exclusivamente que el cumpleañero pueda detonar su alerta con foto, confeti y música en stream mediante <code>!hoyesmicumple</code>.
                 </div>
-                <span class="cmd-scope-pill"
-                  style="background: rgba(234,179,8,0.2); color: #fde047; border: 1px solid rgba(234,179,8,0.5);">🧪
-                  Silencio</span>
+                <div class="cmd-aliases">
+                  <span>Sinónimos:</span>
+                  <span class="cmd-alias-pill" data-copy="!cumplealertas on">!cumplealertas</span>
+                  <span class="cmd-alias-pill" data-copy="!alertascumple on">!alertascumple</span>
+                </div>
+                <div class="cmd-example-box">
+                  <span>💡 <strong>Ejemplos:</strong> <code class="cmd-example-code" data-copy="!hbalertas on">!hbalertas on</code> &bull; <code class="cmd-example-code" data-copy="!hbalertas off">!hbalertas off</code></span>
+                  <button type="button" class="cmd-btn-copy" data-copy="!hbalertas on" style="font-size:0.68rem; padding: 2px 7px;">Copiar</button>
+                </div>
+              </div>
+
+              <!-- !hbfelicitar -->
+              <div class="cmd-item" style="border-left: 4px solid #ec4899;">
+                <div class="cmd-item-header">
+                  <div class="cmd-item-header-left">
+                    <span class="cmd-badge-code" style="color: #fbcfe8; background: rgba(236,72,153,0.2); border-color: rgba(236,72,153,0.5);"
+                      data-copy="!hbfelicitar on" title="Clic para copiar">!hbfelicitar [on|off]</span>
+                    <button type="button" class="cmd-btn-copy" data-copy="!hbfelicitar on">📋 Copiar</button>
+                  </div>
+                  <span class="cmd-scope-pill" style="background: rgba(236,72,153,0.2); color: #fbcfe8; border: 1px solid rgba(236,72,153,0.5);">💌 Tarjetas del Chat</span>
+                </div>
+                <div class="cmd-desc">
+                  <strong>Abre o cierra</strong> la lluvia de tarjetas de felicitación enviadas por los espectadores con <code>!felicidades</code>.
+                </div>
+                <div class="cmd-aliases">
+                  <span>Sinónimos:</span>
+                  <span class="cmd-alias-pill" data-copy="!hbfelicitaciones on">!hbfelicitaciones</span>
+                  <span class="cmd-alias-pill" data-copy="!felicitaciones on">!felicitaciones on</span>
+                </div>
+                <div class="cmd-example-box">
+                  <span>💡 <strong>Ejemplos:</strong> <code class="cmd-example-code" data-copy="!hbfelicitar on">!hbfelicitar on</code> &bull; <code class="cmd-example-code" data-copy="!hbfelicitar off">!hbfelicitar off</code></span>
+                  <button type="button" class="cmd-btn-copy" data-copy="!hbfelicitar on" style="font-size:0.68rem; padding: 2px 7px;">Copiar</button>
+                </div>
+              </div>
+
+              <!-- !hbmod -->
+              <div class="cmd-item" style="border-left: 4px solid #3b82f6;">
+                <div class="cmd-item-header">
+                  <div class="cmd-item-header-left">
+                    <span class="cmd-badge-code" style="color: #93c5fd; background: rgba(59,130,246,0.2); border-color: rgba(59,130,246,0.5);"
+                      data-copy="!hbmod" title="Clic para copiar">!hbmod</span>
+                    <button type="button" class="cmd-btn-copy" data-copy="!hbmod">📋 Copiar</button>
+                  </div>
+                  <span class="cmd-scope-pill" style="background: rgba(59,130,246,0.2); color: #93c5fd; border: 1px solid rgba(59,130,246,0.5);">📋 Panel Mod en Chat</span>
+                </div>
+                <div class="cmd-desc">
+                  <strong>Reporte de Estado en Tiempo Real</strong>: Muestra en el chat el estado de grabación, alertas VIP, felicitaciones, modo pruebas y temporizador de difusión.
+                </div>
+                <div class="cmd-aliases">
+                  <span>Sinónimos:</span>
+                  <span class="cmd-alias-pill" data-copy="!hbadmin">!hbadmin</span>
+                  <span class="cmd-alias-pill" data-copy="!hbestado">!hbestado</span>
+                </div>
+                <div class="cmd-example-box">
+                  <span>💡 <strong>Ejemplo:</strong> <code class="cmd-example-code" data-copy="!hbmod">!hbmod</code></span>
+                  <button type="button" class="cmd-btn-copy" data-copy="!hbmod" style="font-size:0.68rem; padding: 2px 7px;">Copiar</button>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- CATEGORÍA 1: ALERTAS E INTERACCIÓN -->
+          <!-- CATEGORÍA 1: ALERTAS E INTERACCIÓN EN DIRECTO -->
           <div class="cmd-category" id="sec-cmd-live"
             style="border-color: rgba(234,179,8,0.3); background: linear-gradient(160deg, rgba(30,22,10,0.6), rgba(15,12,8,0.8));">
             <div class="cmd-cat-header">
               <div class="cmd-cat-title-wrap">
-                <span style="font-size: 1.2rem;">🎮</span>
-                <h4 class="cmd-cat-title" style="color: #facc15;">1. Alertas e Interacción en Directo</h4>
+                <span style="font-size: 1.25rem;">🎮</span>
+                <div>
+                  <h4 class="cmd-cat-title" style="color: #facc15;">1. Alertas e Interacción en Directo (OBS &amp; Audio)</h4>
+                  <p style="color: #94a3b8; font-size: 0.74rem; margin: 2px 0 0 0;">Festejos en pantalla, batear la piñata y tarjetas flotantes en vivo.</p>
+                </div>
               </div>
               <span class="cmd-scope-pill"
-                style="background: rgba(234,179,8,0.15); color: #fde047; border: 1px solid rgba(234,179,8,0.35);">OBS &
-                Audio</span>
+                style="background: rgba(234,179,8,0.15); color: #fde047; border: 1px solid rgba(234,179,8,0.35);">OBS Studio &amp; Audio</span>
             </div>
 
             <div class="cmd-list">
-              <div class="cmd-item" style="border-left: 3px solid #facc15;">
-                <div>
-                  <span class="cmd-badge-code"
-                    style="color: #fef08a; background: rgba(234,179,8,0.18); border-color: rgba(234,179,8,0.4);"
-                    onclick="navigator.clipboard.writeText('!hoyesmicumple')"
-                    title="Clic para copiar">!hoyesmicumple</span>
+              <!-- !hoyesmicumple -->
+              <div class="cmd-item" style="border-left: 4px solid #facc15;">
+                <div class="cmd-item-header">
+                  <div class="cmd-item-header-left">
+                    <span class="cmd-badge-code" style="color: #fef08a; background: rgba(234,179,8,0.18); border-color: rgba(234,179,8,0.4);"
+                      data-copy="!hoyesmicumple" title="Clic para copiar">!hoyesmicumple</span>
+                    <button type="button" class="cmd-btn-copy" data-copy="!hoyesmicumple">📋 Copiar</button>
+                  </div>
+                  <span class="cmd-scope-pill" style="background: rgba(234,179,8,0.18); color: #fef08a; border: 1px solid rgba(234,179,8,0.4);">👑 Cumpleañero VIP</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Detona la alerta VIP del cumpleañero</strong> en OBS con confeti y sonido personalizado.
+                  <strong>Detona tu Alerta VIP Estelar en Stream</strong>: Muestra tu avatar de Twitch, confeti 3D, dedicatoria personalizada y tu audio elegido. Solo disponible en tu día de cumpleaños o durante tus 7 días de gracia (1 vez al año).
                 </div>
-                <span class="cmd-scope-pill"
-                  style="background: rgba(234,179,8,0.18); color: #fef08a; border: 1px solid rgba(234,179,8,0.4);">👑
-                  Cumpleañero</span>
+                <div class="cmd-aliases">
+                  <span>Sinónimos:</span>
+                  <span class="cmd-alias-pill" data-copy="!hoyesmicum">!hoyesmicum</span>
+                  <span class="cmd-alias-pill" data-copy="!mialerta">!mialerta</span>
+                  <span class="cmd-alias-pill" data-copy="!lanzarmicumple">!lanzarmicumple</span>
+                </div>
+                <div class="cmd-example-box">
+                  <span>💡 <strong>Ejemplo:</strong> <code class="cmd-example-code" data-copy="!hoyesmicumple">!hoyesmicumple</code></span>
+                  <button type="button" class="cmd-btn-copy" data-copy="!hoyesmicumple" style="font-size:0.68rem; padding: 2px 7px;">Copiar</button>
+                </div>
               </div>
 
-              <div class="cmd-item" style="border-left: 3px solid #ec4899;">
-                <div>
-                  <span class="cmd-badge-code"
-                    style="color: #f472b6; background: rgba(236,72,153,0.18); border-color: rgba(236,72,153,0.4);"
-                    onclick="navigator.clipboard.writeText('!felicidades')" title="Clic para copiar">!felicidades
-                    [mensaje]</span>
+              <!-- !dale (Piñata) -->
+              <div class="cmd-item" style="border-left: 4px solid #eab308;">
+                <div class="cmd-item-header">
+                  <div class="cmd-item-header-left">
+                    <span class="cmd-badge-code" style="color: #fef08a; background: rgba(234,179,8,0.2); border-color: rgba(234,179,8,0.5);"
+                      data-copy="!dale" title="Clic para copiar">!dale</span>
+                    <button type="button" class="cmd-btn-copy" data-copy="!dale">📋 Copiar</button>
+                  </div>
+                  <span class="cmd-scope-pill" style="background: rgba(234,179,8,0.2); color: #fde047; border: 1px solid rgba(234,179,8,0.5);">🪅 Toda la Comunidad</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Envía tarjeta de felicitación al stream</strong>. Variantes: <code>!felicidades1</code>
-                  (Música) &bull; <code>!felicidades2</code> (Silbato) &bull; <code>!felicidades3</code> (Voz).
+                  <strong>Golpear la Piñata de Capibara</strong>: ¡Cualquier espectador en el chat puede batear! Cada golpe resta 1 HP a la piñata, anima tu avatar bateando en pantalla y suma a la tabla de los mejores bateadores del directo.
                 </div>
-                <span class="cmd-scope-pill"
-                  style="background: rgba(236,72,153,0.18); color: #fbcfe8; border: 1px solid rgba(236,72,153,0.4);">📺
-                  Chat</span>
+                <div class="cmd-aliases">
+                  <span>Sinónimos:</span>
+                  <span class="cmd-alias-pill" data-copy="!pegar">!pegar</span>
+                  <span class="cmd-alias-pill" data-copy="!hit">!hit</span>
+                  <span class="cmd-alias-pill" data-copy="!palo">!palo</span>
+                  <span class="cmd-alias-pill" data-copy="!golpe">!golpe</span>
+                  <span class="cmd-alias-pill" data-copy="!batear">!batear</span>
+                </div>
+                <div class="cmd-example-box">
+                  <span>💡 <strong>Ejemplo:</strong> <code class="cmd-example-code" data-copy="!dale">!dale</code> (escríbelo varias veces durante la piñata)</span>
+                  <button type="button" class="cmd-btn-copy" data-copy="!dale" style="font-size:0.68rem; padding: 2px 7px;">Copiar</button>
+                </div>
+              </div>
+
+              <!-- !felicidades -->
+              <div class="cmd-item" style="border-left: 4px solid #ec4899;">
+                <div class="cmd-item-header">
+                  <div class="cmd-item-header-left">
+                    <span class="cmd-badge-code" style="color: #f472b6; background: rgba(236,72,153,0.18); border-color: rgba(236,72,153,0.4);"
+                      data-copy="!felicidades ¡Feliz cumple!" title="Clic para copiar">!felicidades [mensaje]</span>
+                    <button type="button" class="cmd-btn-copy" data-copy="!felicidades ¡Feliz cumpleaños, pásala increíble!">📋 Copiar</button>
+                  </div>
+                  <span class="cmd-scope-pill" style="background: rgba(236,72,153,0.18); color: #fbcfe8; border: 1px solid rgba(236,72,153,0.4);">💌 Toda la Comunidad</span>
+                </div>
+                <div class="cmd-desc">
+                  <strong>Envía una Tarjeta Flotante al Stream</strong> con tu foto de Twitch y mensaje al cumpleañero festejado en directo. Incluye sonido festivo y lluvia de confeti.
+                </div>
+                <div class="cmd-aliases">
+                  <span>Variantes de audio:</span>
+                  <span class="cmd-alias-pill" data-copy="!felicidades1 ¡Música y fiesta!">!felicidades1 (🎵 Música)</span>
+                  <span class="cmd-alias-pill" data-copy="!felicidades2 ¡Silbato festivo!">!felicidades2 (🎺 Silbato)</span>
+                  <span class="cmd-alias-pill" data-copy="!felicidades3 ¡Felicitación con voz!">!felicidades3 (🎤 Voz)</span>
+                </div>
+                <div class="cmd-example-box">
+                  <span>💡 <strong>Ejemplos:</strong> <code class="cmd-example-code" data-copy="!felicidades ¡Pásala increíble!">!felicidades ¡Pásala increíble!</code> &bull; <code class="cmd-example-code" data-copy="!felicidades1 ¡A bailar y festejar!">!felicidades1 ¡A bailar y festejar!</code></span>
+                  <button type="button" class="cmd-btn-copy" data-copy="!felicidades ¡Feliz cumpleaños!" style="font-size:0.68rem; padding: 2px 7px;">Copiar ejemplo</button>
+                </div>
+              </div>
+
+              <!-- bang (Easter egg) -->
+              <div class="cmd-item" style="border-left: 4px solid #8b5cf6;">
+                <div class="cmd-item-header">
+                  <div class="cmd-item-header-left">
+                    <span class="cmd-badge-code" style="color: #c4b5fd; background: rgba(139,92,246,0.18); border-color: rgba(139,92,246,0.4);"
+                      data-copy="bang" title="Clic para copiar">bang</span>
+                    <button type="button" class="cmd-btn-copy" data-copy="bang">📋 Copiar</button>
+                  </div>
+                  <span class="cmd-scope-pill" style="background: rgba(139,92,246,0.2); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.4);">💥 Exclusivo capiluisxavihdx</span>
+                </div>
+                <div class="cmd-desc">
+                  <strong>Easter Egg Secreto</strong>: Reproduce el efecto de sonido bang en el overlay de OBS de forma instantánea sin responder nada en el chat de Twitch.
+                </div>
+                <div class="cmd-example-box">
+                  <span>💡 <strong>Ejemplo:</strong> <code class="cmd-example-code" data-copy="bang">bang</code></span>
+                  <button type="button" class="cmd-btn-copy" data-copy="bang" style="font-size:0.68rem; padding: 2px 7px;">Copiar</button>
+                </div>
               </div>
             </div>
           </div>
@@ -1373,111 +1531,191 @@
             style="border-color: rgba(168,85,247,0.3); background: linear-gradient(160deg, rgba(28,14,38,0.6), rgba(14,8,22,0.8));">
             <div class="cmd-cat-header">
               <div class="cmd-cat-title-wrap">
-                <span style="font-size: 1.2rem;">🎨</span>
-                <h4 class="cmd-cat-title" style="color: #c084fc;">2. Personalización de Ficha desde el Chat</h4>
+                <span style="font-size: 1.25rem;">🎨</span>
+                <div>
+                  <h4 class="cmd-cat-title" style="color: #c084fc;">2. Personalización de Ficha desde el Chat</h4>
+                  <p style="color: #94a3b8; font-size: 0.74rem; margin: 2px 0 0 0;">Registra tu fecha, cambia tu frase y selecciona el audio de tu alerta.</p>
+                </div>
               </div>
+              <span class="cmd-scope-pill"
+                style="background: rgba(168,85,247,0.18); color: #e9d5ff; border: 1px solid rgba(168,85,247,0.4);">⚙️ Configuración Ficha</span>
             </div>
 
             <div class="cmd-list">
-              <div class="cmd-item" style="border-left: 3px solid #10b981;">
-                <div>
-                  <span class="cmd-badge-code"
-                    style="color: #6ee7b7; background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.4);"
-                    onclick="navigator.clipboard.writeText('!registro 11-06')" title="Clic para copiar">!registro DD-MM
-                    [usuario]</span>
+              <!-- !registro -->
+              <div class="cmd-item" style="border-left: 4px solid #10b981;">
+                <div class="cmd-item-header">
+                  <div class="cmd-item-header-left">
+                    <span class="cmd-badge-code" style="color: #6ee7b7; background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.4);"
+                      data-copy="!registro 11-06" title="Clic para copiar">!registro DD-MM [usuario]</span>
+                    <button type="button" class="cmd-btn-copy" data-copy="!registro 11-06">📋 Copiar</button>
+                  </div>
+                  <span class="cmd-scope-pill" style="background: rgba(16,185,129,0.18); color: #a7f3d0; border: 1px solid rgba(16,185,129,0.4);">✨ Registro en Chat</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Registra tu cumpleaños</strong> o el de un amigo (ej: <code>!registro 11-06 @amigo</code>).
+                  <strong>Registra tu Fecha de Cumpleaños</strong> (día y mes) o anota a un compañero del canal. Se guarda en la base de datos sin necesidad de contraseñas.
                 </div>
-                <span class="cmd-scope-pill"
-                  style="background: rgba(16,185,129,0.18); color: #a7f3d0; border: 1px solid rgba(16,185,129,0.4);">✨
-                  Registro</span>
+                <div class="cmd-aliases">
+                  <span>Sinónimo:</span>
+                  <span class="cmd-alias-pill" data-copy="!registrarme 11-06">!registrarme DD-MM</span>
+                </div>
+                <div class="cmd-example-box">
+                  <span>💡 <strong>Ejemplos:</strong> <code class="cmd-example-code" data-copy="!registro 11-06">!registro 11-06</code> (para ti: 11 de junio) &bull; <code class="cmd-example-code" data-copy="!registro 11-06 capiluisxavihdx">!registro 11-06 capiluisxavihdx</code> (anotar a un amigo)</span>
+                  <button type="button" class="cmd-btn-copy" data-copy="!registro 11-06" style="font-size:0.68rem; padding: 2px 7px;">Copiar ejemplo</button>
+                </div>
               </div>
 
-              <div class="cmd-item" style="border-left: 3px solid #a855f7;">
-                <div>
-                  <span class="cmd-badge-code"
-                    style="color: #d8b4fe; background: rgba(168,85,247,0.18); border-color: rgba(168,85,247,0.4);"
-                    onclick="navigator.clipboard.writeText('!hbcambio')" title="Clic para copiar">!hbcambio
-                    &lt;frase&gt;</span>
+              <!-- !hbcambio -->
+              <div class="cmd-item" style="border-left: 4px solid #a855f7;">
+                <div class="cmd-item-header">
+                  <div class="cmd-item-header-left">
+                    <span class="cmd-badge-code" style="color: #d8b4fe; background: rgba(168,85,247,0.18); border-color: rgba(168,85,247,0.4);"
+                      data-copy="!hbcambio ¡Hoy se festeja a lo grande en stream!" title="Clic para copiar">!hbcambio &lt;frase&gt;</span>
+                    <button type="button" class="cmd-btn-copy" data-copy="!hbcambio ¡Hoy se festeja a lo grande en stream!">📋 Copiar</button>
+                  </div>
+                  <span class="cmd-scope-pill" style="background: rgba(168,85,247,0.18); color: #e9d5ff; border: 1px solid rgba(168,85,247,0.4);">💬 Dedicatoria Alerta</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Cambia la dedicatoria</strong> que saldrá en OBS al lanzar el festejo (máx. 60 letras).
+                  <strong>Personaliza la Dedicatoria</strong> que saldrá en la tarjeta de OBS cuando lances tu festejo con <code>!hoyesmicumple</code> (máximo 60 letras). Si lo escribes sin frase, el bot te recuerda cuál tienes guardada.
                 </div>
-                <span class="cmd-scope-pill"
-                  style="background: rgba(168,85,247,0.18); color: #e9d5ff; border: 1px solid rgba(168,85,247,0.4);">💬
-                  Frase</span>
+                <div class="cmd-aliases">
+                  <span>Sinónimos:</span>
+                  <span class="cmd-alias-pill" data-copy="!hbfrase ¡Feliz día para mí!">!hbfrase</span>
+                  <span class="cmd-alias-pill" data-copy="!micumplefrase ¡Celebrando juntos!">!micumplefrase</span>
+                </div>
+                <div class="cmd-example-box">
+                  <span>💡 <strong>Ejemplo:</strong> <code class="cmd-example-code" data-copy="!hbcambio ¡Hoy se festeja a lo grande!">!hbcambio ¡Hoy se festeja a lo grande!</code></span>
+                  <button type="button" class="cmd-btn-copy" data-copy="!hbcambio ¡Hoy se festeja a lo grande!" style="font-size:0.68rem; padding: 2px 7px;">Copiar</button>
+                </div>
               </div>
 
-              <div class="cmd-item" style="border-left: 3px solid #8b5cf6;">
-                <div>
-                  <span class="cmd-badge-code"
-                    style="color: #c4b5fd; background: rgba(139,92,246,0.18); border-color: rgba(139,92,246,0.4);"
-                    onclick="navigator.clipboard.writeText('!hbsonido 1')" title="Clic para copiar">!hbsonido
-                    &lt;1|2|3&gt;</span>
+              <!-- !hbsonido -->
+              <div class="cmd-item" style="border-left: 4px solid #8b5cf6;">
+                <div class="cmd-item-header">
+                  <div class="cmd-item-header-left">
+                    <span class="cmd-badge-code" style="color: #c4b5fd; background: rgba(139,92,246,0.18); border-color: rgba(139,92,246,0.4);"
+                      data-copy="!hbsonido 2" title="Clic para copiar">!hbsonido &lt;1|2|3&gt;</span>
+                    <button type="button" class="cmd-btn-copy" data-copy="!hbsonido 2">📋 Copiar</button>
+                  </div>
+                  <span class="cmd-scope-pill" style="background: rgba(139,92,246,0.18); color: #ddd6fe; border: 1px solid rgba(139,92,246,0.4);">🎵 Audio Alerta</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Elige sonido</strong>: 1 = Silbato Festivo, 2 = Música de Fiesta, 3 = Felicitación con Voz.
+                  <strong>Elige el Efecto de Sonido</strong> que sonará en tu alerta festiva:
+                  <br>&bull; <code>1</code> o <code>silbato</code> = 🎺 Silbato Festivo tradicional
+                  <br>&bull; <code>2</code> o <code>musica</code> = 🎵 Canción de Fiesta instrumental
+                  <br>&bull; <code>3</code> o <code>voz</code> = 🎤 Felicitación entusiasta con voz
                 </div>
-                <span class="cmd-scope-pill"
-                  style="background: rgba(139,92,246,0.18); color: #ddd6fe; border: 1px solid rgba(139,92,246,0.4);">🎵
-                  Sonido</span>
+                <div class="cmd-aliases">
+                  <span>Sinónimos:</span>
+                  <span class="cmd-alias-pill" data-copy="!cambiarsonido 2">!cambiarsonido</span>
+                  <span class="cmd-alias-pill" data-copy="!misonido 2">!misonido</span>
+                </div>
+                <div class="cmd-example-box">
+                  <span>💡 <strong>Ejemplos:</strong> <code class="cmd-example-code" data-copy="!hbsonido 1">!hbsonido 1</code> (Silbato) &bull; <code class="cmd-example-code" data-copy="!hbsonido 2">!hbsonido 2</code> (Música) &bull; <code class="cmd-example-code" data-copy="!hbsonido 3">!hbsonido 3</code> (Voz)</span>
+                  <button type="button" class="cmd-btn-copy" data-copy="!hbsonido 2" style="font-size:0.68rem; padding: 2px 7px;">Copiar ejemplo</button>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- CATEGORÍA 3: CONSULTAS -->
+          <!-- CATEGORÍA 3: CONSULTAS EN EL CHAT -->
           <div class="cmd-category" id="sec-cmd-queries"
             style="border-color: rgba(59,130,246,0.25); background: linear-gradient(160deg, rgba(14,22,38,0.6), rgba(8,12,22,0.8));">
             <div class="cmd-cat-header">
               <div class="cmd-cat-title-wrap">
-                <span style="font-size: 1.2rem;">📊</span>
-                <h4 class="cmd-cat-title" style="color: #60a5fa;">3. Consultas en el Chat</h4>
+                <span style="font-size: 1.25rem;">📊</span>
+                <div>
+                  <h4 class="cmd-cat-title" style="color: #60a5fa;">3. Consultas y Cartelera en el Chat</h4>
+                  <p style="color: #94a3b8; font-size: 0.74rem; margin: 2px 0 0 0;">Fechas, días restantes, cartelera del mes y ayuda en vivo.</p>
+                </div>
               </div>
+              <span class="cmd-scope-pill"
+                style="background: rgba(59,130,246,0.18); color: #bfdbfe; border: 1px solid rgba(59,130,246,0.4);">📅 Toda la Comunidad</span>
             </div>
 
             <div class="cmd-list">
-              <div class="cmd-item" style="border-left: 3px solid #3b82f6;">
-                <div>
-                  <span class="cmd-badge-code"
-                    style="color: #93c5fd; background: rgba(59,130,246,0.18); border-color: rgba(59,130,246,0.4);"
-                    onclick="navigator.clipboard.writeText('!cumple')" title="Clic para copiar">!cumple
-                    [@usuario]</span>
+              <!-- !cumple -->
+              <div class="cmd-item" style="border-left: 4px solid #3b82f6;">
+                <div class="cmd-item-header">
+                  <div class="cmd-item-header-left">
+                    <span class="cmd-badge-code" style="color: #93c5fd; background: rgba(59,130,246,0.18); border-color: rgba(59,130,246,0.4);"
+                      data-copy="!cumple" title="Clic para copiar">!cumple [@usuario]</span>
+                    <button type="button" class="cmd-btn-copy" data-copy="!cumple">📋 Copiar</button>
+                  </div>
+                  <span class="cmd-scope-pill" style="background: rgba(59,130,246,0.18); color: #bfdbfe; border: 1px solid rgba(59,130,246,0.4);">🌟 Consulta Días</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Consulta inteligente</strong>: hoy, días restantes o período de gracia.
+                  <strong>Consulta Inteligente de Fechas</strong>: Indica cuántos días faltan para tu cumpleaños o el de un compañero. Si es hoy o está en período de gracia de 7 días, avisa para lanzar la alerta en pantalla.
                 </div>
-                <span class="cmd-scope-pill"
-                  style="background: rgba(59,130,246,0.18); color: #bfdbfe; border: 1px solid rgba(59,130,246,0.4);">🌟
-                  Consulta</span>
+                <div class="cmd-aliases">
+                  <span>Sinónimo:</span>
+                  <span class="cmd-alias-pill" data-copy="!micumple">!micumple</span>
+                </div>
+                <div class="cmd-example-box">
+                  <span>💡 <strong>Ejemplos:</strong> <code class="cmd-example-code" data-copy="!cumple">!cumple</code> (tu fecha) &bull; <code class="cmd-example-code" data-copy="!cumple @yocapi_pr">!cumple @yocapi_pr</code> (fecha de otro usuario)</span>
+                  <button type="button" class="cmd-btn-copy" data-copy="!cumple" style="font-size:0.68rem; padding: 2px 7px;">Copiar</button>
+                </div>
               </div>
 
-              <div class="cmd-item" style="border-left: 3px solid #38bdf8;">
-                <div>
-                  <span class="cmd-badge-code"
-                    style="color: #7dd3fc; background: rgba(56,189,248,0.18); border-color: rgba(56,189,248,0.4);"
-                    onclick="navigator.clipboard.writeText('!proximos')" title="Clic para copiar">!proximos</span>
+              <!-- !proximos -->
+              <div class="cmd-item" style="border-left: 4px solid #38bdf8;">
+                <div class="cmd-item-header">
+                  <div class="cmd-item-header-left">
+                    <span class="cmd-badge-code" style="color: #7dd3fc; background: rgba(56,189,248,0.18); border-color: rgba(56,189,248,0.4);"
+                      data-copy="!proximos" title="Clic para copiar">!proximos</span>
+                    <button type="button" class="cmd-btn-copy" data-copy="!proximos">📋 Copiar</button>
+                  </div>
+                  <span class="cmd-scope-pill" style="background: rgba(56,189,248,0.18); color: #bae6fd; border: 1px solid rgba(56,189,248,0.4);">📅 Próximos 15 Días</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Próximos 15 días</strong> ordenados cronológicamente.
+                  <strong>Próximas Velitas por Soplar</strong>: Muestra los cumpleaños de los próximos 15 días ordenados cronológicamente con días restantes exactos.
                 </div>
-                <span class="cmd-scope-pill"
-                  style="background: rgba(56,189,248,0.18); color: #bae6fd; border: 1px solid rgba(56,189,248,0.4);">📅
-                  15 Días</span>
+                <div class="cmd-example-box">
+                  <span>💡 <strong>Ejemplo:</strong> <code class="cmd-example-code" data-copy="!proximos">!proximos</code></span>
+                  <button type="button" class="cmd-btn-copy" data-copy="!proximos" style="font-size:0.68rem; padding: 2px 7px;">Copiar</button>
+                </div>
               </div>
 
-              <div class="cmd-item" style="border-left: 3px solid #10b981;">
-                <div>
-                  <span class="cmd-badge-code"
-                    style="color: #6ee7b7; background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.4);"
-                    onclick="navigator.clipboard.writeText('!cumplemes')" title="Clic para copiar">!cumplemes</span>
+              <!-- !cumplemes -->
+              <div class="cmd-item" style="border-left: 4px solid #10b981;">
+                <div class="cmd-item-header">
+                  <div class="cmd-item-header-left">
+                    <span class="cmd-badge-code" style="color: #6ee7b7; background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.4);"
+                      data-copy="!cumplemes" title="Clic para copiar">!cumplemes</span>
+                    <button type="button" class="cmd-btn-copy" data-copy="!cumplemes">📋 Copiar</button>
+                  </div>
+                  <span class="cmd-scope-pill" style="background: rgba(16,185,129,0.18); color: #a7f3d0; border: 1px solid rgba(16,185,129,0.4);">🗓️ Cartelera Mes</span>
                 </div>
                 <div class="cmd-desc">
-                  <strong>Cartelera completa</strong> del mes actual.
+                  <strong>Cartelera Completa del Mes</strong>: Lista todos los cumpleañeros anotados en el mes en curso y sus respectivos días de celebración.
                 </div>
-                <span class="cmd-scope-pill"
-                  style="background: rgba(16,185,129,0.18); color: #a7f3d0; border: 1px solid rgba(16,185,129,0.4);">🗓️
-                  Mes</span>
+                <div class="cmd-example-box">
+                  <span>💡 <strong>Ejemplo:</strong> <code class="cmd-example-code" data-copy="!cumplemes">!cumplemes</code></span>
+                  <button type="button" class="cmd-btn-copy" data-copy="!cumplemes" style="font-size:0.68rem; padding: 2px 7px;">Copiar</button>
+                </div>
+              </div>
+
+              <!-- !cumpleinfo -->
+              <div class="cmd-item" style="border-left: 4px solid #f97316;">
+                <div class="cmd-item-header">
+                  <div class="cmd-item-header-left">
+                    <span class="cmd-badge-code" style="color: #fed7aa; background: rgba(249,115,22,0.18); border-color: rgba(249,115,22,0.4);"
+                      data-copy="!cumpleinfo" title="Clic para copiar">!cumpleinfo</span>
+                    <button type="button" class="cmd-btn-copy" data-copy="!cumpleinfo">📋 Copiar</button>
+                  </div>
+                  <span class="cmd-scope-pill" style="background: rgba(249,115,22,0.18); color: #fed7aa; border: 1px solid rgba(249,115,22,0.4);">💡 Guía Rápida</span>
+                </div>
+                <div class="cmd-desc">
+                  <strong>Guía Rápida en Chat</strong>: Despliega una síntesis con los comandos principales de fiesta para que cualquier nuevo espectador sepa cómo participar.
+                </div>
+                <div class="cmd-aliases">
+                  <span>Sinónimo:</span>
+                  <span class="cmd-alias-pill" data-copy="!ayudacumple">!ayudacumple</span>
+                </div>
+                <div class="cmd-example-box">
+                  <span>💡 <strong>Ejemplo:</strong> <code class="cmd-example-code" data-copy="!cumpleinfo">!cumpleinfo</code></span>
+                  <button type="button" class="cmd-btn-copy" data-copy="!cumpleinfo" style="font-size:0.68rem; padding: 2px 7px;">Copiar</button>
+                </div>
               </div>
             </div>
           </div>
@@ -1495,7 +1733,10 @@
               <div class="cmd-editor-box"
                 style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; border: 1px solid rgba(99,102,241,0.25);">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                  <code style="color: #818cf8; font-weight: 800; font-size: 0.88rem;">!regcumple</code>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <code style="color: #818cf8; font-weight: 800; font-size: 0.88rem;">!regcumple</code>
+                    <button type="button" class="cmd-btn-copy" data-copy="!regcumple" style="padding: 2px 7px; font-size: 0.68rem;">📋 Copiar</button>
+                  </div>
                   <button type="button" class="btn-save-cmd-response btn-copy" data-cmd="regcumple"
                     style="padding: 4px 10px; font-size: 0.72rem; background: rgba(99,102,241,0.25); border-color: rgba(99,102,241,0.5); color: #c7d2fe;">💾
                     Guardar</button>
@@ -1507,7 +1748,10 @@
               <div class="cmd-editor-box"
                 style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; border: 1px solid rgba(236,72,153,0.25);">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                  <code style="color: #f472b6; font-weight: 800; font-size: 0.88rem;">!felicitar</code>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <code style="color: #f472b6; font-weight: 800; font-size: 0.88rem;">!felicitar</code>
+                    <button type="button" class="cmd-btn-copy" data-copy="!felicitar" style="padding: 2px 7px; font-size: 0.68rem;">📋 Copiar</button>
+                  </div>
                   <button type="button" class="btn-save-cmd-response btn-copy" data-cmd="felicitar"
                     style="padding: 4px 10px; font-size: 0.72rem; background: rgba(236,72,153,0.25); border-color: rgba(236,72,153,0.5); color: #fbcfe8;">💾
                     Guardar</button>
