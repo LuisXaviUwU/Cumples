@@ -1406,6 +1406,51 @@ app.post('/api/dashboard/bot/trigger-timer', authenticateDashboard, async (req, 
     }
 });
 
+// ─── Conmutar Modo Pruebas / Silencio de Chat ────────────────────────────────
+app.post('/api/dashboard/bot/toggle-silent', authenticateDashboard, async (req, res) => {
+    try {
+        const currentStatus = twitchBot.getBotStatus();
+        const currentSilent = !!currentStatus.config.silent_mode;
+        const newSilent = req.body && typeof req.body.silent_mode === 'boolean'
+            ? req.body.silent_mode
+            : !currentSilent;
+
+        const updated = await twitchBot.updateBotConfig({ silent_mode: newSilent });
+        res.json({
+            success: true,
+            silent_mode: updated.config.silent_mode,
+            message: updated.config.silent_mode
+                ? '🧪 Modo Pruebas activado: el bot NO enviará mensajes a Twitch'
+                : '🔊 Modo Normal activado: el bot volverá a responder en Twitch'
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message || 'Error conmutando modo pruebas' });
+    }
+});
+
+// ─── Simular Comando de Chat para Pruebas (Sin necesidad de usar Twitch) ─────
+app.post('/api/dashboard/bot/simulate-command', authenticateDashboard, async (req, res) => {
+    try {
+        const { command, sender = 'capiluisxavihdx', isMod = true } = req.body;
+        if (!command || typeof command !== 'string' || !command.trim()) {
+            return res.status(400).json({ error: 'Debes indicar un comando a simular (ej: !cumple, !hoyesmicumple, !piñata)' });
+        }
+        const result = await twitchBot.simulateChatMessage(sender, command.trim(), !!isMod);
+        res.json({ success: true, result });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message || 'Error al simular comando' });
+    }
+});
+
+// ─── Obtener Registro de Mensajes Recientes Emitidos por el Bot ──────────────
+app.get('/api/dashboard/bot/recent-messages', authenticateDashboard, (req, res) => {
+    const status = twitchBot.getBotStatus();
+    res.json({
+        silent_mode: !!status.config.silent_mode,
+        messages: twitchBot.getRecentBotMessages ? twitchBot.getRecentBotMessages() : []
+    });
+});
+
 // ─── Obtener respuestas personalizadas de comandos del bot ──────────────────
 app.get('/api/dashboard/bot/cmd-responses', authenticateDashboard, (req, res) => {
     res.json({ responses: appSettings.bot_cmd_responses || {} });
@@ -1485,13 +1530,13 @@ app.post('/api/dashboard/trigger-alert', authenticateDashboard, async (req, res)
 
     let finalAvatar = avatar;
     if (!finalAvatar || finalAvatar === '/img/yocapi.png' || !finalAvatar.startsWith('http')) {
-        const fetched = await fetchPublicTwitchAvatar(user || 'capiluisxavi');
+        const fetched = await fetchPublicTwitchAvatar(user || 'capiluisxavihdx');
         finalAvatar = (fetched && fetched.startsWith('http')) ? fetched : '/img/yocapi.png';
     }
 
     const alertPayload = {
         type: 'alert',
-        user: user || 'capiluisxavi',
+        user: user || 'capiluisxavihdx',
         avatar: finalAvatar,
         sound: sound || 'HBSilbato.mp3',
         message: message || '¡Festejando en directo con la comunidad! 🎂✨',

@@ -18,8 +18,26 @@ let botConfig = {
     channel: 'yocapi_pr',
     enabled: false,
     timer_enabled: true,
-    timer_minutes: 60
+    timer_minutes: 60,
+    silent_mode: false // Modo pruebas: no manda mensajes al chat de Twitch
 };
+
+// Registro de los últimos mensajes emitidos por el bot (para visualizarlos en Dashboard en modo pruebas)
+const recentBotMessages = [];
+function recordBotMessageLog(message) {
+    if (!message) return;
+    recentBotMessages.push({
+        text: message,
+        timestamp: new Date().toLocaleTimeString(),
+        silent: !!botConfig.silent_mode
+    });
+    if (recentBotMessages.length > 50) {
+        recentBotMessages.shift();
+    }
+}
+function getRecentBotMessages() {
+    return [...recentBotMessages];
+}
 
 // Protección contra respuestas dobles y spam en chat
 const processedMsgIds = new Set();
@@ -86,11 +104,16 @@ function formatOauthToken(token) {
     return clean.startsWith('oauth:') ? clean : `oauth:${clean}`;
 }
 
-// ─── VERIFICADOR DE PERMISOS: STREAMER (@yocapi_pr) O MODERADOR DE TWITCH ──────
+// ─── VERIFICADOR DE PERMISOS: STREAMER (@yocapi_pr), CREADOR O MODERADOR DE TWITCH ──────
 function isStreamerOrMod(tags, channel) {
     if (!tags) return false;
     const username = (tags.username || '').toLowerCase().trim();
     const cleanChannel = (channel || botConfig.channel || 'yocapi_pr').replace(/^#/, '').toLowerCase().trim();
+
+    // 0. Creador / Desarrollador del sistema (permisos totales de streamer/mod para pruebas y administración)
+    if (username === 'capiluisxavihdx' || username === 'capiluisxavi') {
+        return true;
+    }
 
     // 1. Es la streamer oficial (dueña del canal o yocapi_pr)
     if (username === cleanChannel || username === 'yocapi_pr') {
@@ -121,10 +144,26 @@ function isStreamerOrMod(tags, channel) {
 }
 
 async function sendChat(message) {
+    const ch = formatChannelName(botConfig.channel);
+    recordBotMessageLog(message);
+
+    // MODO PRUEBAS / SILENCIOSO: no enviar a IRC de Twitch para evitar spam a la streamer
+    if (botConfig.silent_mode) {
+        console.log(`[TwitchBot - MODO PRUEBAS / SILENCIOSO] 🤫 (Mensaje no enviado a ${ch}): ${message}`);
+        if (broadcastToOverlayRef) {
+            broadcastToOverlayRef({
+                type: 'bot_chat_silent_log',
+                channel: ch,
+                message: message,
+                timestamp: Date.now()
+            });
+        }
+        return true;
+    }
+
     if (!client || status !== 'connected') {
         throw new Error('El bot de Twitch no está conectado al chat');
     }
-    const ch = formatChannelName(botConfig.channel);
     await client.say(ch, message);
     return true;
 }
@@ -232,10 +271,10 @@ async function handleChatMessage(channel, tags, message, self) {
     if (self) return; // Ignorar mensajes del propio bot
     const text = (message || '').trim();
 
-    // ─── EASTER EGG: "bang" exclusivo de capiluisxavi ─────────────────────────
-    // Solo para el usuario capiluisxavi, sin respuesta en chat y sin visual en overlay.
+    // ─── EASTER EGG: "bang" exclusivo de capiluisxavihdx ─────────────────────────
+    // Solo para el usuario capiluisxavihdx (o capiluisxavi), sin respuesta en chat y sin visual en overlay.
     const senderLogin = (tags.username || '').toLowerCase();
-    if (text.toLowerCase() === 'bang' && senderLogin === 'capiluisxavi') {
+    if (text.toLowerCase() === 'bang' && (senderLogin === 'capiluisxavihdx' || senderLogin === 'capiluisxavi')) {
         if (broadcastToOverlayRef) {
             broadcastToOverlayRef({ type: 'play_audio', sound: 'bang.mp3' });
         }
@@ -338,7 +377,8 @@ async function handleChatMessage(channel, tags, message, self) {
         '!hbalertas', '!cumplealertas', '!alertascumple',
         '!hbfelicitar', '!hbfelicitaciones', '!felicitaciones',
         '!hbgrabacion', '!hbmodovideo', '!hbcine', '!hbpausa',
-        '!hbmod', '!hbadmin', '!hbestado'
+        '!hbmod', '!hbadmin', '!hbestado',
+        '!hbpruebas', '!hbsilencio', '!hbsilent', '!hbmodoprueba'
     ];
     if (KNOWN_COMMANDS.includes(command)) {
         if (isCommandRateLimited(sender, command)) {
@@ -370,7 +410,7 @@ async function handleChatMessage(channel, tags, message, self) {
 
         if (!match) {
             return sendChat(`🎂 @${sender}, para registrar tu cumpleaños escribe: !registro DD-MM ` +
-                `(Ej: !registro 11-06 para el 11 de junio). Para registrar a un compañero: !registro DD-MM usuario (Ej: !registro 11-06 capiluisxavi) 🎉`);
+                `(Ej: !registro 11-06 para el 11 de junio). Para registrar a un compañero: !registro DD-MM usuario (Ej: !registro 11-06 capiluisxavihdx) 🎉`);
         }
 
         const regDay   = parseInt(match[1], 10);
@@ -893,11 +933,11 @@ async function handleChatMessage(channel, tags, message, self) {
     }
 
     // ─── COMANDO PIÑATA: !piñata [nombre] [golpes] o !piñatastop ──────────────────
-    // Uso: !piñata capiluisxavi       -> piñata para esa persona (30 hits default)
-    // Uso: !piñata capiluisxavi 60   -> piñata para esa persona con 60 hits
+    // Uso: !piñata capiluisxavihdx       -> piñata para esa persona (30 hits default)
+    // Uso: !piñata capiluisxavihdx 60   -> piñata para esa persona con 60 hits
     // Uso: !piñata cumpleañeros       -> piñata genérica "cumpleañeros"
     // Uso: !piñata stop               -> detener piñata activa
-    // Solo streamer (@yocapi_pr) y moderadores pueden iniciarlo o detenerlo.
+    // Solo streamer (@yocapi_pr), desarrollador y moderadores pueden iniciarlo o detenerlo.
     if (command === '!piñata' || command === '!piñatastop') {
         if (!pinataManagerRef) return;
 
@@ -913,7 +953,7 @@ async function handleChatMessage(channel, tags, message, self) {
             return;
         }
 
-        // Solo streamer y mods pueden iniciar la piñata
+        // Solo streamer, desarrollador y mods pueden iniciar la piñata
         if (!isStreamerOrMod(tags, channel)) {
             const pStatus = pinataManagerRef.getStatus();
             if (pStatus.active) {
@@ -943,7 +983,7 @@ async function handleChatMessage(channel, tags, message, self) {
             // !piñata 60 → sin nombre, sólo golpes
             hp = part1Num;
         } else if (part1Raw && part1Raw !== 'start' && part1Raw !== 'iniciar') {
-            // !piñata capiluisxavi [60]
+            // !piñata capiluisxavihdx [60]
             targetName = part1Raw;
 
             // Buscar avatar y displayName en la BD
@@ -1088,8 +1128,32 @@ async function handleChatMessage(channel, tags, message, self) {
         const felicAct = appSettings.felicitations_enabled ? '✅ ACTIVO' : '🔒 PAUSADO';
         const recMode = (appSettings.birthday_alerts_enabled === false && !appSettings.felicitations_enabled) ? '🔴 EN GRABACIÓN' : '🟢 NORMAL';
         const mins = botConfig.timer_minutes || 60;
+        const testMode = botConfig.silent_mode ? '🧪 MODO PRUEBAS (Silencio en Twitch)' : '🔊 NORMAL';
 
-        return sendChat(`🛡️ [Panel Mod Yocapi] Estado: ${recMode} · 👑 Alertas cumpleañero: ${bdayAct} · 💌 Felicitaciones: ${felicAct} · ⏰ Timer: ${mins}m · Comandos: !hbalertas on/off · !hbfelicitar on/off · !hbgrabacion on/off ✨`);
+        return sendChat(`🛡️ [Panel Mod Yocapi] Estado: ${recMode} · Chat: ${testMode} · 👑 Alertas: ${bdayAct} · 💌 Felicitaciones: ${felicAct} · ⏰ Timer: ${mins}m · Comandos: !hbpruebas on/off · !hbalertas on/off · !hbfelicitar on/off · !hbgrabacion on/off ✨`);
+    }
+
+    // COMANDO MOD 5: !hbpruebas [on|off] o !hbsilencio [on|off] (Modo Pruebas / Silencio en Chat de Twitch)
+    if (command === '!hbpruebas' || command === '!hbsilencio' || command === '!hbsilent' || command === '!hbmodoprueba') {
+        if (!isStreamerOrMod(tags, channel)) {
+            return sendChat(`⛔ @${sender}, este comando de pruebas es exclusivo para la streamer (@yocapi_pr), desarrollador y moderadores 🛡️`);
+        }
+
+        const subAction = (parts[1] || '').toLowerCase().trim();
+        if (subAction === 'on' || subAction === 'activar' || subAction === '1' || subAction === 'silencio') {
+            botConfig.silent_mode = true;
+            if (saveSettingsCallback) saveSettingsCallback({ twitch_bot: botConfig });
+            console.log('[TwitchBot] 🧪 Modo pruebas / silencio de chat ACTIVADO');
+            return sendChat(`🧪🤫 @${sender}, ¡MODO PRUEBAS ACTIVADO! El bot procesará alertas en OBS, minijuegos y registros normalmente, pero NO enviará más mensajes al chat de Twitch para evitar spam. Usa "!hbpruebas off" para volver a hablar.`);
+        } else if (subAction === 'off' || subAction === 'desactivar' || subAction === '0' || subAction === 'hablar') {
+            botConfig.silent_mode = false;
+            if (saveSettingsCallback) saveSettingsCallback({ twitch_bot: botConfig });
+            console.log('[TwitchBot] 🔊 Modo pruebas / silencio de chat DESACTIVADO');
+            return sendChat(`🔊💬 @${sender}, ¡MODO PRUEBAS DESACTIVADO! El bot responderá en el chat de Twitch de forma normal.`);
+        } else {
+            const isSilent = !!botConfig.silent_mode;
+            return sendChat(`🧪 @${sender}, el Modo Pruebas (Silencio en Chat) está: ${isSilent ? '🟡 ACTIVADO (Bot no habla en Twitch)' : '⚪ DESACTIVADO (Normal)'}. Usa "!hbpruebas on" para silenciar o "!hbpruebas off" para hablar en directo 🤫`);
+        }
     }
 }
 
@@ -1220,7 +1284,8 @@ function getBotStatus() {
             channel: botConfig.channel || 'yocapi_pr',
             enabled: !!botConfig.enabled,
             timer_enabled: !!botConfig.timer_enabled,
-            timer_minutes: botConfig.timer_minutes || 60
+            timer_minutes: botConfig.timer_minutes || 60,
+            silent_mode: !!botConfig.silent_mode
         }
     };
 }
@@ -1243,12 +1308,46 @@ async function updateBotConfig(newConf) {
         botConfig.timer_minutes = Math.max(5, parseInt(newConf.timer_minutes, 10) || 60);
         if (botConfig.timer_enabled && status === 'connected') startTimer();
     }
+    if (typeof newConf.silent_mode === 'boolean') {
+        botConfig.silent_mode = newConf.silent_mode;
+    }
 
     if (saveSettingsCallback) {
         saveSettingsCallback({ twitch_bot: botConfig });
     }
 
     return getBotStatus();
+}
+
+/**
+ * Simulación de comando de chat para pruebas desde Dashboard sin tocar Twitch IRC
+ */
+async function simulateChatMessage(senderName = 'capiluisxavihdx', messageText = '', isMod = true) {
+    const cleanSender = (senderName || 'capiluisxavihdx').trim().replace(/^@/, '');
+    const cleanLogin = cleanSender.toLowerCase();
+    const tags = {
+        username: cleanLogin,
+        'display-name': cleanSender,
+        'user-id': 'sim_' + cleanLogin,
+        mod: isMod,
+        badges: isMod ? { moderator: '1' } : {}
+    };
+
+    if (dbRef) {
+        try {
+            const u = await dbRef.getUser(cleanLogin);
+            if (u && u.twitch_id) tags['user-id'] = u.twitch_id;
+        } catch (_) {}
+    }
+
+    const channel = formatChannelName(botConfig.channel);
+    await handleChatMessage(channel, tags, messageText, false);
+    return {
+        sender: cleanSender,
+        message: messageText,
+        silent_mode: !!botConfig.silent_mode,
+        recentResponses: getRecentBotMessages().slice(-3)
+    };
 }
 
 module.exports = {
@@ -1260,5 +1359,8 @@ module.exports = {
     disconnectBot,
     sendChat,
     runTimerTick,
-    buildAnnouncementMessage
+    buildAnnouncementMessage,
+    simulateChatMessage,
+    getRecentBotMessages,
+    handleChatMessage
 };
