@@ -989,6 +989,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Copiar CSS Anti-Render para OBS
+  const btnCopyAntiRender = document.getElementById('btn-copy-anti-render-css');
+  if (btnCopyAntiRender) {
+    btnCopyAntiRender.addEventListener('click', () => {
+      const code = document.getElementById('obs-anti-render-css')?.textContent || '';
+      navigator.clipboard.writeText(code).then(() => {
+        showToast('🛡️ ¡CSS Anti-Render copiado! Pégalo en OBS > CSS Personalizado', 'success');
+      }).catch(() => {
+        showToast('Selecciona y copia el CSS manualmente', 'info');
+      });
+    });
+  }
+
+  // Copiar URL de Ping (/ping) para cron-job / UptimeRobot
+  const btnCopyPing = document.getElementById('btn-copy-ping-url');
+  if (btnCopyPing) {
+    btnCopyPing.addEventListener('click', () => {
+      const pingUrl = `${window.location.origin}/ping`;
+      navigator.clipboard.writeText(pingUrl).then(() => {
+        showToast(`⏰ URL copiada: ${pingUrl} (Pégala en cron-job.org o UptimeRobot)`, 'success');
+      }).catch(() => {
+        showToast(`URL de Ping: ${window.location.origin}/ping`, 'info');
+      });
+    });
+  }
+
   // Botón directo para lanzar alerta de prueba a OBS
   const btnTestObsDirect = document.getElementById('btn-test-obs-direct');
   if (btnTestObsDirect) {
@@ -1387,6 +1413,37 @@ document.addEventListener('DOMContentLoaded', () => {
     btnExportCsv.addEventListener('click', () => {
       window.location.href = '/api/dashboard/export-csv';
       showToast('📥 Descargando archivo CSV de cumpleaños...', 'info');
+    });
+  }
+
+  // ─── Fusionar Duplicados por Cambio de Nick en Twitch ─────────────────────
+  const btnDeduplicate = document.getElementById('btn-deduplicate');
+  if (btnDeduplicate) {
+    btnDeduplicate.addEventListener('click', async () => {
+      if (!confirm('¿Deseas analizar y fusionar automáticamente cuentas duplicadas por cambio de nombre en Twitch?')) return;
+      btnDeduplicate.disabled = true;
+      const origHtml = btnDeduplicate.innerHTML;
+      btnDeduplicate.innerHTML = '<span>⏳</span><span>Analizando...</span>';
+      try {
+        const res = await authFetch('/api/dashboard/deduplicate', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          if (data.merged > 0) {
+            showToast(data.message, 'success');
+            loadBirthdays();
+            loadStats();
+          } else {
+            showToast('No se encontraron cuentas duplicadas.', 'info');
+          }
+        } else {
+          showToast(data.error || 'Error al fusionar duplicados', 'error');
+        }
+      } catch {
+        showToast('Error de conexión al fusionar duplicados', 'error');
+      } finally {
+        btnDeduplicate.disabled = false;
+        btnDeduplicate.innerHTML = origHtml;
+      }
     });
   }
 

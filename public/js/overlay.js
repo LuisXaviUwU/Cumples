@@ -20,6 +20,33 @@ const debugStatus = document.getElementById('debug-status');
 let currentAudio = null;
 let currentOverlayVolume = 0.85;
 
+// Fade-out suave de audio para evitar cortes abruptos en el stream
+function fadeOutAudio(audio, durationMs = 1000) {
+  if (!audio) return;
+  const startVol = audio.volume;
+  if (startVol <= 0) {
+    try { audio.pause(); } catch (_) {}
+    return;
+  }
+  const steps = 12;
+  const stepTime = durationMs / steps;
+  let currentStep = 0;
+  const interval = setInterval(() => {
+    currentStep++;
+    const factor = Math.max(0, 1 - (currentStep / steps));
+    try {
+      audio.volume = Math.max(0, startVol * factor);
+    } catch (_) {}
+    if (currentStep >= steps) {
+      clearInterval(interval);
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+      } catch (_) {}
+    }
+  }, stepTime);
+}
+
 function applyOverlayConfig(cfg) {
   if (!cfg) return;
 
@@ -272,7 +299,12 @@ function playNext() {
   // Mostrar alerta con animación
   alertWrapper.classList.add('active');
 
-  // Programar fin de alerta
+  // Programar fin de alerta y fade-out suave del audio
+  const fadeStartMs = Math.max(0, ALERT_DURATION_MS - 1200);
+  setTimeout(() => {
+    if (currentAudio) fadeOutAudio(currentAudio, 1200);
+  }, fadeStartMs);
+
   setTimeout(() => {
     alertWrapper.classList.remove('active');
     setTimeout(() => {
@@ -324,7 +356,7 @@ function connectSSE() {
         }
         alertWrapper.classList.remove('active');
         isPlaying = false;
-        alertQueue = [];
+        alertQueue.length = 0;
         updateQueueTag();
         return;
       }
