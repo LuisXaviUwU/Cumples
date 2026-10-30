@@ -202,9 +202,22 @@ async function buildAnnouncementMessage() {
         }
 
         // 1. Prioridad: Cumpleaños de HOY
-        if (todayBirthdays.length > 0) {
-            const list = todayBirthdays.map(b => `@${b.name}`).join(', ');
-            return `🎂 ¡ALERTA DE FIESTA EN DIRECTO! 🎉 Hoy cumple años ${list} 🥳 ¡Llenen el chat de amor, mañanitas y recuérdenle entrar a lanzar su alerta con música en pantalla! 👉 ${appUrlRef} 👑✨`;
+        const todayPending = todayBirthdays.filter(b => !b.alreadyCelebrated);
+        const todayCelebrated = todayBirthdays.filter(b => b.alreadyCelebrated);
+
+        if (todayPending.length > 0) {
+            const list = todayPending.map(b => `@${b.name}`).join(', ');
+            let extra = '';
+            if (todayCelebrated.length > 0) {
+                const listDone = todayCelebrated.map(b => `@${b.name}`).join(', ');
+                extra = ` (¡y felicidades a ${listDone} que ya festejó en vivo!)`;
+            }
+            return `🎂 ¡ALERTA DE FIESTA EN DIRECTO! 🎉 Hoy cumple años ${list}${extra} 🥳 ¡Llenen el chat de amor, mañanitas y recuérdenle entrar a lanzar su alerta con música en pantalla! 👉 ${appUrlRef} 👑✨`;
+        }
+
+        if (todayCelebrated.length > 0) {
+            const list = todayCelebrated.map(b => `@${b.name}`).join(', ');
+            return `🎂 ¡HOY ES CUMPLEAÑOS! 🎉 Felicidades a ${list} que hoy cumple años y ya festejó con su alerta especial en pantalla 🥳 ¡Sigan dejándole mucho amor y mañanitas en el chat! 💖✨`;
         }
 
         // 2. Prioridad: Cumpleaños en Período de Gracia (que aún no han lanzado)
@@ -283,31 +296,48 @@ async function handleChatMessage(channel, tags, message, self) {
 
     // ─── DETECCIÓN PASIVA DE CAMBIO DE NOMBRE DE TWITCH ───────────────────────
     // Twitch envía `user-id` en cada mensaje — es permanente aunque el nombre cambie.
-    // Si el user-id está en la BD con otro username, renombramos automáticamente en segundo plano.
+    // Si el user-id está en la BD con otro username, renombramos o fusionamos automáticamente en segundo plano.
     if (dbRef && tags['user-id'] && senderLogin) {
         (async () => {
             try {
                 const twitchId = String(tags['user-id']).trim();
                 const registeredByLogin = await dbRef.getUser(senderLogin);
 
+                if (dbRef.getUserByTwitchId) {
+                    const oldRecord = await dbRef.getUserByTwitchId(twitchId);
+                    if (oldRecord && oldRecord.username !== senderLogin) {
+                        if (registeredByLogin) {
+                            // Ambos registros existen en la BD (duplicado tras cambio de nick).
+                            console.log(`[TwitchBot] 🔄 Fusión de duplicados detectada: @${oldRecord.username} y @${senderLogin}. Eliminando obsoleto...`);
+                            if (!registeredByLogin.custom_message && oldRecord.custom_message) {
+                                registeredByLogin.custom_message = oldRecord.custom_message;
+                            }
+                            if (oldRecord.selected_sound && registeredByLogin.selected_sound === 'HBSilbato.mp3') {
+                                registeredByLogin.selected_sound = oldRecord.selected_sound;
+                            }
+                            registeredByLogin.twitch_id = twitchId;
+                            await dbRef.saveUser(registeredByLogin);
+                            await dbRef.deleteUser(oldRecord.username);
+                            console.log(`[TwitchBot] ✅ Fusión completada: @${oldRecord.username} absorbido en @${senderLogin}`);
+                        } else {
+                            // Solo existía el nombre anterior, migrar completamente
+                            console.log(`[TwitchBot] 🔄 Cambio de nombre detectado: @${oldRecord.username} → @${senderLogin}. Migrando...`);
+                            await dbRef.migrateUser(oldRecord.username, senderLogin, {
+                                display_name: tags['display-name'] || senderLogin,
+                                twitch_id: twitchId
+                            });
+                            console.log(`[TwitchBot] ✅ Migración completada: @${oldRecord.username} → @${senderLogin}`);
+                        }
+                        return;
+                    }
+                }
+
                 if (registeredByLogin) {
-                    // El usuario ya existe con su nombre actual. Guardar su twitch_id si aún no lo tiene.
-                    if (!registeredByLogin.twitch_id) {
+                    // El usuario existe y no hay colisión; asegurar su twitch_id guardado
+                    if (!registeredByLogin.twitch_id || registeredByLogin.twitch_id !== twitchId) {
                         registeredByLogin.twitch_id = twitchId;
                         await dbRef.saveUser(registeredByLogin);
                         console.log(`[TwitchBot] ✅ twitch_id guardado para @${senderLogin} → ${twitchId}`);
-                    }
-                } else if (dbRef.getUserByTwitchId) {
-                    // El nombre actual no está en la BD, pero quizá cambió el username.
-                    // Buscar por twitch_id permanente.
-                    const oldRecord = await dbRef.getUserByTwitchId(twitchId);
-                    if (oldRecord && oldRecord.username !== senderLogin) {
-                        console.log(`[TwitchBot] 🔄 Cambio de nombre detectado: @${oldRecord.username} → @${senderLogin}. Migrando...`);
-                        await dbRef.migrateUser(oldRecord.username, senderLogin, {
-                            display_name: tags['display-name'] || senderLogin,
-                            twitch_id: twitchId
-                        });
-                        console.log(`[TwitchBot] ✅ Migración completada: @${oldRecord.username} → @${senderLogin}`);
                     }
                 }
             } catch (e) {
@@ -378,6 +408,7 @@ async function handleChatMessage(channel, tags, message, self) {
         '!hbfelicitar', '!hbfelicitaciones', '!felicitaciones',
         '!hbgrabacion', '!hbmodovideo', '!hbcine', '!hbpausa',
         '!hbmod', '!hbadmin', '!hbestado',
+        '!hblibre', '!hbdesbloquear',
         '!hbpruebas', '!hbsilencio', '!hbsilent', '!hbmodoprueba'
     ];
     if (KNOWN_COMMANDS.includes(command)) {
@@ -424,6 +455,11 @@ async function handleChatMessage(channel, tags, message, self) {
         }
 
         const monthName      = MONTH_NAMES[regMonth] || regMonth;
+        const maxDay         = (regMonth === 2) ? 29 : ([4, 6, 9, 11].includes(regMonth) ? 30 : 31);
+        if (regDay > maxDay) {
+            return sendChat(`⚠️ @${sender}, ${monthName} solo tiene hasta ${maxDay} días 📅`);
+        }
+
         const senderLoginReg = (tags.username || sender).toLowerCase().replace(/[^a-z0-9_]/g, '');
 
         const cleanTarget   = targetPart.toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '');
@@ -433,34 +469,48 @@ async function handleChatMessage(channel, tags, message, self) {
         const twitchId      = isSelf && tags['user-id'] ? String(tags['user-id']).trim() : '';
 
         try {
-            const existing = await dbRef.getUser(targetLogin);
+            let existing = await dbRef.getUser(targetLogin);
+
+            // Detección de cambio de nick en Twitch: si no existe por nombre pero viene su Twitch ID permanente
+            if (!existing && twitchId) {
+                const oldByTwitchId = await dbRef.getUserByTwitchId(twitchId);
+                if (oldByTwitchId && oldByTwitchId.username !== targetLogin) {
+                    console.log(`[TwitchBot !registro] 🔄 Cambio de nombre detectado por Twitch ID: @${oldByTwitchId.username} -> @${targetLogin}. Migrando registro...`);
+                    await dbRef.migrateUser(oldByTwitchId.username, targetLogin, {
+                        display_name: targetDisplay,
+                        twitch_id: twitchId
+                    });
+                    existing = await dbRef.getUser(targetLogin);
+                }
+            }
 
             if (existing) {
-                if (existing.birthday_unlocked && isSelf) {
-                    return sendChat(`⚠️ @${sender}, tu cuenta está desbloqueada por el dashboard — ` +
-                        `actualiza tu fecha desde ${appUrlRef} 🎂`);
-                }
+                // Si la cuenta está marcada como desbloqueada (por dashboard o !hblibre) y el usuario
+                // viene a cambiar su fecha desde el chat, permitirlo directamente.
+                const isUnlocked = existing.birthday_unlocked === true || existing.birthday_unlocked === 1;
 
-                // Comprobar bloqueo de 1 año para cambio de fecha
-                const lockedSince = existing.created_at || existing.registered_at || null;
-                const isLocked = lockedSince
-                    ? (Date.now() - new Date(lockedSince).getTime()) < 365 * 24 * 3600 * 1000
-                    : false;
+                if (!isUnlocked) {
+                    // Comprobar bloqueo de 1 año para cambio de fecha
+                    const lockedSince = existing.birthday_locked_at || existing.created_at || existing.registered_at || null;
+                    const isLocked = lockedSince
+                        ? (Date.now() - new Date(lockedSince).getTime()) < 365 * 24 * 3600 * 1000
+                        : false;
 
-                if (isLocked && (existing.birth_month !== regMonth || existing.birth_day !== regDay)) {
-                    if (isSelf) {
-                        return sendChat(`🔒 @${sender}, tu fecha ya está registrada como el ` +
-                            `${existing.birth_day} de ${MONTH_NAMES[existing.birth_month] || existing.birth_month}. ` +
-                            `Solo puedes cambiarla una vez al año. Si hay un error, pide ayuda a la streamer 🎂`);
-                    } else {
-                        return sendChat(`🔒 @${sender}, @${targetLogin} ya tiene fecha registrada como el ` +
-                            `${existing.birth_day} de ${MONTH_NAMES[existing.birth_month] || existing.birth_month}. ` +
-                            `Solo se puede cambiar una vez al año 🎂`);
+                    if (isLocked && (existing.birth_month !== regMonth || existing.birth_day !== regDay)) {
+                        if (isSelf) {
+                            return sendChat(`🔒 @${sender}, tu fecha ya está registrada como el ` +
+                                `${existing.birth_day} de ${MONTH_NAMES[existing.birth_month] || existing.birth_month}. ` +
+                                `Solo puedes cambiarla una vez al año. Si hay un error, pide ayuda a la streamer o mods con !hblibre 🎂`);
+                        } else {
+                            return sendChat(`🔒 @${sender}, @${targetLogin} ya tiene fecha registrada como el ` +
+                                `${existing.birth_day} de ${MONTH_NAMES[existing.birth_month] || existing.birth_month}. ` +
+                                `Solo se puede cambiar una vez al año 🎂`);
+                        }
                     }
                 }
 
                 // Misma fecha — confirmar que ya está registrado
-                if (existing.birth_month === regMonth && existing.birth_day === regDay) {
+                if (existing.birth_month === regMonth && existing.birth_day === regDay && !isUnlocked) {
                     if (isSelf) {
                         return sendChat(`✅ @${sender}, ¡ya tienes el ${regDay} de ${monthName} registrado! ` +
                             `Cuando llegue tu día escribe !hoyesmicumple para lanzar tu alerta 🎉`);
@@ -469,10 +519,11 @@ async function handleChatMessage(channel, tags, message, self) {
                     }
                 }
 
-                // Actualizar fecha
+                // Actualizar fecha (permitido: desbloqueado por mod, o fecha diferente y sin lock)
+                const nowIso = new Date().toISOString();
                 existing.birth_month  = regMonth;
                 existing.birth_day    = regDay;
-                existing.created_at   = new Date().toISOString();
+                existing.birthday_locked_at = nowIso;
                 existing.birthday_unlocked = false;
                 if (twitchId && !existing.twitch_id) existing.twitch_id = twitchId;
                 await dbRef.saveUser(existing);
@@ -498,10 +549,13 @@ async function handleChatMessage(channel, tags, message, self) {
                 custom_message: '',
                 selected_sound: 'HBSilbato.mp3',
                 birthday_unlocked: false,
+                birthday_locked_at: nowIso,
                 created_at:     nowIso,
                 registered_at:  nowIso,
                 twitch_id:      twitchId
             });
+
+            dbRef.deduplicateUsers().catch(() => {});
 
             if (isSelf) {
                 return sendChat(`🎉🎂 ¡@${sender} YA ESTÁ EN LA LISTA VIP DE CUMPLEAÑEROS! ` +
@@ -685,13 +739,24 @@ async function handleChatMessage(channel, tags, message, self) {
             return sendChat(`👑 @${displayName}, ¡ya lanzaste tu alerta de cumpleaños este año! Esperamos que hayas disfrutado tu festejo en stream. ¡Te esperamos para el próximo año! 🥳🎂`);
         }
 
+        const sound = user.selected_sound || 'HBSilbato.mp3';
+
+        // Si el usuario configuró la canción completa de cumpleaños, verificar mutex de música
+        if (sound === 'MBMusica.mp3' && acquireMusicLockRef) {
+            const lockAcquired = acquireMusicLockRef(user.username);
+            if (!lockAcquired) {
+                const lockStatus = getMusicLockStatusRef ? getMusicLockStatusRef() : { remainingMs: 15000 };
+                const sec = Math.max(1, Math.ceil((lockStatus.remainingMs || 15000) / 1000));
+                return sendChat(`🎶 @${displayName}, hay una canción de cumpleaños sonando en directo en este momento. Espera ${sec}s y vuelve a escribir !hoyesmicumple 🎂`);
+            }
+        }
+
         // Marcar celebración en la base de datos para no duplicar
         user.last_activated = new Date().toISOString();
         user.last_played_date = new Date().toISOString().split('T')[0];
         user.last_celebrated_year = bStatus.celebrationYear;
         await dbRef.saveUser(user);
 
-        const sound = user.selected_sound || 'HBSilbato.mp3';
         const messageText = user.custom_message || '¡Hoy es mi cumpleaños!';
 
         await dbRef.logAlert({
@@ -1130,7 +1195,7 @@ async function handleChatMessage(channel, tags, message, self) {
         const mins = botConfig.timer_minutes || 60;
         const testMode = botConfig.silent_mode ? '🧪 MODO PRUEBAS (Silencio en Twitch)' : '🔊 NORMAL';
 
-        return sendChat(`🛡️ [Panel Mod Yocapi] Estado: ${recMode} · Chat: ${testMode} · 👑 Alertas: ${bdayAct} · 💌 Felicitaciones: ${felicAct} · ⏰ Timer: ${mins}m · Comandos: !hbpruebas on/off · !hbalertas on/off · !hbfelicitar on/off · !hbgrabacion on/off ✨`);
+        return sendChat(`🛡️ [Panel Mod] ${recMode} · ${testMode} · 👑 ${bdayAct} · 💌 ${felicAct} · ⏰ ${mins}m | Cmds: !hbalertas on/off · !hbfelicitar on/off · !hbgrabacion on/off · !hbpruebas on/off · !hblibre @usuario ✨`);
     }
 
     // COMANDO MOD 5: !hbpruebas [on|off] o !hbsilencio [on|off] (Modo Pruebas / Silencio en Chat de Twitch)
@@ -1154,6 +1219,26 @@ async function handleChatMessage(channel, tags, message, self) {
             const isSilent = !!botConfig.silent_mode;
             return sendChat(`🧪 @${sender}, el Modo Pruebas (Silencio en Chat) está: ${isSilent ? '🟡 ACTIVADO (Bot no habla en Twitch)' : '⚪ DESACTIVADO (Normal)'}. Usa "!hbpruebas on" para silenciar o "!hbpruebas off" para hablar en directo 🤫`);
         }
+    }
+
+    // COMANDO MOD 6: !hblibre @usuario o !hbdesbloquear @usuario (Permitir a un seguidor cambiar su fecha)
+    if (command === '!hblibre' || command === '!hbdesbloquear') {
+        if (!isStreamerOrMod(tags, channel)) {
+            return sendChat(`⛔ @${sender}, este comando de desbloqueo es exclusivo para la streamer (@yocapi_pr) y moderadores 🛡️`);
+        }
+        if (!dbRef) return;
+        const target = (parts[1] || '').trim().replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+        if (!target) {
+            return sendChat(`🛡️ @${sender}, indica a quién desbloquear la fecha: !hblibre @usuario 📅`);
+        }
+        const targetUser = await dbRef.getUser(target);
+        if (!targetUser) {
+            return sendChat(`⚠️ @${sender}, no se encontró al usuario @${target} en la base de datos.`);
+        }
+        targetUser.birthday_unlocked = true;
+        targetUser.birthday_locked_at = null;
+        await dbRef.saveUser(targetUser);
+        return sendChat(`🔓✅ @${sender}, la fecha de @${targetUser.display_name || targetUser.username} ha sido DESBLOQUEADA. Ya puede escribir "!registro DD-MM" o entrar a ${appUrlRef} para actualizar su fecha de cumpleaños 🎉`);
     }
 }
 

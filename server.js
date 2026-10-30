@@ -141,13 +141,18 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ─── Endpoints de Health / Ping para Keep-Alive & Anti-Sleep (Render / Uptime) ─
+app.get(['/ping', '/health', '/api/ping', '/api/health'], (req, res) => {
+    res.status(200).type('text/plain').send('pong');
+});
+
 // ─── Estado en Memoria para OBS Overlay ──────────────────────────────────────
 const sseClients = new Set();
 const recentAlertsCache = new Map(); // username -> timestamp
 
 // ─── Mutex de Música: solo una canción de cumpleaños a la vez ─────────────────
 let musicLock = null; // { lockedAt: Date, expiresAt: Date, lockedBy: string }
-const MUSIC_LOCK_DURATION_MS = 90_000; // 90 segundos (duración aprox. de la canción)
+const MUSIC_LOCK_DURATION_MS = 25_000; // 25 segundos (duración de la alerta + margen de fade-out)
 
 function getMusicLockStatus() {
     if (!musicLock) return { locked: false };
@@ -299,15 +304,65 @@ async function fetchPublicTwitchAvatar(username) {
     return null;
 }
 
+// Obtener información completa de usuario de Twitch (ID permanente, login, displayName, avatar)
+async function fetchTwitchUserInfo(username) {
+    const cleanName = (username || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+    if (!cleanName) return null;
+    try {
+        const ivrData = await fetchHttpJson(`https://api.ivr.fi/v2/twitch/user?login=${cleanName}`);
+        if (ivrData && Array.isArray(ivrData) && ivrData[0] && ivrData[0].id) {
+            const u = ivrData[0];
+            return {
+                id: String(u.id).trim(),
+                login: (u.login || cleanName).toLowerCase().trim(),
+                displayName: u.displayName || u.login || cleanName,
+                avatar: (u.logo && u.logo.startsWith('http')) ? u.logo : null
+            };
+        }
+    } catch (_) {}
+    return null;
+}
+
 // ─── Helper Cálculo de Cumpleaños & Gracia ──────────────────────────────────
 function getNowDate() {
     const tz = process.env.TIMEZONE || 'America/Mexico_City';
     try {
-        const localStr = new Date().toLocaleString('en-US', { timeZone: tz });
-        return new Date(localStr);
+        const now = new Date();
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: tz,
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric',
+            hour12: false
+        });
+        const parts = formatter.formatToParts(now);
+        let year, month, day, hour = 0, minute = 0, second = 0;
+        for (const p of parts) {
+            if (p.type === 'year') year = parseInt(p.value, 10);
+            else if (p.type === 'month') month = parseInt(p.value, 10);
+            else if (p.type === 'day') day = parseInt(p.value, 10);
+            else if (p.type === 'hour') hour = parseInt(p.value, 10) % 24;
+            else if (p.type === 'minute') minute = parseInt(p.value, 10);
+            else if (p.type === 'second') second = parseInt(p.value, 10);
+        }
+        if (year && month && day) {
+            return new Date(year, month - 1, day, hour, minute, second);
+        }
+        return new Date();
     } catch (_) {
         return new Date();
     }
+}
+
+// Máximo de días reales por mes (permite 29 de febrero para años bisiestos)
+function getMaxDaysInMonth(month) {
+    const m = parseInt(month, 10);
+    if (m === 2) return 29;
+    if ([4, 6, 9, 11].includes(m)) return 30;
+    return 31;
 }
 
 function getBirthdayStatus(birthMonth, birthDay) {
@@ -396,7 +451,7 @@ app.get('/api/avatar/:username', async (req, res) => {
     res.json({ avatar });
 });
 
-// Registro de usuario nuevo (solo nick + fecha de cumpleaños)
+// Registro de usuario nuevo (solo nick + fecha de cumpleaños con prevención de duplicados por cambio de nick)
 app.post('/api/auth/register', async (req, res) => {
     try {
         const { username, birth_month, birth_day, custom_message, selected_sound } = req.body;
@@ -405,29 +460,63 @@ app.post('/api/auth/register', async (req, res) => {
             return res.status(400).json({ error: 'Ingresa tu nombre de Twitch válido' });
         }
 
-        const cleanName = username.trim();
-        const existing = await db.getUser(cleanName);
-        if (existing) {
-            return res.status(400).json({ error: 'Este usuario ya está registrado. Usa la pestaña "Ya tengo cuenta" e ingresa tu usuario.' });
-        }
-
+        const cleanName = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
         const month = parseInt(birth_month, 10);
         const day = parseInt(birth_day, 10);
         if (isNaN(month) || month < 1 || month > 12) {
             return res.status(400).json({ error: 'Selecciona un mes válido' });
         }
-        if (isNaN(day) || day < 1 || day > 31) {
-            return res.status(400).json({ error: 'Selecciona un día válido' });
+        const maxDay = getMaxDaysInMonth(month);
+        if (isNaN(day) || day < 1 || day > maxDay) {
+            return res.status(400).json({ error: `Día inválido para el mes seleccionado (máximo ${maxDay})` });
         }
 
-        // Obtener avatar público de Twitch con multi-fuente
-        const fetchedAvatar = await fetchPublicTwitchAvatar(cleanName);
-        const avatarUrl = (fetchedAvatar && fetchedAvatar.startsWith('http')) ? fetchedAvatar : '/img/yocapi.png';
+        // Consultar info oficial de Twitch para obtener Twitch ID permanente y avatar
+        const twitchInfo = await fetchTwitchUserInfo(cleanName);
+        const twitchId = twitchInfo?.id || (req.body.twitch_id ? String(req.body.twitch_id).trim() : '');
+        const displayName = twitchInfo?.displayName || username.trim();
+        const avatarUrl = twitchInfo?.avatar || await fetchPublicTwitchAvatar(cleanName) || '/img/yocapi.png';
 
+        // 1. Verificar si ya existe exactamente con este nombre de usuario
+        const existing = await db.getUser(cleanName);
+        if (existing) {
+            return res.status(400).json({ error: 'Este usuario ya está registrado. Usa la pestaña "Ya tengo cuenta" e ingresa tu usuario.' });
+        }
+
+        // 2. DETECCIÓN DE CAMBIO DE NOMBRE: Si tiene twitch_id permanente, verificar si ya estaba registrado con su nombre anterior
+        if (twitchId) {
+            const oldRecord = await db.getUserByTwitchId(twitchId);
+            if (oldRecord && oldRecord.username !== cleanName) {
+                console.log(`[Auth/Register] 🔄 Cambio de nombre en Twitch detectado: @${oldRecord.username} -> @${cleanName}. Actualizando registro existente sin duplicar...`);
+                const updatedUser = await db.migrateUser(oldRecord.username, cleanName, {
+                    display_name: displayName,
+                    profile_image: avatarUrl,
+                    birth_month: month,
+                    birth_day: day,
+                    custom_message: custom_message || oldRecord.custom_message || '',
+                    selected_sound: selected_sound || oldRecord.selected_sound || 'HBSilbato.mp3',
+                    twitch_id: twitchId
+                });
+
+                const token = crypto.randomBytes(32).toString('hex');
+                await db.createSession(token, updatedUser);
+
+                res.cookie('yocapi_session', token, {
+                    httpOnly: true,
+                    maxAge: 60 * 24 * 60 * 60 * 1000,
+                    sameSite: 'lax',
+                    secure: process.env.NODE_ENV === 'production' || !!process.env.RENDER
+                });
+
+                return res.json({ success: true, user: updatedUser, token, migrated: true, previousUsername: oldRecord.username });
+            }
+        }
+
+        // 3. Crear nuevo usuario
         const nowIso = new Date().toISOString();
         const newUser = await db.saveUser({
             username: cleanName,
-            display_name: cleanName,
+            display_name: displayName,
             pin_hash: '',  // Ya no se usa
             recovery_hash: '', // Ya no se usa
             profile_image: avatarUrl,
@@ -438,8 +527,12 @@ app.post('/api/auth/register', async (req, res) => {
             birthday_unlocked: false,
             created_at: nowIso,
             registered_at: nowIso,
-            twitch_id: req.body.twitch_id || ''
+            birthday_locked_at: nowIso,
+            twitch_id: twitchId
         });
+
+        // Limpiar duplicados residuales si existieran
+        db.deduplicateUsers().catch(() => {});
 
         const token = crypto.randomBytes(32).toString('hex');
         await db.createSession(token, newUser);
@@ -463,7 +556,7 @@ app.post('/api/auth/reset-pin', async (req, res) => {
     res.status(410).json({ error: 'Esta función ya no está disponible. Ahora solo necesitas tu nombre de Twitch para acceder.' });
 });
 
-// Inicio de sesión — solo con el nombre de Twitch (sin contraseña)
+// Inicio de sesión — solo con el nombre de Twitch (con detección de cambio de nick)
 app.post('/api/auth/login', async (req, res) => {
     try {
         const { username } = req.body;
@@ -471,7 +564,25 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(400).json({ error: 'Ingresa tu nombre de Twitch' });
         }
 
-        const user = await db.getUser(username.trim());
+        const cleanName = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+        let user = await db.getUser(cleanName);
+
+        // Si no se encuentra con el nuevo nombre, comprobar si cambió de nombre en Twitch buscando por Twitch ID permanente
+        if (!user) {
+            const twitchInfo = await fetchTwitchUserInfo(cleanName);
+            if (twitchInfo && twitchInfo.id) {
+                const oldUser = await db.getUserByTwitchId(twitchInfo.id);
+                if (oldUser) {
+                    console.log(`[Auth/Login] 🔄 Inicio de sesión con nick actualizado de Twitch: @${oldUser.username} -> @${cleanName}. Migrando...`);
+                    user = await db.migrateUser(oldUser.username, cleanName, {
+                        display_name: twitchInfo.displayName || cleanName,
+                        profile_image: twitchInfo.avatar || oldUser.profile_image,
+                        twitch_id: twitchInfo.id
+                    });
+                }
+            }
+        }
+
         if (!user) {
             return res.status(404).json({ error: 'Usuario no encontrado. ¿Aún no estás registrado? Usa la pestaña "Registrarme".' });
         }
@@ -509,8 +620,8 @@ function isUserDateLocked(user) {
     if (user.birthday_unlocked === true || user.birthday_unlocked === 1) return false;
     if (!user.birth_month || !user.birth_day) return false;
 
-    // Buscar cualquier fecha de registro/creación/modificación disponible
-    const dateStr = user.created_at || user.registered_at || user.last_changed_at;
+    // Buscar fecha de bloqueo de cumpleaños o fecha de registro inicial (NUNCA last_changed_at)
+    const dateStr = user.birthday_locked_at || user.created_at || user.registered_at;
     const regTime = dateStr ? new Date(dateStr).getTime() : 0;
     // Si ya tiene fecha registrada pero no hay timestamp, por defecto está bloqueado por 1 año
     if (!regTime) return true;
@@ -582,8 +693,9 @@ app.post('/api/birthday/update', authenticateUser, async (req, res) => {
             if (isNaN(m) || m < 1 || m > 12) {
                 return res.status(400).json({ error: 'Mes inválido' });
             }
-            if (isNaN(d) || d < 1 || d > 31) {
-                return res.status(400).json({ error: 'Día inválido' });
+            const maxDay = getMaxDaysInMonth(m);
+            if (isNaN(d) || d < 1 || d > maxDay) {
+                return res.status(400).json({ error: `Día inválido para el mes seleccionado (máximo ${maxDay})` });
             }
 
             // Validar restricción de cambio de fecha por 1 año
@@ -600,7 +712,7 @@ app.post('/api/birthday/update', authenticateUser, async (req, res) => {
             user.birth_month = m;
             user.birth_day = d;
             user.birthday_unlocked = false; // Se vuelve a bloquear por 1 año al actualizarla
-            user.created_at = new Date().toISOString();
+            user.birthday_locked_at = new Date().toISOString();
         }
 
         if (custom_message !== undefined) {
@@ -698,6 +810,18 @@ app.post('/api/birthday/alert', authenticateUser, async (req, res) => {
     }
 
     recentAlertsCache.set(user.username, now);
+
+    // ── Mutex de música si el usuario eligió MBMusica.mp3 ──────────────────
+    if (user.selected_sound === 'MBMusica.mp3') {
+        if (!acquireMusicLock(user.username)) {
+            const lockInfo = getMusicLockStatus();
+            const secsLeft = Math.ceil((lockInfo.remainingMs || 5000) / 1000);
+            return res.status(429).json({
+                error: `🎵 La música de fiesta ya está sonando en stream (${secsLeft}s restantes). ¡Espera que termine para que tu rola suene completa!`
+            });
+        }
+        broadcastToOverlay({ type: 'music_lock_update', music_lock: getMusicLockStatus() });
+    }
 
     // Auto-heal avatar si es default o falta antes de lanzar alerta
     if (!user.profile_image || user.profile_image === '/img/yocapi.png' || !user.profile_image.startsWith('http')) {
@@ -1131,6 +1255,9 @@ app.get('/api/dashboard/birthdays', authenticateDashboard, async (req, res) => {
         const month = req.query.month ? parseInt(req.query.month, 10) : null;
         const search = (req.query.search || '').toLowerCase().trim();
 
+        // Limpiar automáticamente posibles duplicados por cambio de nombre de Twitch
+        await db.deduplicateUsers();
+
         let all = await db.getAllUsers();
 
         if (month && !isNaN(month)) {
@@ -1177,6 +1304,7 @@ app.post('/api/dashboard/users/:username/unlock-date', authenticateDashboard, as
         user.birthday_unlocked = true;
         user.birth_month = 0;
         user.birth_day = 0;
+        user.birthday_locked_at = '';
         await db.saveUser(user);
 
         res.json({ success: true, message: `¡Fecha de @${user.username} desbloqueada y reseteada! Ya puede elegir y confirmar su fecha correcta en su perfil.` });
@@ -1191,8 +1319,12 @@ app.post('/api/dashboard/users/:username/change-date', authenticateDashboard, as
         const { birth_month, birth_day, reset_celebration } = req.body;
         const m = parseInt(birth_month, 10);
         const d = parseInt(birth_day, 10);
-        if (isNaN(m) || m < 1 || m > 12 || isNaN(d) || d < 1 || d > 31) {
-            return res.status(400).json({ error: 'Mes o día inválido' });
+        if (isNaN(m) || m < 1 || m > 12) {
+            return res.status(400).json({ error: 'Mes inválido' });
+        }
+        const maxDay = getMaxDaysInMonth(m);
+        if (isNaN(d) || d < 1 || d > maxDay) {
+            return res.status(400).json({ error: `Día inválido para el mes seleccionado (máximo ${maxDay})` });
         }
 
         const user = await db.getUser(req.params.username);
@@ -1201,7 +1333,7 @@ app.post('/api/dashboard/users/:username/change-date', authenticateDashboard, as
         user.birth_month = m;
         user.birth_day = d;
         user.birthday_unlocked = false;
-        user.created_at = new Date().toISOString();
+        user.birthday_locked_at = new Date().toISOString();
 
         // Si se solicita o por defecto al cambiar la fecha, permitir volver a celebrar este año
         if (reset_celebration !== false) {
@@ -1348,6 +1480,25 @@ app.post('/api/dashboard/users/:username/refresh-avatar', authenticateDashboard,
         });
     } catch (err) {
         res.status(500).json({ error: 'Error al refrescar avatar desde Twitch' });
+    }
+});
+
+// ─── API: Deduplicación manual de usuarios (DASHBOARD) ───────────────────────
+app.post('/api/dashboard/deduplicate', authenticateDashboard, async (req, res) => {
+    try {
+        const result = await db.deduplicateUsers();
+        if (result.merged === 0) {
+            return res.json({ success: true, merged: 0, message: 'No se encontraron cuentas duplicadas.' });
+        }
+        const details = result.removed.map(r => `@${r.old} → @${r.kept}`).join(', ');
+        return res.json({
+            success: true,
+            merged: result.merged,
+            message: `✅ ${result.merged} cuenta(s) duplicada(s) fusionada(s): ${details}`
+        });
+    } catch (err) {
+        console.error('Error en deduplicación manual:', err);
+        res.status(500).json({ error: 'Error al deduplicar: ' + (err.message || 'desconocido') });
     }
 });
 
@@ -1774,7 +1925,8 @@ app.get('/api/dashboard/export-csv', authenticateDashboard, async (req, res) => 
             const msg = `"${(u.custom_message || '').replace(/"/g, '""')}"`;
             const sound = u.selected_sound || 'HBSilbato.mp3';
             const regDate = u.created_at ? new Date(u.created_at).toLocaleDateString('es-ES') : '';
-            const lockDate = u.birthday_locked_at ? new Date(u.birthday_locked_at).toLocaleDateString('es-ES') : '';
+            const rawLock = u.birthday_locked_at || u.created_at || u.registered_at;
+            const lockDate = rawLock ? new Date(rawLock).toLocaleDateString('es-ES') : '';
 
             csv += `"${u.username}","${u.display_name || u.username}","${m}",${d},${msg},"${sound}","${regDate}","${lockDate}"\n`;
         }
@@ -1987,10 +2139,20 @@ app.get('/api/bot/timer', async (req, res) => {
             }
         }
 
-        // 1. Prioridad Máxima: Cumpleaños de HOY
+        // 1. Prioridad Máxima: Cumpleaños de HOY — distinguir pendientes vs ya celebrados
         if (todayBirthdays.length > 0) {
-            const list = todayBirthdays.map(b => `@${b.name}`).join(', ');
-            return res.send(`🎂 ¡ATENCIÓN CHAT! ¡Hoy es el cumpleaños de ${list}! 🥳 ¡Mándale mucho amor en el chat y dile que entre a lanzar su alerta en directo con confeti y sonido! 👉 ${siteUrl} 🎉`);
+            const pending   = todayBirthdays.filter(b => !b.alreadyCelebrated);
+            const celebrated = todayBirthdays.filter(b => b.alreadyCelebrated);
+            const parts = [];
+            if (pending.length > 0) {
+                const list = pending.map(b => `@${b.name}`).join(', ');
+                parts.push(`🎂 ¡ATENCIÓN CHAT! ¡HOY es el cumpleaños de ${list}! 🥳 ¡Dile que entre a lanzar su alerta con confeti y música en directo! 👉 ${siteUrl} 🎉`);
+            }
+            if (celebrated.length > 0) {
+                const list = celebrated.map(b => `@${b.name}`).join(', ');
+                parts.push(`🥳 ¡Feliz cumpleaños a ${list}! ¡Ya celebraron en directo con su alerta especial! 🎊 ¡Déjales mucho amor en el chat!`);
+            }
+            return res.send(parts.join(' | '));
         }
 
         // 2. Prioridad: Cumpleaños en Período de Gracia (que aún no han lanzado su alerta)
@@ -2113,6 +2275,16 @@ async function startServer() {
     await loadInitialSettings();
     initBotService();
 
+    // Consolidar automáticamente cuentas duplicadas por cambio de nombre
+    try {
+        const dedupRes = await db.deduplicateUsers();
+        if (dedupRes.merged > 0) {
+            console.log(`[Startup] 🔄 ${dedupRes.merged} cuentas duplicadas consolidadas con éxito.`);
+        }
+    } catch (e) {
+        console.warn('[Startup] Advertencia en comprobación de duplicados:', e.message);
+    }
+
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`\n==================================================`);
         console.log(`🎂 Yocapi Birthday Platform v2.0 (Nick + PIN)`);
@@ -2122,6 +2294,21 @@ async function startServer() {
         console.log(`💾 Base de datos: ${db.getMode().toUpperCase()}`);
         console.log(`☁️  Configuración OBS & Bot: PERSISTENTE EN ${db.getMode() === 'firestore' ? 'FIRESTORE CLOUD' : 'SQLITE'}`);
         console.log(`==================================================\n`);
+
+        // Anti-Sleep Keep-Alive para Render (ping cada 8 min para evitar que Render lo apague)
+        const rawTargetUrl = process.env.RENDER_EXTERNAL_URL || process.env.APP_URL || '';
+        if (rawTargetUrl && rawTargetUrl.startsWith('http') && !rawTargetUrl.includes('localhost')) {
+            const pingUrl = `${rawTargetUrl.replace(/\/$/, '')}/ping`;
+            console.log(`[Keep-Alive] ⏰ Anti-sleep activo para Render: ping cada 8 min a ${pingUrl}`);
+            setInterval(() => {
+                try {
+                    const client = pingUrl.startsWith('https') ? https : require('http');
+                    const req = client.get(pingUrl, { timeout: 10000 }, (res) => {});
+                    req.on('error', () => {});
+                    req.on('timeout', () => { req.destroy(); });
+                } catch (_) {}
+            }, 8 * 60 * 1000);
+        }
     });
 }
 

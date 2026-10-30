@@ -138,6 +138,9 @@ function initDatabase() {
     try {
         sqliteDb.exec("ALTER TABLE users ADD COLUMN twitch_id TEXT DEFAULT '';");
     } catch (e) {}
+    try {
+        sqliteDb.exec("ALTER TABLE users ADD COLUMN birthday_locked_at TEXT DEFAULT '';");
+    } catch (e) {}
 
     mode = 'sqlite';
     console.log('💾 [DB] Conectado a SQLite local (data/birthdays.db)');
@@ -197,6 +200,10 @@ const db = {
             last_celebrated_year: parseInt(data.last_celebrated_year, 10) || 0,
             birthday_unlocked: (data.birthday_unlocked === true || data.birthday_unlocked === 1) ? 1 : 0,
             created_at: data.created_at || data.registered_at || new Date().toISOString(),
+            // Si se pasa null explícitamente (desbloqueo), se respeta; de lo contrario usar fallback
+            birthday_locked_at: ('birthday_locked_at' in data && data.birthday_locked_at === null)
+                ? ''
+                : (data.birthday_locked_at || data.created_at || data.registered_at || new Date().toISOString()),
             twitch_id: data.twitch_id || ''
         };
 
@@ -213,8 +220,8 @@ const db = {
                     username, display_name, pin_hash, recovery_hash, profile_image,
                     birth_month, birth_day, custom_message, selected_sound,
                     registered_at, last_changed_at, last_activated, last_played_date,
-                    last_celebrated_year, birthday_unlocked, created_at, twitch_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    last_celebrated_year, birthday_unlocked, created_at, twitch_id, birthday_locked_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(username) DO UPDATE SET
                     display_name = excluded.display_name,
                     pin_hash = excluded.pin_hash,
@@ -230,13 +237,14 @@ const db = {
                     last_celebrated_year = excluded.last_celebrated_year,
                     birthday_unlocked = excluded.birthday_unlocked,
                     created_at = CASE WHEN excluded.created_at != '' THEN excluded.created_at ELSE users.created_at END,
-                    twitch_id = CASE WHEN excluded.twitch_id != '' THEN excluded.twitch_id ELSE users.twitch_id END
+                    twitch_id = CASE WHEN excluded.twitch_id != '' THEN excluded.twitch_id ELSE users.twitch_id END,
+                    birthday_locked_at = excluded.birthday_locked_at
             `);
             stmt.run(
                 record.username, record.display_name, record.pin_hash, record.recovery_hash, record.profile_image,
                 record.birth_month, record.birth_day, record.custom_message, record.selected_sound,
                 record.registered_at, record.last_changed_at, record.last_activated, record.last_played_date,
-                record.last_celebrated_year, record.birthday_unlocked, record.created_at, record.twitch_id
+                record.last_celebrated_year, record.birthday_unlocked, record.created_at, record.twitch_id, record.birthday_locked_at
             );
         }
         return record;
@@ -293,6 +301,116 @@ const db = {
             await this.deleteUser(oldUsername);
         }
         return merged;
+    },
+
+    async deduplicateUsers() {
+        try {
+            const users = await this.getAllUsers();
+            if (!users || users.length <= 1) return { merged: 0, removed: [] };
+
+            const removed = [];
+            const deletedUsernames = new Set();
+
+            for (let i = 0; i < users.length; i++) {
+                const u1 = users[i];
+                if (!u1 || deletedUsernames.has(u1.username)) continue;
+
+                for (let j = i + 1; j < users.length; j++) {
+                    const u2 = users[j];
+                    if (!u2 || deletedUsernames.has(u2.username)) continue;
+
+                    let isDuplicate = false;
+
+                    // Criterio 1: Mismo twitch_id no vacío
+                    if (u1.twitch_id && u2.twitch_id && String(u1.twitch_id).trim() === String(u2.twitch_id).trim()) {
+                        isDuplicate = true;
+                    }
+
+                    // Criterio 2: Mismo día y mes de cumpleaños + nombres derivados (ej: capiluisxavi y capiluisxavihdx)
+                    const m1 = parseInt(u1.birth_month, 10);
+                    const m2 = parseInt(u2.birth_month, 10);
+                    const day1 = parseInt(u1.birth_day, 10);
+                    const day2 = parseInt(u2.birth_day, 10);
+
+                    if (!isDuplicate && !isNaN(m1) && !isNaN(m2) && !isNaN(day1) && !isNaN(day2) && m1 === m2 && day1 === day2) {
+                        const n1 = (u1.username || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                        const n2 = (u2.username || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                        const d1 = (u1.display_name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                        const d2 = (u2.display_name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+                        const nameMatch = (n1 && n2 && (n1 === n2 || n1.startsWith(n2) || n2.startsWith(n1))) ||
+                                          (d1 && d2 && (d1 === d2 || d1.startsWith(d2) || d2.startsWith(d1)));
+                        const sameMsg = (u1.custom_message && u2.custom_message &&
+                                         u1.custom_message.trim() === u2.custom_message.trim() &&
+                                         u1.custom_message.trim() !== '—' && u1.custom_message.trim() !== '');
+
+                        if (nameMatch || sameMsg) {
+                            isDuplicate = true;
+                        }
+                    }
+
+                    if (isDuplicate) {
+                        const d1 = new Date(u1.created_at || u1.registered_at || 0).getTime();
+                        const d2 = new Date(u2.created_at || u2.registered_at || 0).getTime();
+
+                        let keepUser, oldUser;
+                        // Prioridad 1: quien tiene twitch_id (es el más actualizado desde Twitch)
+                        // Prioridad 2: nombre más largo (el nuevo nick de Twitch suele ser más largo)
+                        // Prioridad 3: registro más reciente
+                        const u1HasId = !!(u1.twitch_id && u1.twitch_id.trim());
+                        const u2HasId = !!(u2.twitch_id && u2.twitch_id.trim());
+                        if (u2HasId && !u1HasId) {
+                            keepUser = u2; oldUser = u1;
+                        } else if (u1HasId && !u2HasId) {
+                            keepUser = u1; oldUser = u2;
+                        } else if (u2.username.length > u1.username.length) {
+                            keepUser = u2; oldUser = u1;
+                        } else if (u1.username.length > u2.username.length) {
+                            keepUser = u1; oldUser = u2;
+                        } else if (d2 > d1) {
+                            keepUser = u2; oldUser = u1;
+                        } else {
+                            keepUser = u1; oldUser = u2;
+                        }
+
+                        console.log(`[DB Deduplicate] 🔄 Fusionando duplicado: @${oldUser.username} absorbido en @${keepUser.username}`);
+                        if (!keepUser.twitch_id && oldUser.twitch_id) keepUser.twitch_id = oldUser.twitch_id;
+                        if ((!keepUser.custom_message || keepUser.custom_message === '—') && oldUser.custom_message) {
+                            keepUser.custom_message = oldUser.custom_message;
+                        }
+                        if (oldUser.selected_sound && keepUser.selected_sound === 'HBSilbato.mp3') {
+                            keepUser.selected_sound = oldUser.selected_sound;
+                        }
+                        if (!keepUser.last_celebrated_year && oldUser.last_celebrated_year) {
+                            keepUser.last_celebrated_year = oldUser.last_celebrated_year;
+                        }
+                        if (!keepUser.last_played_date && oldUser.last_played_date) {
+                            keepUser.last_played_date = oldUser.last_played_date;
+                        }
+                        if (oldUser.created_at && (!keepUser.created_at || new Date(oldUser.created_at) < new Date(keepUser.created_at))) {
+                            keepUser.created_at = oldUser.created_at;
+                        }
+                        if (!keepUser.birthday_locked_at && oldUser.birthday_locked_at) {
+                            keepUser.birthday_locked_at = oldUser.birthday_locked_at;
+                        }
+                        if ((!keepUser.profile_image || keepUser.profile_image === '/img/yocapi.png') && oldUser.profile_image && oldUser.profile_image !== '/img/yocapi.png') {
+                            keepUser.profile_image = oldUser.profile_image;
+                        }
+                        await this.saveUser(keepUser);
+                        await this.deleteUser(oldUser.username);
+                        deletedUsernames.add(oldUser.username);
+                        removed.push({ old: oldUser.username, kept: keepUser.username });
+                        if (oldUser === u1) {
+                            break; // u1 fue absorbido y eliminado, terminar comparaciones de u1
+                        }
+                    }
+                }
+            }
+            return { merged: removed.length, removed };
+        } catch (err) {
+            console.error('[DB Deduplicate] Error en deduplicateUsers:', err);
+            return { merged: 0, removed: [] };
+        }
     },
 
     // ─ SESIONES ─────────────────────────────────────────────────────────────
