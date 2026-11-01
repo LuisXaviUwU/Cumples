@@ -812,6 +812,18 @@ body {
   transform: translateY(-1px);
 }
 
+.btn-act-mark-done {
+  background: rgba(16, 185, 129, 0.16) !important;
+  border-color: rgba(16, 185, 129, 0.38) !important;
+  color: #6ee7b7 !important;
+}
+
+.btn-act-mark-done:hover {
+  background: rgba(16, 185, 129, 0.32) !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+
 .btn-act-unlock {
   background: rgba(245, 158, 11, 0.12) !important;
   border-color: rgba(245, 158, 11, 0.32) !important;
