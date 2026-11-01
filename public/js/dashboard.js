@@ -310,10 +310,20 @@ async function loadTodayCelebrants() {
           const tagColor = c.status.isToday ? 'var(--c-pink)' : 'var(--c-gold)';
 
           const currentCelebrationYear = c.status?.celebrationYear || new Date().getFullYear();
-          const hasCelebrated = (parseInt(c.last_celebrated_year, 10) || 0) >= currentCelebrationYear;
+          const hasCelebrated = c.alreadyCelebrated !== undefined
+            ? !!c.alreadyCelebrated
+            : ((parseInt(c.last_celebrated_year, 10) || 0) >= currentCelebrationYear);
           const celebBadge = hasCelebrated
             ? '<span style="font-size:0.72rem; color:#f87171; background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.35); padding:2px 8px; border-radius:6px; font-weight:700;">✅ Ya lanzó este año</span>'
             : '<span style="font-size:0.72rem; color:#34d399; background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.35); padding:2px 8px; border-radius:6px; font-weight:700;">⏳ Listo para lanzar</span>';
+
+          const celebActionButton = hasCelebrated
+            ? `<button class="btn-copy btn-quick-reset-celebration" data-username="${c.username}" style="padding:6px 10px; font-size:0.78rem; background:rgba(239,68,68,0.15); border-color:rgba(239,68,68,0.35); color:#fca5a5; font-weight:700;" title="Permite que este usuario pueda volver a lanzar su alerta con !hoyesmicumple o desde la web">
+                🔄 Permitir Relanzar
+              </button>`
+            : `<button class="btn-copy btn-quick-mark-celebrated" data-username="${c.username}" style="padding:6px 10px; font-size:0.78rem; background:rgba(16,185,129,0.2); border-color:rgba(16,185,129,0.5); color:#34d399; font-weight:700;" title="Marcar como ya celebrado este año (silencia recordatorios del bot)">
+                ✅ Ya celebró
+              </button>`;
 
           card.innerHTML = `
             <div class="today-item-left">
@@ -333,12 +343,10 @@ async function loadTodayCelebrants() {
                 <option value="HBVoz.mp3" ${c.selected_sound === 'HBVoz.mp3' ? 'selected' : ''}>🎤 Felicitación de Voz</option>
                 <option value="MBMusica.mp3" ${c.selected_sound === 'MBMusica.mp3' ? 'selected' : ''}>🎵 Música de Fiesta</option>
               </select>
-              <button class="btn-alert-direct" data-user="${c.display_name}" data-avatar="${c.profile_image}" data-sound="${c.selected_sound}" data-msg="${c.custom_message || ''}">
+              <button class="btn-alert-direct" data-username="${c.username}" data-user="${c.display_name}" data-avatar="${c.profile_image}" data-sound="${c.selected_sound}" data-msg="${c.custom_message || ''}">
                 🎉 Lanzar a OBS
               </button>
-              <button class="btn-copy btn-quick-reset-celebration" data-username="${c.username}" style="padding:6px 10px; font-size:0.78rem; background:rgba(16,185,129,0.2); border-color:rgba(16,185,129,0.4); color:#34d399; font-weight:700;" title="Permite que este usuario pueda volver a lanzar su alerta con !hoyesmicumple o desde la web">
-                🔄 Permitir Relanzar
-              </button>
+              ${celebActionButton}
             </div>
           `;
 
@@ -355,15 +363,19 @@ async function loadTodayCelebrants() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                  username: btn.dataset.username || c.username,
                   user: btn.dataset.user,
                   avatar: btn.dataset.avatar,
                   sound: selectedSound,
-                  message: btn.dataset.msg
+                  message: btn.dataset.msg,
+                  markCelebrated: true
                 })
               });
               const resData = await postRes.json();
               if (resData.success) {
                 showToast(`¡Alerta de ${btn.dataset.user} enviada a OBS!`, 'success');
+                loadToday();
+                loadBirthdays();
               } else {
                 showToast(resData.error || 'Error al enviar', 'error');
               }
@@ -372,6 +384,28 @@ async function loadTodayCelebrants() {
             } finally {
               btn.disabled = false;
               btn.innerHTML = '🎉 Lanzar a OBS';
+            }
+          });
+
+          card.querySelector('.btn-quick-mark-celebrated')?.addEventListener('click', async (e) => {
+            const btn = e.currentTarget;
+            btn.disabled = true;
+            btn.textContent = 'Marcando...';
+            try {
+              const rRes = await authFetch(`/api/dashboard/users/${c.username}/mark-celebrated`, { method: 'POST' });
+              const rData = await rRes.json();
+              if (rData.success) {
+                showToast(rData.message, 'success');
+                loadToday();
+                loadBirthdays();
+              } else {
+                showToast(rData.error || 'Error al marcar como celebrado', 'error');
+              }
+            } catch {
+              showToast('Error de conexión', 'error');
+            } finally {
+              btn.disabled = false;
+              btn.textContent = '✅ Ya celebró';
             }
           });
 
@@ -485,6 +519,17 @@ async function loadBirthdays() {
       const tr = document.createElement('tr');
       const regDate = b.registered_at ? new Date(b.registered_at).toLocaleDateString() : '-';
       const isLocked = b.birthday_unlocked !== true && b.birth_month && b.birth_day;
+      const hasCelebrated = b.alreadyCelebrated !== undefined
+        ? !!b.alreadyCelebrated
+        : ((parseInt(b.last_celebrated_year, 10) || 0) >= (new Date().getFullYear()));
+
+      const celebActionBtn = hasCelebrated
+        ? `<button class="btn-act btn-act-reset" title="Permitir volver a lanzar alerta este año (resetea celebración)" data-reset-celebration="${b.username}">
+            🔄 Relanzar
+          </button>`
+        : `<button class="btn-act btn-act-mark-done" title="Marcar como ya celebrado este año (silencia recordatorios del bot)" data-mark-celebrated="${b.username}">
+            ✅ Ya celebró
+          </button>`;
 
       tr.innerHTML = `
         <td class="col-user">
@@ -511,9 +556,7 @@ async function loadBirthdays() {
             <button class="btn-act btn-act-launch" title="Lanzar alerta en directo a OBS" data-launch-alert="${b.username}">
               🚀 Lanzar
             </button>
-            <button class="btn-act btn-act-reset" title="Permitir volver a lanzar alerta este año (resetea celebración)" data-reset-celebration="${b.username}">
-              🔄 Relanzar
-            </button>
+            ${celebActionBtn}
             <button class="btn-act ${isLocked ? 'btn-act-unlock' : 'btn-act-free'}" title="${isLocked ? 'Desbloquear fecha de este usuario' : 'Fecha ya desbloqueada'}" data-unlock="${b.username}">
               ${isLocked ? '🔓 Abrir' : '✅ Libre'}
             </button>
@@ -564,6 +607,23 @@ async function loadBirthdays() {
             loadToday();
           } else {
             showToast(data.error || 'Error al resetear celebración', 'error');
+          }
+        } catch {
+          showToast('Error de conexión', 'error');
+        }
+      });
+
+      // Marcar celebración manualmente (silencia recordatorios del bot)
+      tr.querySelector('[data-mark-celebrated]')?.addEventListener('click', async () => {
+        try {
+          const res = await authFetch(`/api/dashboard/users/${b.username}/mark-celebrated`, { method: 'POST' });
+          const data = await res.json();
+          if (data.success) {
+            showToast(data.message, 'success');
+            loadBirthdays();
+            loadToday();
+          } else {
+            showToast(data.error || 'Error al marcar como celebrado', 'error');
           }
         } catch {
           showToast('Error de conexión', 'error');
@@ -911,13 +971,22 @@ function showLaunchAlertModal(username, displayName, avatar, message, defaultSou
       const res = await authFetch('/api/dashboard/trigger-alert', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user: displayName, avatar, sound, message: message || '¡Felicidades en tu día especial!' })
+        body: JSON.stringify({
+          username,
+          user: displayName,
+          avatar,
+          sound,
+          message: message || '¡Felicidades en tu día especial!',
+          markCelebrated: true
+        })
       });
       const data = await res.json();
       if (data.success) {
         showToast(`¡Alerta de ${displayName} enviada a OBS!`, 'success');
         backdrop.remove();
         loadStats();
+        loadBirthdays();
+        loadToday();
       } else {
         showToast(data.error || 'Error al lanzar alerta', 'error');
         btn.disabled = false;
@@ -2122,7 +2191,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await authFetch('/api/dashboard/bot/recent-messages');
       if (res.ok) { const d = await res.json(); updateSilentModeUI(!!d.silent_mode); }
-    } catch (_) {}
+    } catch (_) { }
   })();
 
   // ─── Sincronizar display del intervalo del timer ──────────────────────────
@@ -2593,7 +2662,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.classList.add('active');
         // Calcular duración estimada y mostrarla brevemente
         const estSec = Math.min(120, Math.max(20, Math.round(45 + (hp - 10) * 0.75)));
-        const estLabel = estSec >= 60 ? `${Math.floor(estSec/60)}m ${estSec % 60 > 0 ? estSec % 60 + 's' : ''}`.trim() : `${estSec}s`;
+        const estLabel = estSec >= 60 ? `${Math.floor(estSec / 60)}m ${estSec % 60 > 0 ? estSec % 60 + 's' : ''}`.trim() : `${estSec}s`;
         showToast(`🪅 Piñata: ${hp} golpes · duración ~${estLabel}`, 'info');
       }
     });
@@ -3349,7 +3418,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnBackup.innerHTML = '⏳ Descargando...';
         const res = await authFetch('/api/dashboard/backup-config');
         const data = await res.json();
-        
+
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -3413,9 +3482,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ─── Click-to-copy interactivo para comandos y ejemplos ──────────────────
   document.addEventListener('click', (e) => {
-    const copyTarget = e.target.closest('.cmd-btn-copy') || 
-                       e.target.closest('.cmd-example-code') || 
-                       e.target.closest('.cmd-alias-pill');
+    const copyTarget = e.target.closest('.cmd-btn-copy') ||
+      e.target.closest('.cmd-example-code') ||
+      e.target.closest('.cmd-alias-pill');
     if (!copyTarget) return;
 
     let textToCopy = copyTarget.getAttribute('data-copy');
