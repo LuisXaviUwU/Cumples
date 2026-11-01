@@ -400,6 +400,24 @@ function getBirthdayStatus(birthMonth, birthDay) {
     };
 }
 
+// ─── Helper de Detección Robusta: ¿El usuario ya celebró su cumpleaños este año? ──
+function isUserCelebratedThisYear(user, status) {
+    if (!user) return false;
+    const celebrationYear = status?.celebrationYear || new Date().getFullYear();
+    const lastCelebratedYear = parseInt(user.last_celebrated_year, 10) || 0;
+    if (lastCelebratedYear >= celebrationYear) return true;
+
+    // Respaldo de detección: si ya tiene fecha de reproducción o activación registrada del año en curso
+    const yearStr = String(celebrationYear);
+    if (user.last_played_date && String(user.last_played_date).startsWith(yearStr)) {
+        return true;
+    }
+    if (user.last_activated && String(user.last_activated).startsWith(yearStr)) {
+        return true;
+    }
+    return false;
+}
+
 // ─── Inicialización del Motor de Piñata de Capibara & Bot Oficial ──────────
 pinataManager.init({
     broadcastToOverlay: (data) => broadcastToOverlay(data),
@@ -410,6 +428,7 @@ function initBotService() {
     twitchBot.initTwitchBot({
         db,
         getBirthdayStatus,
+        isUserCelebratedThisYear,
         APP_URL,
         initialConfig: appSettings.twitch_bot,
         cmdResponses: appSettings.bot_cmd_responses || {},
@@ -651,8 +670,7 @@ app.get('/api/me', authenticateUser, async (req, res) => {
             : getBirthdayStatus(user.birth_month, user.birth_day);
 
         // Determine if the user already launched their celebration this year
-        const alreadyCelebrated = status.canCelebrate
-            && (parseInt(user.last_celebrated_year, 10) || 0) >= status.celebrationYear;
+        const alreadyCelebrated = status.canCelebrate && isUserCelebratedThisYear(user, status);
 
         res.json({
             user: {
@@ -792,8 +810,7 @@ app.post('/api/birthday/alert', authenticateUser, async (req, res) => {
     }
 
     // ── Restricción: solo una celebración por cumpleaños (por año) ──────────
-    const lastCelebratedYear = parseInt(user.last_celebrated_year, 10) || 0;
-    if (lastCelebratedYear >= status.celebrationYear) {
+    if (isUserCelebratedThisYear(user, status)) {
         return res.status(400).json({
             error: '🎂 ¡Ya lanzaste tu felicitación de cumpleaños este año! Solo puedes hacerlo una vez. ¡Hasta el próximo año!'
         });
@@ -1242,7 +1259,8 @@ app.get('/api/dashboard/today', authenticateDashboard, async (req, res) => {
         if (status.canCelebrate) {
             todayList.push({
                 ...u,
-                status
+                status,
+                alreadyCelebrated: isUserCelebratedThisYear(u, status)
             });
         }
     }
@@ -1270,7 +1288,15 @@ app.get('/api/dashboard/birthdays', authenticateDashboard, async (req, res) => {
             );
         }
 
-        res.json(all);
+        const mapped = all.map(u => {
+            const status = (u.birth_month && u.birth_day) ? getBirthdayStatus(u.birth_month, u.birth_day) : null;
+            return {
+                ...u,
+                alreadyCelebrated: isUserCelebratedThisYear(u, status)
+            };
+        });
+
+        res.json(mapped);
     } catch (err) {
         console.error('Error en /api/dashboard/birthdays:', err);
         res.status(500).json({ error: 'Error al consultar cumpleaños' });
@@ -1369,6 +1395,34 @@ app.post('/api/dashboard/users/:username/reset-celebration', authenticateDashboa
     } catch (err) {
         console.error('Error al resetear celebración:', err);
         res.status(500).json({ error: 'Error al resetear celebración' });
+    }
+});
+
+// Marcar manualmente a un usuario como YA CELEBRADO este año (Dashboard)
+app.post('/api/dashboard/users/:username/mark-celebrated', authenticateDashboard, async (req, res) => {
+    try {
+        const username = req.params.username.toLowerCase().trim();
+        const user = await db.getUser(username);
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        const status = (user.birth_month && user.birth_day)
+            ? getBirthdayStatus(user.birth_month, user.birth_day)
+            : { celebrationYear: new Date().getFullYear() };
+
+        const year = status.celebrationYear || new Date().getFullYear();
+        user.last_celebrated_year = year;
+        user.last_played_date = new Date().toISOString().split('T')[0];
+        user.last_activated = new Date().toISOString();
+        await db.saveUser(user);
+
+        res.json({
+            success: true,
+            message: `✅ @${user.display_name || user.username} marcado como YA CELEBRADO este año (${year}). ¡El bot ya no recordará su cumpleaños!`,
+            user
+        });
+    } catch (err) {
+        console.error('Error al marcar como celebrado:', err);
+        res.status(500).json({ error: 'Error al marcar como celebrado' });
     }
 });
 
@@ -1677,17 +1731,18 @@ app.post('/api/dashboard/birthday-alerts-toggle', authenticateDashboard, (req, r
 
 // Lanzar alerta manual o de prueba desde el Dashboard
 app.post('/api/dashboard/trigger-alert', authenticateDashboard, async (req, res) => {
-    const { user, sound, message, avatar, theme, isTest } = req.body;
+    const { username, user, sound, message, avatar, theme, isTest, markCelebrated } = req.body;
 
+    const targetNick = (username || user || 'capiluisxavihdx').toLowerCase().trim();
     let finalAvatar = avatar;
     if (!finalAvatar || finalAvatar === '/img/yocapi.png' || !finalAvatar.startsWith('http')) {
-        const fetched = await fetchPublicTwitchAvatar(user || 'capiluisxavihdx');
+        const fetched = await fetchPublicTwitchAvatar(targetNick);
         finalAvatar = (fetched && fetched.startsWith('http')) ? fetched : '/img/yocapi.png';
     }
 
     const alertPayload = {
         type: 'alert',
-        user: user || 'capiluisxavihdx',
+        user: user || targetNick,
         avatar: finalAvatar,
         sound: sound || 'HBSilbato.mp3',
         message: message || '¡Festejando en directo con la comunidad! 🎂✨',
@@ -1701,8 +1756,23 @@ app.post('/api/dashboard/trigger-alert', authenticateDashboard, async (req, res)
 
     // Solo guardar en base de datos si NO es una prueba
     if (!isTest) {
+        let dbUser = await db.getUser(targetNick);
+        if (!dbUser && user) {
+            dbUser = await db.getUser(String(user).toLowerCase().trim());
+        }
+
+        if (dbUser && markCelebrated !== false) {
+            const status = (dbUser.birth_month && dbUser.birth_day)
+                ? getBirthdayStatus(dbUser.birth_month, dbUser.birth_day)
+                : { celebrationYear: new Date().getFullYear() };
+            dbUser.last_celebrated_year = status.celebrationYear || new Date().getFullYear();
+            dbUser.last_played_date = new Date().toISOString().split('T')[0];
+            dbUser.last_activated = new Date().toISOString();
+            await db.saveUser(dbUser);
+        }
+
         await db.logAlert({
-            username: 'streamer_manual',
+            username: dbUser ? dbUser.username : targetNick,
             display_name: alertPayload.user,
             sound_file: alertPayload.sound,
             message: alertPayload.message
@@ -1954,8 +2024,7 @@ app.get('/api/bot/today', async (req, res) => {
             if (!u.birth_month || !u.birth_day || u.birthday_unlocked) continue;
             const status = getBirthdayStatus(u.birth_month, u.birth_day);
             if (!status.canCelebrate) continue;
-            const lastCelebrated = parseInt(u.last_celebrated_year, 10) || 0;
-            const alreadyCelebrated = lastCelebrated >= status.celebrationYear;
+            const alreadyCelebrated = isUserCelebratedThisYear(u, status);
             const name = u.display_name || u.username;
             if (status.isToday) {
                 todayBirthdays.push(name);
@@ -2037,8 +2106,7 @@ app.get('/api/bot/check', async (req, res) => {
         const displayName = user.display_name || user.username;
 
         if (status.canCelebrate) {
-            const lastCelebrated = parseInt(user.last_celebrated_year, 10) || 0;
-            const alreadyCelebrated = lastCelebrated >= status.celebrationYear;
+            const alreadyCelebrated = isUserCelebratedThisYear(user, status);
 
             if (status.isToday) {
                 if (isSelf) {
@@ -2121,8 +2189,7 @@ app.get('/api/bot/timer', async (req, res) => {
             const name = u.display_name || u.username;
 
             if (status.canCelebrate) {
-                const lastCelebrated = parseInt(u.last_celebrated_year, 10) || 0;
-                const alreadyCelebrated = lastCelebrated >= status.celebrationYear;
+                const alreadyCelebrated = isUserCelebratedThisYear(u, status);
 
                 if (status.isToday) {
                     todayBirthdays.push({ name, alreadyCelebrated });

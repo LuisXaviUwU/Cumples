@@ -68,6 +68,7 @@ function isCommandRateLimited(user, command) {
 
 let dbRef = null;
 let getBirthdayStatusRef = null;
+let isUserCelebratedThisYearRef = null;
 let appUrlRef = 'http://localhost:3001';
 let saveSettingsCallback = null;
 let broadcastToOverlayRef = null;
@@ -76,6 +77,21 @@ let acquireMusicLockRef = null;
 let getMusicLockStatusRef = null;
 let pausedAlertsQueueRef = null;
 let pinataManagerRef = null;
+
+function isUserCelebratedThisYear(user, status) {
+    if (isUserCelebratedThisYearRef) {
+        return isUserCelebratedThisYearRef(user, status);
+    }
+    if (!user) return false;
+    const celebrationYear = status?.celebrationYear || new Date().getFullYear();
+    const lastCelebratedYear = parseInt(user.last_celebrated_year, 10) || 0;
+    if (lastCelebratedYear >= celebrationYear) return true;
+
+    const yearStr = String(celebrationYear);
+    if (user.last_played_date && String(user.last_played_date).startsWith(yearStr)) return true;
+    if (user.last_activated && String(user.last_activated).startsWith(yearStr)) return true;
+    return false;
+}
 
 // Respuestas personalizables para comandos estáticos
 let customCmdResponses = {
@@ -183,8 +199,7 @@ async function buildAnnouncementMessage() {
             const name = u.display_name || u.username;
 
             if (bStatus.canCelebrate) {
-                const lastCelebrated = parseInt(u.last_celebrated_year, 10) || 0;
-                const alreadyCelebrated = lastCelebrated >= bStatus.celebrationYear;
+                const alreadyCelebrated = isUserCelebratedThisYear(u, bStatus);
 
                 if (bStatus.isToday) {
                     todayBirthdays.push({ name, alreadyCelebrated });
@@ -409,6 +424,8 @@ async function handleChatMessage(channel, tags, message, self) {
         '!hbgrabacion', '!hbmodovideo', '!hbcine', '!hbpausa',
         '!hbmod', '!hbadmin', '!hbestado',
         '!hblibre', '!hbdesbloquear',
+        '!hbyacelebro', '!hbcelebrado', '!hblisto',
+        '!hbrelanzar', '!hbreiniciar',
         '!hbpruebas', '!hbsilencio', '!hbsilent', '!hbmodoprueba'
     ];
     if (KNOWN_COMMANDS.includes(command)) {
@@ -593,8 +610,7 @@ async function handleChatMessage(channel, tags, message, self) {
         const displayName = user.display_name || user.username;
 
         if (bStatus.canCelebrate) {
-            const lastCelebrated = parseInt(user.last_celebrated_year, 10) || 0;
-            const alreadyCelebrated = lastCelebrated >= bStatus.celebrationYear;
+            const alreadyCelebrated = isUserCelebratedThisYear(user, bStatus);
 
             if (bStatus.isToday) {
                 if (isSelf) {
@@ -732,8 +748,7 @@ async function handleChatMessage(channel, tags, message, self) {
             return sendChat(`🗓️ @${displayName}, tu cumpleaños registrado es el ${user.birth_day} de ${monthText} (faltan ${days} días). ¡Tu alerta con música y confeti se desbloqueará en tu día especial! 🎂✨`);
         }
 
-        const lastCelebrated = parseInt(user.last_celebrated_year, 10) || 0;
-        const alreadyCelebrated = lastCelebrated >= bStatus.celebrationYear;
+        const alreadyCelebrated = isUserCelebratedThisYear(user, bStatus);
 
         if (alreadyCelebrated) {
             return sendChat(`👑 @${displayName}, ¡ya lanzaste tu alerta de cumpleaños este año! Esperamos que hayas disfrutado tu festejo en stream. ¡Te esperamos para el próximo año! 🥳🎂`);
@@ -1195,7 +1210,7 @@ async function handleChatMessage(channel, tags, message, self) {
         const mins = botConfig.timer_minutes || 60;
         const testMode = botConfig.silent_mode ? '🧪 MODO PRUEBAS (Silencio en Twitch)' : '🔊 NORMAL';
 
-        return sendChat(`🛡️ [Panel Mod] ${recMode} · ${testMode} · 👑 ${bdayAct} · 💌 ${felicAct} · ⏰ ${mins}m | Cmds: !hbalertas on/off · !hbfelicitar on/off · !hbgrabacion on/off · !hbpruebas on/off · !hblibre @usuario ✨`);
+        return sendChat(`🛡️ [Panel Mod] ${recMode} · ${testMode} · 👑 ${bdayAct} · 💌 ${felicAct} · ⏰ ${mins}m | Cmds: !hbalertas on/off · !hbfelicitar on/off · !hbgrabacion on/off · !hbyacelebro @usuario · !hbrelanzar @usuario · !hblibre @usuario · !hbpruebas on/off ✨`);
     }
 
     // COMANDO MOD 5: !hbpruebas [on|off] o !hbsilencio [on|off] (Modo Pruebas / Silencio en Chat de Twitch)
@@ -1239,6 +1254,52 @@ async function handleChatMessage(channel, tags, message, self) {
         targetUser.birthday_locked_at = null;
         await dbRef.saveUser(targetUser);
         return sendChat(`🔓✅ @${sender}, la fecha de @${targetUser.display_name || targetUser.username} ha sido DESBLOQUEADA. Ya puede escribir "!registro DD-MM" o entrar a ${appUrlRef} para actualizar su fecha de cumpleaños 🎉`);
+    }
+
+    // COMANDO MOD 7: !hbyacelebro @usuario o !hbcelebrado @usuario (Marcar como ya celebrado este año)
+    if (command === '!hbyacelebro' || command === '!hbcelebrado' || command === '!hblisto') {
+        if (!isStreamerOrMod(tags, channel)) {
+            return sendChat(`⛔ @${sender}, este comando es exclusivo para la streamer (@yocapi_pr) y moderadores 🛡️`);
+        }
+        if (!dbRef) return;
+        const target = (parts[1] || '').trim().replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+        if (!target) {
+            return sendChat(`ℹ️ @${sender}, indica a quién marcar como celebrado: !hbyacelebro @usuario 🎂`);
+        }
+        const targetUser = await dbRef.getUser(target);
+        if (!targetUser) {
+            return sendChat(`⚠️ @${sender}, no se encontró al usuario @${target} en la base de datos.`);
+        }
+        const bStatus = getBirthdayStatusRef ? getBirthdayStatusRef(targetUser.birth_month, targetUser.birth_day) : null;
+        const year = bStatus?.celebrationYear || new Date().getFullYear();
+        targetUser.last_celebrated_year = year;
+        targetUser.last_played_date = new Date().toISOString().split('T')[0];
+        targetUser.last_activated = new Date().toISOString();
+        await dbRef.saveUser(targetUser);
+
+        return sendChat(`✅ @${sender}, @${targetUser.display_name || targetUser.username} ha sido marcado como YA CELEBRADO este año (${year}). ¡El bot ya no enviará recordatorios para su cumpleaños! 🥳🎉`);
+    }
+
+    // COMANDO MOD 8: !hbrelanzar @usuario o !hbreiniciar @usuario (Permitir volver a celebrar / relanzar)
+    if (command === '!hbrelanzar' || command === '!hbreiniciar') {
+        if (!isStreamerOrMod(tags, channel)) {
+            return sendChat(`⛔ @${sender}, este comando es exclusivo para la streamer (@yocapi_pr) y moderadores 🛡️`);
+        }
+        if (!dbRef) return;
+        const target = (parts[1] || '').trim().replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+        if (!target) {
+            return sendChat(`ℹ️ @${sender}, indica a quién relanzar la celebración: !hbrelanzar @usuario 🔄`);
+        }
+        const targetUser = await dbRef.getUser(target);
+        if (!targetUser) {
+            return sendChat(`⚠️ @${sender}, no se encontró al usuario @${target} en la base de datos.`);
+        }
+        targetUser.last_celebrated_year = 0;
+        targetUser.last_played_date = null;
+        targetUser.last_activated = null;
+        await dbRef.saveUser(targetUser);
+
+        return sendChat(`🔄 @${sender}, se ha reiniciado la celebración de @${targetUser.display_name || targetUser.username}. ¡Ya puede volver a lanzar su alerta en stream con !hoyesmicumple o desde la web! 🎂✨`);
     }
 }
 
