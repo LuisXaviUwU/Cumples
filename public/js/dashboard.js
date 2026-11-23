@@ -314,39 +314,54 @@ async function loadTodayCelebrants() {
             ? !!c.alreadyCelebrated
             : ((parseInt(c.last_celebrated_year, 10) || 0) >= currentCelebrationYear);
           const celebBadge = hasCelebrated
-            ? '<span style="font-size:0.72rem; color:#f87171; background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.35); padding:2px 8px; border-radius:6px; font-weight:700;">✅ Ya lanzó este año</span>'
-            : '<span style="font-size:0.72rem; color:#34d399; background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.35); padding:2px 8px; border-radius:6px; font-weight:700;">⏳ Listo para lanzar</span>';
+            ? '<span class="today-status-badge" style="color:#f87171; background:rgba(239,68,68,0.18); border-color:rgba(239,68,68,0.35);">✅ Ya festejó</span>'
+            : '<span class="today-status-badge" style="color:#34d399; background:rgba(16,185,129,0.18); border-color:rgba(16,185,129,0.35);">⏳ Listo</span>';
 
           const celebActionButton = hasCelebrated
-            ? `<button class="btn-copy btn-quick-reset-celebration" data-username="${c.username}" style="padding:6px 10px; font-size:0.78rem; background:rgba(239,68,68,0.15); border-color:rgba(239,68,68,0.35); color:#fca5a5; font-weight:700;" title="Permite que este usuario pueda volver a lanzar su alerta con !hoyesmicumple o desde la web">
-                🔄 Permitir Relanzar
+            ? `<button class="btn-copy btn-quick-reset-celebration" data-username="${c.username}" style="padding:7px 10px; font-size:0.78rem; background:rgba(239,68,68,0.15); border-color:rgba(239,68,68,0.35); color:#fca5a5; font-weight:700;" title="Permite que este usuario pueda volver a lanzar su alerta con !cumplehoy o desde la web">
+                🔄 Relanzar
               </button>`
-            : `<button class="btn-copy btn-quick-mark-celebrated" data-username="${c.username}" style="padding:6px 10px; font-size:0.78rem; background:rgba(16,185,129,0.2); border-color:rgba(16,185,129,0.5); color:#34d399; font-weight:700;" title="Marcar como ya celebrado este año (silencia recordatorios del bot)">
+            : `<button class="btn-copy btn-quick-mark-celebrated" data-username="${c.username}" style="padding:7px 10px; font-size:0.78rem; background:rgba(16,185,129,0.2); border-color:rgba(16,185,129,0.5); color:#34d399; font-weight:700;" title="Marcar como ya celebrado este año (silencia recordatorios del bot)">
                 ✅ Ya celebró
               </button>`;
 
           card.innerHTML = `
-            <div class="today-item-left">
+            <div class="today-card-header">
               <img src="${c.profile_image || '/img/yocapi.png'}" onerror="this.src='/img/yocapi.png'" alt="${c.display_name}" class="today-avatar">
               <div class="today-info">
-                <h4>
-                  ${c.display_name} 
-                  <span style="font-size:0.75rem; font-weight:700; color:${tagColor}; margin-left:8px;">${tagText}</span>
+                <div class="today-name-row">
+                  <span class="today-display-name">${c.display_name}</span>
+                  <span class="today-username-sub">@${c.username}</span>
+                </div>
+                <div class="today-badges-row">
+                  <span class="today-status-badge" style="color:${tagColor}; background:${c.status.isToday ? 'rgba(244,63,94,0.15)' : 'rgba(245,158,11,0.15)'}; border-color:${c.status.isToday ? 'rgba(244,63,94,0.35)' : 'rgba(245,158,11,0.35)'};">
+                    ${tagText}
+                  </span>
                   ${celebBadge}
-                </h4>
-                <p>${c.custom_message ? `"${c.custom_message}"` : 'Sin mensaje personalizado'} &bull; Sonido: <strong>${c.selected_sound || 'HBSilbato.mp3'}</strong></p>
+                </div>
               </div>
             </div>
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <select class="today-sound-select" style="background:#1e1537;border:1px solid rgba(145,70,255,0.3);color:#e2e8f0;border-radius:8px;padding:6px 10px;font-size:0.8rem;cursor:pointer;">
-                <option value="HBSilbato.mp3" ${c.selected_sound === 'HBSilbato.mp3' ? 'selected' : ''}>🎺 Silbato Festivo</option>
-                <option value="HBVoz.mp3" ${c.selected_sound === 'HBVoz.mp3' ? 'selected' : ''}>🎤 Felicitación de Voz</option>
-                <option value="MBMusica.mp3" ${c.selected_sound === 'MBMusica.mp3' ? 'selected' : ''}>🎵 Música de Fiesta</option>
-              </select>
-              <button class="btn-alert-direct" data-username="${c.username}" data-user="${c.display_name}" data-avatar="${c.profile_image}" data-sound="${c.selected_sound}" data-msg="${c.custom_message || ''}">
-                🎉 Lanzar a OBS
-              </button>
-              ${celebActionButton}
+
+            <div class="today-card-body">
+              <div class="today-phrase">
+                ${c.custom_message ? `💬 "${c.custom_message}"` : '<span style="color:#64748b; font-style:italic;">Sin mensaje personalizado</span>'}
+              </div>
+            </div>
+
+            <div class="today-card-actions">
+              <div class="today-sound-row">
+                <select class="today-sound-select">
+                  <option value="HBSilbato.mp3" ${c.selected_sound === 'HBSilbato.mp3' ? 'selected' : ''}>🎺 Silbato Festivo</option>
+                  <option value="HBVoz.mp3" ${c.selected_sound === 'HBVoz.mp3' ? 'selected' : ''}>🎤 Felicitación de Voz</option>
+                  <option value="MBMusica.mp3" ${c.selected_sound === 'MBMusica.mp3' ? 'selected' : ''}>🎵 Música de Fiesta</option>
+                </select>
+              </div>
+              <div class="today-btn-group">
+                <button class="btn-alert-direct" data-username="${c.username}" data-user="${c.display_name}" data-avatar="${c.profile_image}" data-sound="${c.selected_sound}" data-msg="${c.custom_message || ''}">
+                  🎉 Lanzar OBS
+                </button>
+                ${celebActionButton}
+              </div>
             </div>
           `;
 
@@ -458,25 +473,31 @@ async function loadTodayCelebrants() {
           card.className = 'today-item-card';
           const daysBadge = u.daysUntil === 1 ? '¡Mañana!' : `En ${u.daysUntil} días`;
           card.innerHTML = `
-            <div class="today-item-left">
+            <div class="today-card-header">
               <img src="${u.profile_image || '/img/yocapi.png'}" onerror="this.src='/img/yocapi.png'" alt="${u.display_name}" class="today-avatar">
               <div class="today-info">
-                <h4>
-                  ${u.display_name} 
-                  <span style="font-size:0.75rem; font-weight:800; background:rgba(168, 85, 247, 0.25); color:#c084fc; border:1px solid rgba(168, 85, 247, 0.45); padding:3px 10px; border-radius:12px; margin-left:8px;">
+                <div class="today-name-row">
+                  <span class="today-display-name">${u.display_name}</span>
+                  <span class="today-username-sub">@${u.username}</span>
+                </div>
+                <div class="today-badges-row">
+                  <span class="today-status-badge" style="background:rgba(168, 85, 247, 0.2); color:#c084fc; border-color:rgba(168, 85, 247, 0.45);">
                     ${daysBadge} (${u.birth_day} de ${monthShortNames[u.birth_month]})
                   </span>
-                </h4>
-                <p style="color:#94a3b8; font-size:0.82rem; margin-top:2px;">
-                  Fecha: <strong>${u.birth_day} de ${MONTH_NAMES[u.birth_month]}</strong> &bull; Sonido: <strong>${u.selected_sound || 'HBSilbato.mp3'}</strong>
-                </p>
+                </div>
               </div>
             </div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <button type="button" class="btn-copy btn-launch-upcoming" style="background:rgba(145,70,255,0.2); border-color:rgba(145,70,255,0.4); color:#bf94ff; font-size:0.8rem; padding:8px 14px; font-weight:700; display:inline-flex; align-items:center; gap:6px;">
-                <span>🚀</span>
-                <span>Lanzar a OBS</span>
-              </button>
+            <div class="today-card-body">
+              <div class="today-phrase" style="color:#94a3b8; font-size:0.8rem;">
+                📅 Fecha: <strong>${u.birth_day} de ${MONTH_NAMES[u.birth_month]}</strong> &bull; Sonido: <strong>${u.selected_sound || 'HBSilbato.mp3'}</strong>
+              </div>
+            </div>
+            <div class="today-card-actions">
+              <div class="today-btn-group">
+                <button type="button" class="btn-copy btn-launch-upcoming" style="width:100%; background:rgba(145,70,255,0.2); border-color:rgba(145,70,255,0.4); color:#bf94ff; font-size:0.82rem; padding:8px 14px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                  <span>🚀 Lanzar a OBS por adelantado</span>
+                </button>
+              </div>
             </div>
           `;
 
