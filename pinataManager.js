@@ -65,6 +65,9 @@ class PinataManager {
             totalHits: 0,
             hits: new Map(), // username -> { username, displayName, avatar, count }
             lastHitBy: null,
+            recentHits: [], // Timestamps de golpes para activar Frenesí
+            frenzyUntil: 0, // Timestamp de fin de Frenesí
+            extraTimeGranted: false, // Control de tiempo extra de remontada
             timerHandle: setTimeout(() => {
                 this.handleTimeout();
             }, cleanDuration * 1000)
@@ -90,7 +93,7 @@ class PinataManager {
                     ? `¡Hoy celebramos a @${this.activePinata.targetUser}! `
                     : '';
                 const minSec = cleanDuration >= 60 ? `${Math.floor(cleanDuration/60)}m ${cleanDuration % 60 > 0 ? `${cleanDuration % 60}s` : ''}`.trim() : `${cleanDuration}s`;
-                await this.sendChatFn(`🪅 ¡SE COLGÓ LA PIÑATA CAPIBARA DE CUMPLEAÑOS! 🎂🎉 ${targetLabel}Tienen ${minSec} para romperla entre todos. ¡Escriban !dale o !pegar para batear! 🏑💥 (Salud: ${cleanHp} golpes)`);
+                await this.sendChatFn(`🪅 ¡SE COLGÓ LA PIÑATA DE CAPIBARA! 🎂🎉 ${targetLabel}¡Tienen ${minSec} para romperla! ⚡ Hay GOLPES CRÍTICOS y modo FRENESÍ. ¡Escriban !dale para batear! 🏑💥 (Salud: ${cleanHp})`);
             } catch (e) {
                 console.warn('[Pinata] Error enviando chat start:', e.message);
             }
@@ -108,14 +111,98 @@ class PinataManager {
         }
 
         const cleanUser = (username || '').toLowerCase().trim();
-        // Cooldown anti-spam por usuario: 700ms para permitir múltiples golpes durante los 35s pero evitar macros de 50 hits/segundo
+        // Cooldown ágil: 380ms para permitir golpes fluidos sin sentirse bloqueado
         const lastHit = this.userHitCooldowns.get(cleanUser) || 0;
-        if (now - lastHit < 700) {
-            return { success: false, reason: 'cooldown', remainingMs: 700 - (now - lastHit) };
+        if (now - lastHit < 380) {
+            return { success: false, reason: 'cooldown', remainingMs: 380 - (now - lastHit) };
         }
         this.userHitCooldowns.set(cleanUser, now);
 
-        this.activePinata.currentHp--;
+        // ─── CÁLCULO DE DAÑO Y CRÍTICOS ──────────────────────────────────────────
+        const cleanTarget = (this.activePinata.targetUser || '').toLowerCase().replace(/^@/, '').trim();
+        const isBirthdayCelebrant = cleanUser && cleanTarget && cleanUser === cleanTarget;
+
+        let baseDamage = 1;
+        let hitType = 'normal'; // 'normal' | 'crit' | 'super_crit' | 'birthday'
+        let hitText = '+1';
+
+        if (isBirthdayCelebrant) {
+            // ¡El cumpleañero tiene el Bate de Oro! (Daño x3 o x4 garantizado)
+            baseDamage = 3;
+            hitType = 'birthday';
+            hitText = '👑 ¡BATE DE ORO! +3';
+        } else {
+            const roll = Math.random();
+            if (roll < 0.12) {
+                // 12% probabilidad de Mega Crítico
+                baseDamage = 3;
+                hitType = 'super_crit';
+                hitText = '⚡ ¡MEGA CRÍTICO! +3';
+            } else if (roll < 0.38) {
+                // 26% probabilidad de Golpe Crítico
+                baseDamage = 2;
+                hitType = 'crit';
+                hitText = '💥 ¡CRÍTICO! +2';
+            } else {
+                baseDamage = 1;
+                hitType = 'normal';
+                hitText = '+1';
+            }
+        }
+
+        // ─── MODO FRENESÍ COMUNITARIO ──────────────────────────────────────────
+        let isFrenzy = now < (this.activePinata.frenzyUntil || 0);
+
+        // Evaluar golpes recientes en los últimos 3.5 segundos
+        this.activePinata.recentHits = (this.activePinata.recentHits || []).filter(t => now - t < 3500);
+        this.activePinata.recentHits.push(now);
+
+        // Activar Frenesí si hay 4 o más golpes en 3.5 segundos
+        if (!isFrenzy && this.activePinata.recentHits.length >= 4) {
+            isFrenzy = true;
+            this.activePinata.frenzyUntil = now + 7000; // 7 segundos de Frenesí
+            if (this.broadcastFn) {
+                this.broadcastFn({
+                    type: 'pinata_frenzy_start',
+                    durationMs: 7000
+                });
+            }
+            if (this.sendChatFn) {
+                this.sendChatFn('🔥 ¡MODO FRENESÍ ACTIVADO EN PANTALLA! ¡Daño doble para todos, spameen !dale! 🏑💥').catch(() => {});
+            }
+        }
+
+        const finalDamage = isFrenzy ? (baseDamage * 2) : baseDamage;
+        if (isFrenzy) {
+            hitText += ' 🔥 (x2)';
+        }
+
+        // ─── TIEMPO EXTRA DRAMÁTICO (CLUTCH REMONTADA) ──────────────────────────
+        // Si quedan <= 10s y la piñata tiene <= 35% de HP, regalar +10s una sola vez
+        const remainingSec = Math.ceil((this.activePinata.expiresAt - now) / 1000);
+        if (!this.activePinata.extraTimeGranted && remainingSec <= 10 && (this.activePinata.currentHp / this.activePinata.maxHp) <= 0.35) {
+            this.activePinata.extraTimeGranted = true;
+            const extraSec = 10;
+            this.activePinata.expiresAt += (extraSec * 1000);
+            clearTimeout(this.activePinata.timerHandle);
+            this.activePinata.timerHandle = setTimeout(() => {
+                this.handleTimeout();
+            }, this.activePinata.expiresAt - now);
+
+            if (this.broadcastFn) {
+                this.broadcastFn({
+                    type: 'pinata_extra_time',
+                    extraSec,
+                    newRemainingSec: remainingSec + extraSec
+                });
+            }
+            if (this.sendChatFn) {
+                this.sendChatFn('⏰ ¡TIEMPO EXTRA DE +10 SEGUNDOS! ¡Está a punto de romperse, rematen con !dale! 🪅💥').catch(() => {});
+            }
+        }
+
+        // Aplicar daño a la piñata
+        this.activePinata.currentHp = Math.max(0, this.activePinata.currentHp - finalDamage);
         this.activePinata.totalHits++;
         const dispName = displayName || username || 'Amigo';
         this.activePinata.lastHitBy = dispName;
@@ -126,19 +213,24 @@ class PinataManager {
             avatar: avatar || '/img/yocapi.png',
             count: 0
         };
-        currentHits.count++;
+        // El puntaje del usuario suma el daño infligido
+        currentHits.count += finalDamage;
         currentHits.avatar = avatar || currentHits.avatar;
         this.activePinata.hits.set(cleanUser, currentHits);
 
         const currentHp = Math.max(0, this.activePinata.currentHp);
         const percentage = Math.max(0, Math.round((currentHp / this.activePinata.maxHp) * 100));
 
-        // Broadcast de golpe inmediato a OBS
+        // Broadcast de golpe inmediato a OBS con información del crítico y daño
         if (this.broadcastFn) {
             this.broadcastFn({
                 type: 'pinata_hit',
                 user: dispName,
                 avatar: avatar || currentHits.avatar || '/img/yocapi.png',
+                damage: finalDamage,
+                hitType,
+                hitText,
+                isFrenzy,
                 currentHp,
                 maxHp: this.activePinata.maxHp,
                 percentage
@@ -147,10 +239,10 @@ class PinataManager {
 
         if (currentHp <= 0) {
             await this.handleBroken(dispName);
-            return { success: true, broken: true, currentHp: 0 };
+            return { success: true, broken: true, currentHp: 0, damage: finalDamage, hitType };
         }
 
-        return { success: true, broken: false, currentHp, percentage };
+        return { success: true, broken: false, currentHp, percentage, damage: finalDamage, hitType };
     }
 
     async handleBroken(lastHitter) {
