@@ -3057,7 +3057,7 @@ document.addEventListener('DOMContentLoaded', () => {
       {
         name: '!hbgrabacion [on|off]',
         aliases: '!hbmodovideo · !hbcine · !hbpausa',
-        desc: 'Modo Grabación Cero Interrupciones: Silencia alertas y tarjetas en pantalla para grabar TikToks o YouTube.',
+        desc: 'Modo Grabación Cero Interrupciones: Silencia alertas y tarjetas en pantalla para momentos de concentración en el stream de Twitch.',
         tag: '🎬 MODO VIDEO',
         color: '#ef4444'
       },
