@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>📜 Guía de Comandos — yocapi_pr</title>
+  <link rel="icon" type="image/png" href="img/yocapi.png">
+
+  <!-- Fuentes Oficiales -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Estilos específicos para la página de comandos */
+    .cmd-page-container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 24px 16px 80px;
+      width: 100%;
+    }
+
+    .cmd-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      backdrop-filter: blur(16px);
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .cmd-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .cmd-brand img {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid var(--twitch-purple);
+      box-shadow: 0 0 14px var(--twitch-glow);
+    }
+
+    .cmd-brand-text h1 {
+      font-family: var(--font-heading);
+      font-size: 1.15rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cmd-brand-text p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .cmd-nav-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: var(--transition);
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+    }
+
+    .btn-nav:hover {
+      background: rgba(145, 70, 255, 0.15);
+      border-color: var(--twitch-purple);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    .btn-nav.active {
+      background: linear-gradient(135deg, var(--twitch-purple), var(--twitch-hover));
+      border-color: transparent;
+      color: #fff;
+      box-shadow: var(--shadow-btn);
+    }
+
+    /* Hero */
+    .cmd-hero {
+      text-align: center;
+      padding: 24px 16px 28px;
+      margin-bottom: 24px;
+    }
+
+    .cmd-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(145, 70, 255, 0.14);
+      border: 1px solid var(--border-glow);
+      color: var(--twitch-light);
+      padding: 5px 14px;
+      border-radius: var(--radius-pill);
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .cmd-hero-title {
+      font-family: var(--font-heading);
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 10px;
+    }
+
+    .cmd-hero-title span {
+      background: linear-gradient(135deg, #f43f5e, #fbbf24, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .cmd-hero-subtitle {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      max-width: 620px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    /* Buscador & Categorías */
+    .cmd-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .cmd-search-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    .cmd-search-input {
+      width: 100%;
+      padding: 14px 44px 14px 44px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+      transition: var(--transition);
+      backdrop-filter: blur(12px);
+    }
+
+    .cmd-search-input:focus {
+      border-color: var(--twitch-purple);
+      box-shadow: 0 0 20px var(--twitch-glow);
+      background: rgba(28, 22, 45, 0.95);
+    }
+
+    .cmd-search-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.1rem;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .cmd-search-clear {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: none;
+      padding: 4px;
+    }
+
+    .cmd-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+
+    .cmd-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .cmd-tab-btn {
+      padding: 9px 18px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cmd-tab-btn:hover {
+      background: rgba(145, 70, 255, 0.12);
+      color: #fff;
+      border-color: rgba(145, 70, 255, 0.3);
+    }
+
+    .cmd-tab-btn.active {
+      background: linear-gradient(135deg, var(--twitch-purple), var(--twitch-hover));
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 4px 14px var(--twitch-glow);
+    }
+
+    /* Grilla de Comandos */
+    .cmd-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 18px;
+    }
+
+    .cmd-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      backdrop-filter: blur(14px);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cmd-card:hover {
+      border-color: var(--border-glow);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-card);
+      background: var(--bg-card-hover);
+    }
+
+    .cmd-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--twitch-purple);
+      opacity: 0.6;
+    }
+
+    .cmd-card.tag-bday::before { background: var(--accent-pink); }
+    .cmd-card.tag-pinata::before { background: var(--accent-gold); }
+    .cmd-card.tag-mod::before { background: #3b82f6; }
+    .cmd-card.tag-query::before { background: var(--accent-cyan); }
+
+    .cmd-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .cmd-main-tag {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #f8fafc;
+      background: rgba(145, 70, 255, 0.15);
+      border: 1px solid rgba(145, 70, 255, 0.3);
+      padding: 4px 10px;
+      border-radius: 8px;
+      display: inline-block;
+      word-break: break-all;
+    }
+
+    .cmd-role-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .role-all { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .role-bday { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+    .role-mod { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+
+    .cmd-desc {
+      font-size: 0.88rem;
+      color: var(--text-main);
+      line-height: 1.45;
+    }
+
+    .cmd-aliases {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .cmd-aliases strong {
+      color: var(--twitch-light);
+      font-weight: 700;
+    }
+
+    .cmd-aliases code {
+      font-family: 'Consolas', monospace;
+      color: #e2e8f0;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin: 0 2px;
+      display: inline-block;
+    }
+
+    .cmd-example {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      border-left: 2px solid rgba(255, 255, 255, 0.1);
+      padding-left: 8px;
+    }
+
+    .cmd-example span {
+      color: #94a3b8;
+      font-family: 'Consolas', monospace;
+    }
+
+    .cmd-card-footer {
+      margin-top: auto;
+      padding-top: 8px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .btn-copy-cmd {
+      background: rgba(145, 70, 255, 0.12);
+      border: 1px solid rgba(145, 70, 255, 0.3);
+      color: var(--twitch-light);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition);
+    }
+
+    .btn-copy-cmd:hover {
+      background: var(--twitch-purple);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    .btn-copy-cmd.copied {
+      background: #10b981 !important;
+      border-color: #10b981 !important;
+      color: #fff !important;
+    }
+
+    /* Estado vacío de búsqueda */
+    .cmd-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 48px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      display: none;
+    }
+
+    .cmd-empty h3 {
+      font-family: var(--font-heading);
+      font-size: 1.2rem;
+      margin-bottom: 6px;
+    }
+
+    .cmd-empty p {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+
+    @media (max-width: 640px) {
+      .cmd-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .cmd-brand {
+        justify-content: center;
+        text-align: center;
+      }
+      .cmd-nav-links {
+        justify-content: center;
+      }
+      .cmd-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Fondo Cósmico Dinámico -->
+  <div class="cosmic-bg">
+    <div class="aurora-glow glow-1"></div>
+    <div class="aurora-glow glow-2"></div>
+    <div class="aurora-glow glow-3"></div>
+  </div>
+
+  <div class="cmd-page-container">
+    <!-- Encabezado de Navegación -->
+    <header class="cmd-header">
+      <a href="https://twitch.tv/yocapi_pr" target="_blank" rel="noopener noreferrer" class="cmd-brand">
+        <img src="img/yocapi.png" alt="yocapi_pr">
+        <div class="cmd-brand-text">
+          <h1>yocapi_pr <span style="font-size:0.65rem; background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.4); padding:2px 6px; border-radius:4px;">BOT OFICIAL</span></h1>
+          <p>Comandos del Stream de Cumpleaños & Minijuegos</p>
+        </div>
+      </a>
+
+      <div class="cmd-nav-links">
+        <a href="/" class="btn-nav">
+          <span>🎂</span> Mi Portal
+        </a>
+        <a href="/calendario" class="btn-nav">
+          <span>📅</span> Calendario
+        </a>
+        <a href="https://twitch.tv/yocapi_pr" target="_blank" rel="noopener noreferrer" class="btn-nav active">
+          <span>🟣</span> Canal de Twitch
+        </a>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="cmd-hero">
+      <div class="cmd-badge">📖 Guía Rápida & Lista Interactiva</div>
+      <h2 class="cmd-hero-title">Comandos para el <span>Chat de Twitch</span></h2>
+      <p class="cmd-hero-subtitle">
+        Todos los comandos que puedes escribir en el directo de <strong>yocapi_pr</strong>. Haz clic en "Copiar" para usarlos al instante en el chat.
+      </p>
+    </section>
+
+    <!-- Controles: Buscador y Categorías -->
+    <section class="cmd-controls">
+      <div class="cmd-search-wrap">
+        <span class="cmd-search-icon">🔍</span>
+        <input type="text" id="cmd-search" class="cmd-search-input" placeholder="Buscar comando por nombre, alias o función (ej: piñata, sonido, registro, mod)...">
+        <button id="cmd-search-clear" class="cmd-search-clear" title="Borrar búsqueda">✕</button>
+      </div>
+
+      <div class="cmd-tabs" id="cmd-category-tabs">
+        <button class="cmd-tab-btn active" data-cat="all">🌟 Todos (<span id="count-all">0</span>)</button>
+        <button class="cmd-tab-btn" data-cat="bday">🎂 Cumpleañeros (<span id="count-bday">0</span>)</button>
+        <button class="cmd-tab-btn" data-cat="query">🔍 Consultas (<span id="count-query">0</span>)</button>
+        <button class="cmd-tab-btn" data-cat="pinata">🪅 Minijuegos & Chat (<span id="count-pinata">0</span>)</button>
+        <button class="cmd-tab-btn" data-cat="mod">🛡️ Moderación (<span id="count-mod">0</span>)</button>
+      </div>
+    </section>
+
+    <!-- Grilla de Comandos -->
+    <div class="cmd-grid" id="commands-container">
+      <!-- Los comandos se renderizan dinámicamente con JavaScript -->
+    </div>
+
+    <div class="cmd-empty" id="cmd-empty-state">
+      <div style="font-size:2rem; margin-bottom:8px;">🔍</div>
+      <h3>No se encontraron comandos</h3>
+      <p>Prueba buscando con otra palabra clave como <em>"alerta"</em>, <em>"piñata"</em>, <em>"fecha"</em> o <em>"mod"</em>.</p>
+    </div>
+  </div>
+
+  <script>
+    // Catálogo Maestro de Comandos con Alias Cortos, Roles y Ejemplos
+    const COMMANDS = [
+      // ─── CUMPLEAÑEROS ───
+      {
+        cmd: '!cumplehoy',
+        cat: 'bday',
+        role: 'bday',
+        roleText: '👑 Cumpleañero',
+        desc: 'Lanza tu alerta audiovisual festiva en directo en la pantalla del stream (en tu día o dentro de tus 14 días de gracia).',
+        aliases: ['!alerta', '!fiesta', '!hoyesmicumple', '!mialerta', '!lanzarcumple'],
+        example: '!cumplehoy',
+        explanation: 'Detona tu canción seleccionada, confeti y tu mensaje en el overlay de OBS.'
+      },
+      {
+        cmd: '!reg DD-MM',
+        cat: 'bday',
+        role: 'all',
+        roleText: '👤 Todos',
+        desc: 'Registra tu fecha de cumpleaños. Soporta números o meses en texto (ej. 15 mayo). También puedes registrar a un amigo: !reg DD-MM @amigo.',
+        aliases: ['!registro', '!anotarme', '!regcumple', '!registrar'],
+        example: '!reg 15-05  ·  !reg 15 mayo  ·  !reg 15-05 @amigo',
+        explanation: 'Acepta formatos rápidos como 15-05, 15/05 o nombre del mes.'
+      },
+      {
+        cmd: '!frase <texto>',
+        cat: 'bday',
+        role: 'bday',
+        roleText: '👑 Cumpleañero',
+        desc: 'Personaliza la dedicatoria o frase corta que aparecerá en pantalla cuando suene tu alerta en vivo (máx 60 caracteres).',
+        aliases: ['!msg', '!hbcambio', '!mifrase', '!cambiarfrase'],
+        example: '!frase ¡Un año más festejando con los capibaras!',
+        explanation: 'Actualiza tu dedicatoria para que todos en el stream la vean.'
+      },
+      {
+        cmd: '!sonido <1/2/3>',
+        cat: 'bday',
+        role: 'bday',
+        roleText: '👑 Cumpleañero',
+        desc: 'Elige la música o sonido de tu alerta: 1 = Silbato Festivo 🎺, 2 = Música de Fiesta 🎵, 3 = Felicitación de Voz 🎤.',
+        aliases: ['!audio', '!hbsonido', '!misonido', '!rola'],
+        example: '!sonido 2',
+        explanation: 'Elige tu rola favorita para que resuene en directo.'
+      },
+
+      // ─── CONSULTAS ───
+      {
+        cmd: '!cumple [@usuario]',
+        cat: 'query',
+        role: 'all',
+        roleText: '👤 Todos',
+        desc: 'Consulta tu fecha registrada y días restantes. Mencionando a alguien más, consulta su fecha.',
+        aliases: ['!micumple', '!cumpleaños', '!mifecha'],
+        example: '!cumple  ·  !cumple @yocapi_pr',
+        explanation: 'El bot responde con la fecha, días faltantes y estado de celebración.'
+      },
+      {
+        cmd: '!prox',
+        cat: 'query',
+        role: 'all',
+        roleText: '👤 Todos',
+        desc: 'Muestra los próximos cumpleaños que están por celebrarse en la comunidad en orden cronológico.',
+        aliases: ['!proximos', '!siguientes', '!cumples'],
+        example: '!prox',
+        explanation: 'Para enterarte de quién festeja en los siguientes días.'
+      },
+      {
+        cmd: '!mes [mes]',
+        cat: 'query',
+        role: 'all',
+        roleText: '👤 Todos',
+        desc: 'Lista a los miembros de la comunidad que cumplen años en el mes actual o en el mes indicado.',
+        aliases: ['!cumplemes', '!cumplesmes'],
+        example: '!mes  ·  !mes mayo  ·  !mes 05',
+        explanation: 'Lista directa y compacta en el chat de Twitch.'
+      },
+      {
+        cmd: '!cmds',
+        cat: 'query',
+        role: 'all',
+        roleText: '👤 Todos',
+        desc: 'Enlace web directo a esta guía interactiva y resumen de los comandos más usados.',
+        aliases: ['!comandos', '!ayuda', '!help', '!bot'],
+        example: '!cmds',
+        explanation: 'Respuesta directa con el enlace a /comandos.'
+      },
+
+      // ─── MINIJUEGOS & CHAT ───
+      {
+        cmd: '!piñata [nombre] [golpes]',
+        cat: 'pinata',
+        role: 'all',
+        roleText: '👤 Streamer/Mods',
+        desc: 'Inicia el minijuego de la piñata comunitaria de capibara (por defecto 30 golpes). Cancela con !stop.',
+        aliases: ['!pata', '!pinata', '!stop', '!piñatastop'],
+        example: '!piñata  ·  !piñata @amigo 50  ·  !stop',
+        explanation: 'Invocable por streamer o mods. Aparece colgada para batearla.'
+      },
+      {
+        cmd: '!dale',
+        cat: 'pinata',
+        role: 'all',
+        roleText: '👤 Todos',
+        desc: '¡Golpea la piñata activa! Tu avatar sale disparado con un palo para batearla y soltar caramelos.',
+        aliases: ['!pegar', '!golpe', '!hit', '!palo', '!batear'],
+        example: '!dale',
+        explanation: 'Entre todos deben romperla antes del límite de tiempo.'
+      },
+      {
+        cmd: '!feliz [mensaje]',
+        cat: 'pinata',
+        role: 'all',
+        roleText: '👤 Todos',
+        desc: 'Envía confeti y una tarjeta flotante de felicitación a la pantalla del stream.',
+        aliases: ['!gg', '!hb', '!felicitar', '!felicidades', '!festejar'],
+        example: '!feliz ¡Muchas felicidades pásala genial!',
+        explanation: 'Muestra una tarjeta de felicitación flotante en directo.'
+      },
+
+      // ─── MODERACIÓN & STREAMER ───
+      {
+        cmd: '!mod',
+        cat: 'mod',
+        role: 'mod',
+        roleText: '🛡️ Streamer & Mods',
+        desc: 'Panel de estado rápido en el chat: estado de alertas, grabación, timer y resumen de acciones.',
+        aliases: ['!hbmod', '!hbadmin', '!hbestado'],
+        example: '!mod',
+        explanation: 'Resumen directo de 1 sola línea para moderadores.'
+      },
+      {
+        cmd: '!listo @usuario',
+        cat: 'mod',
+        role: 'mod',
+        roleText: '🛡️ Streamer & Mods',
+        desc: 'Marca manualmente a un usuario como YA CELEBRADO este año. El bot no volverá a avisar en chat sobre su gracia.',
+        aliases: ['!hecho', '!yacelebro', '!hbyacelebro', '!hbcelebrado'],
+        example: '!listo @capi_daniellc_21',
+        explanation: 'Detiene avisos repetitivos de recordatorio en stream.'
+      },
+      {
+        cmd: '!relanzar @usuario',
+        cat: 'mod',
+        role: 'mod',
+        roleText: '🛡️ Streamer & Mods',
+        desc: 'Reinicia la celebración de un usuario para que pueda volver a detonar su festejo con !cumplehoy en directo.',
+        aliases: ['!reinicio', '!hbrelanzar', '!hbreiniciar'],
+        example: '!relanzar @amigo',
+        explanation: 'Útil si hubo un problema técnico y debe sonar de nuevo.'
+      },
+      {
+        cmd: '!libre @usuario',
+        cat: 'mod',
+        role: 'mod',
+        roleText: '🛡️ Streamer & Mods',
+        desc: 'Desbloquea la fecha de cumpleaños de un seguidor para que pueda corregirla con !reg DD-MM.',
+        aliases: ['!abrir', '!hblibre', '!hbdesbloquear'],
+        example: '!libre @amigo',
+        explanation: 'Levanta el bloqueo de 1 año en la fecha de nacimiento.'
+      },
+      {
+        cmd: '!alertas [on|off]',
+        cat: 'mod',
+        role: 'mod',
+        roleText: '🛡️ Streamer & Mods',
+        desc: 'Activa o desactiva temporalmente que los cumpleañeros puedan detonar alertas con !cumplehoy en directo.',
+        aliases: ['!hbalertas', '!cumplealertas'],
+        example: '!alertas off  ·  !alertas on',
+        explanation: 'Pausa las alertas durante momentos clave o partidas intensas.'
+      },
+      {
+        cmd: '!rec [on|off]',
+        cat: 'mod',
+        role: 'mod',
+        roleText: '🛡️ Streamer & Mods',
+        desc: 'Modo Grabación: silencia alertas y felicitaciones en un comando durante grabaciones de YouTube/TikTok.',
+        aliases: ['!grabar', '!hbgrabacion', '!hbmodovideo'],
+        example: '!rec on  ·  !rec off',
+        explanation: 'Pausa total sin borrar configuraciones.'
+      },
+      {
+        cmd: '!silencio [on|off]',
+        cat: 'mod',
+        role: 'mod',
+        roleText: '🛡️ Streamer & Mods',
+        desc: 'Modo Pruebas / Silencio: procesa todo en el overlay de OBS sin enviar mensajes de bot al chat de Twitch.',
+        aliases: ['!test', '!hbpruebas', '!hbsilencio'],
+        example: '!silencio on  ·  !silencio off',
+        explanation: 'Perfecto para hacer pruebas sin generar spam en el chat.'
+      }
+    ];
+
+    let currentCategory = 'all';
+    let searchQuery = '';
+
+    const container = document.getElementById('commands-container');
+    const emptyState = document.getElementById('cmd-empty-state');
+    const searchInput = document.getElementById('cmd-search');
+    const searchClear = document.getElementById('cmd-search-clear');
+    const categoryTabs = document.getElementById('cmd-category-tabs');
+
+    // Actualizar contadores
+    function updateCounts() {
+      document.getElementById('count-all').textContent = COMMANDS.length;
+      document.getElementById('count-bday').textContent = COMMANDS.filter(c => c.cat === 'bday').length;
+      document.getElementById('count-query').textContent = COMMANDS.filter(c => c.cat === 'query').length;
+      document.getElementById('count-pinata').textContent = COMMANDS.filter(c => c.cat === 'pinata').length;
+      document.getElementById('count-mod').textContent = COMMANDS.filter(c => c.cat === 'mod').length;
+    }
+
+    // Renderizar tarjetas
+    function renderCommands() {
+      const q = searchQuery.toLowerCase().trim();
+      const filtered = COMMANDS.filter(c => {
+        const matchCat = currentCategory === 'all' || c.cat === currentCategory;
+        if (!matchCat) return false;
+        if (!q) return true;
+
+        const inCmd = c.cmd.toLowerCase().includes(q);
+        const inDesc = c.desc.toLowerCase().includes(q);
+        const inAliases = c.aliases.some(a => a.toLowerCase().includes(q));
+        const inExpl = (c.explanation || '').toLowerCase().includes(q);
+        return inCmd || inDesc || inAliases || inExpl;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      container.innerHTML = filtered.map(c => {
+        const copyValue = c.cmd.split(' ')[0]; // Copiar comando base
+        const aliasesHtml = c.aliases.map(a => `<code>${a}</code>`).join(' ');
+        const roleClass = c.role === 'all' ? 'role-all' : (c.role === 'bday' ? 'role-bday' : 'role-mod');
+
+        return `
+          <div class="cmd-card tag-${c.cat}">
+            <div class="cmd-card-header">
+              <span class="cmd-main-tag">${c.cmd}</span>
+              <span class="cmd-role-badge ${roleClass}">${c.roleText}</span>
+            </div>
+
+            <p class="cmd-desc">${c.desc}</p>
+
+            ${c.aliases && c.aliases.length > 0 ? `
+              <div class="cmd-aliases">
+                <strong>Alias válidos:</strong> ${aliasesHtml}
+              </div>
+            ` : ''}
+
+            <div class="cmd-example">
+              <strong>Ejemplo:</strong> <span>${c.example}</span><br>
+              <small>${c.explanation}</small>
+            </div>
+
+            <div class="cmd-card-footer">
+              <button class="btn-copy-cmd" data-copy="${copyValue}">
+                <span>📋</span> Copiar
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Asignar eventos de copiar
+      container.querySelectorAll('.btn-copy-cmd').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const text = btn.dataset.copy;
+          navigator.clipboard.writeText(text).then(() => {
+            const original = btn.innerHTML;
+            btn.classList.add('copied');
+            btn.innerHTML = '<span>✅</span> ¡Copiado!';
+            setTimeout(() => {
+              btn.classList.remove('copied');
+              btn.innerHTML = original;
+            }, 1800);
+          }).catch(() => {
+            // Fallback
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            btn.classList.add('copied');
+            btn.innerHTML = '<span>✅</span> ¡Copiado!';
+            setTimeout(() => {
+              btn.classList.remove('copied');
+              btn.innerHTML = '<span>📋</span> Copiar';
+            }, 1800);
+          });
+        });
+      });
+    }
+
+    // Filtrado por buscador
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      searchClear.style.display = searchQuery ? 'block' : 'none';
+      renderCommands();
+    });
+
+    searchClear.addEventListener('click', () => {
+      searchInput.value = '';
+      searchQuery = '';
+      searchClear.style.display = 'none';
+      renderCommands();
+      searchInput.focus();
+    });
+
+    // Pestañas de categorías
+    categoryTabs.querySelectorAll('.cmd-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        categoryTabs.querySelectorAll('.cmd-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentCategory = btn.dataset.cat;
+        renderCommands();
+      });
+    });
+
+    // Inicializar
+    updateCounts();
+    renderCommands();
+  </script>
+</body>
+</html>
