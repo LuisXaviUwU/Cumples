@@ -295,7 +295,7 @@ async function buildAnnouncementMessage() {
         // 4. Mensajes rotativos de invitación a la comunidad (cortos y directos)
         const communityInvites = [
             `🎂 Anota tu cumple con !reg DD-MM ✨`,
-            `📜 Comandos de cumple: !cmds 🪅`
+            `📜 Comandos de cumple: !cumplecmds 🪅`
         ];
         return communityInvites[Math.floor(Math.random() * communityInvites.length)];
     } catch (e) {
@@ -449,35 +449,35 @@ async function handleChatMessage(channel, tags, message, self) {
         return;
     }
 
-    // 2. COOLDOWN ANTI-SPAM (Evita que el mismo usuario dispare el mismo comando repetidamente en < 3s)
+    // 2. COOLDOWN ANTI-SPAM (Comandos exclusivos de cumpleaños sin colisión con StreamElements)
     const KNOWN_COMMANDS = [
         // Registro
         '!reg', '!registro', '!regcumple', '!registrarme', '!registrar', '!anotarme', '!cumpleregistro',
         // Consulta
         '!cumple', '!micumple', '!cumpleaños', '!cumpleanos', '!mifecha', '!fechacumple', '!cuandocumplo',
         '!prox', '!proximos', '!siguientes', '!cumples', '!mes', '!cumplemes', '!cumplesmes', '!mescumple',
-        // Información & Ayuda
-        '!cmds', '!comandos', '!commands', '!ayuda', '!help', '!cumpleinfo', '!ayudacumple', '!guiacomandos', '!bot',
+        // Información & Ayuda (específicos de cumple para NO chocar con StreamElements !cmds / !help)
+        '!cumplecmds', '!ccmds', '!cumpleayuda', '!cumpleguia', '!cumpleinfo', '!cumplecomandos', '!bday',
         // Alerta de Cumpleaños
         '!cumplehoy', '!alerta', '!mialerta', '!fiesta', '!festejo', '!hoyesmicumple', '!hoyesmicum', '!lanzarmicumple', '!micumplealerta', '!lanzarcumple', '!cumplealerta',
-        // Felicitaciones & Confeti
-        '!feliz', '!gg', '!hb', '!felicidades', '!felicidades1', '!felicidades2', '!felicidades3',
+        // Felicitaciones & Confeti (sin !gg para no chocar con partidas)
+        '!feliz', '!hb', '!felicidades', '!felicidades1', '!felicidades2', '!felicidades3',
         '!felicitar', '!felicitar1', '!felicitar2', '!felicitar3',
         '!felicitaciones', '!felicitacion', '!festejar',
-        // Piñata Minijuego
-        '!piñata', '!pinata', '!pata', '!stop', '!pstop', '!piñatastop', '!pinatastop', '!piñatita', '!pinatita',
+        // Piñata Minijuego (sin !stop genérico)
+        '!piñata', '!pinata', '!pata', '!pstop', '!piñatastop', '!pinatastop', '!piñatita', '!pinatita',
         // Personalización de Alerta
-        '!frase', '!msg', '!hbcambio', '!hbfrase', '!micumplefrase', '!cambiarfrase', '!mifrase',
-        '!sonido', '!audio', '!rola', '!cancion', '!hbsonido', '!cambiarsonido', '!misonido', '!cambiarmusica',
+        '!frase', '!hbcambio', '!hbfrase', '!micumplefrase', '!cambiarfrase', '!mifrase',
+        '!sonido', '!audio', '!hbsonido', '!cambiarsonido', '!misonido', '!cambiarmusica',
         // Control & Moderación
         '!alertas', '!hbalertas', '!cumplealertas', '!alertascumple',
         '!hbfelicitar', '!hbfelicitaciones',
         '!rec', '!grabar', '!hbgrabacion', '!hbmodovideo', '!hbcine', '!hbpausa',
-        '!mod', '!hbmod', '!hbadmin', '!hbestado', '!modcumple',
+        '!hbmod', '!cumplemod', '!hbadmin', '!hbestado', '!modcumple',
         '!libre', '!abrir', '!hblibre', '!hbdesbloquear', '!hbabrir',
         '!listo', '!hecho', '!yacelebro', '!hbyacelebro', '!hbcelebrado', '!hblisto', '!hbyafestejo',
         '!relanzar', '!reinicio', '!hbrelanzar', '!hbreiniciar', '!hbreset',
-        '!silencio', '!test', '!hbpruebas', '!hbsilencio', '!hbsilent', '!hbmodoprueba'
+        '!silencio', '!hbpruebas', '!hbsilencio', '!hbsilent', '!hbmodoprueba'
     ];
     if (KNOWN_COMMANDS.includes(command)) {
         if (isCommandRateLimited(sender, command)) {
@@ -862,11 +862,10 @@ async function handleChatMessage(channel, tags, message, self) {
         return sendChat(`🎂 ¡Feliz cumpleaños @${displayName}! Alerta sonando en pantalla 🥳🎉`);
     }
 
-// ─── COMANDO 6: !feliz / !felicidades / !gg / !hb [mensaje] ───────────────
+// ─── COMANDO 6: !feliz / !felicidades / !hb [mensaje] ─────────────────────
 const felicitationCommands = [
-    '!feliz', '!gg', '!hb',
+    '!feliz', '!hb',
     '!feliz1', '!feliz2', '!feliz3',
-    '!gg1', '!gg2', '!gg3',
     '!hb1', '!hb2', '!hb3',
     '!felicidades', '!felicidades1', '!felicidades2', '!felicidades3',
     '!felicitar', '!felicitar1', '!felicitar2', '!felicitar3',
@@ -883,7 +882,7 @@ if (felicitationCommands.includes(command)) {
     } else {
 
         // Si es comando a secas sin mensaje y sin que haya felicitaciones activas, mostrar info
-        if ((command === '!felicitar' || command === '!feliz' || command === '!gg' || command === '!hb') && !arg && !appSettings.felicitations_enabled) {
+        if ((command === '!felicitar' || command === '!feliz' || command === '!hb') && !arg && !appSettings.felicitations_enabled) {
             const msg = customCmdResponses.felicitar
                 ? customCmdResponses.felicitar.replace(/\{URL\}/gi, appUrlRef)
                 : `💌 Felicita en vivo a los cumpleañeros con !feliz <mensaje> o entra a ${appUrlRef} 🎉`;
@@ -1007,8 +1006,8 @@ if (felicitationCommands.includes(command)) {
     } // end else (not on/off control)
 }
 
-// ─── COMANDO 7: !frase / !msg / !hbcambio <frase> (Modificar frase de alerta) ──
-if (command === '!frase' || command === '!msg' || command === '!hbcambio' || command === '!hbfrase' || command === '!micumplefrase' || command === '!cambiarfrase' || command === '!mifrase') {
+// ─── COMANDO 7: !frase / !hbcambio <frase> (Modificar frase de alerta) ──────
+if (command === '!frase' || command === '!hbcambio' || command === '!hbfrase' || command === '!micumplefrase' || command === '!cambiarfrase' || command === '!mifrase') {
     if (!dbRef) return;
     const senderLogin = sender.toLowerCase().replace(/[^a-z0-9_]/g, '');
     const user = await dbRef.getUser(senderLogin);
@@ -1031,7 +1030,7 @@ if (command === '!frase' || command === '!msg' || command === '!hbcambio' || com
 }
 
 // ─── COMANDO 8: !sonido / !audio / !hbsonido <1 | 2 | 3> ─────────────────────
-if (command === '!sonido' || command === '!audio' || command === '!hbsonido' || command === '!cambiarsonido' || command === '!misonido' || command === '!cambiarmusica' || command === '!rola' || command === '!cancion') {
+if (command === '!sonido' || command === '!audio' || command === '!hbsonido' || command === '!cambiarsonido' || command === '!misonido' || command === '!cambiarmusica') {
     if (!dbRef) return;
     const senderLogin = sender.toLowerCase().replace(/[^a-z0-9_]/g, '');
     const user = await dbRef.getUser(senderLogin);
@@ -1072,12 +1071,12 @@ if (command === '!sonido' || command === '!audio' || command === '!hbsonido' || 
     return sendChat(`🎵 @${sender}, sonido cambiado a: ${soundLabel} 🔊`);
 }
 
-// ─── COMANDO PIÑATA: !piñata / !pata / !stop ─────────────────────────────────
-if (command === '!piñata' || command === '!pinata' || command === '!pata' || command === '!p' || command === '!piñatastop' || command === '!pinatastop' || command === '!pstop' || command === '!stop' || command === '!detener') {
+// ─── COMANDO PIÑATA: !piñata / !pata / !pstop ───────────────────────────────
+if (command === '!piñata' || command === '!pinata' || command === '!pata' || command === '!pstop' || command === '!piñatastop' || command === '!pinatastop') {
     if (!pinataManagerRef) return;
 
     const subAction = (parts[1] || '').toLowerCase().trim();
-    const isStopCmd = command === '!stop' || command === '!detener' || command === '!pstop' || command === '!piñatastop' || command === '!pinatastop' || subAction === 'stop' || subAction === 'detener' || subAction === 'cancelar';
+    const isStopCmd = command === '!pstop' || command === '!piñatastop' || command === '!pinatastop' || subAction === 'stop' || subAction === 'detener' || subAction === 'cancelar';
 
     if (isStopCmd) {
         if (!isStreamerOrMod(tags, channel)) {
@@ -1101,7 +1100,7 @@ if (command === '!piñata' || command === '!pinata' || command === '!pata' || co
 
     const currentStatus = pinataManagerRef.getStatus();
     if (currentStatus.active && subAction !== 'restart' && subAction !== 'reiniciar') {
-        return sendChat(`🪅 @${sender}, piñata en curso (${currentStatus.currentHp}/${currentStatus.maxHp} HP, ${currentStatus.remainingSec}s restantes). Usa !stop para cancelar.`);
+        return sendChat(`🪅 @${sender}, piñata en curso (${currentStatus.currentHp}/${currentStatus.maxHp} HP, ${currentStatus.remainingSec}s restantes). Usa !pstop para cancelar.`);
     }
 
     // Parsear nombre y golpes
@@ -1161,10 +1160,9 @@ if (command === '!piñata' || command === '!pinata' || command === '!pata' || co
     return;
 }
 
-// ─── COMANDO 9: !cmds / !comandos / !ayuda ──────────────────────────────────
-if (command === '!cmds' || command === '!cmd' || command === '!comandos' || command === '!ayuda' || command === '!help' || command === '!commands' ||
-    command === '!cumpleinfo' || command === '!ayudacumple' || command === '!guiacomandos' || command === '!bot') {
-    return sendChat(`📜 Guía: ${appUrlRef}/comandos 🎂 | !cumplehoy (alerta) · !reg DD-MM · !cumple · !dale (piñata) · !feliz [msg] · !frase <texto> · !sonido <1/2/3>`);
+// ─── COMANDO 9: !cumplecmds / !ccmds / !cumpleayuda (Guía de Cumpleaños) ─────
+if (command === '!cumplecmds' || command === '!ccmds' || command === '!cumpleayuda' || command === '!cumpleguia' || command === '!cumpleinfo' || command === '!cumplecomandos' || command === '!bday') {
+    return sendChat(`📜 Guía: ${appUrlRef}/comandos 🎂 | !cumplehoy · !reg DD-MM · !cumple · !dale (piñata) · !feliz [msg] · !frase · !sonido`);
 }
 
 // ─── COMANDOS EXCLUSIVOS DE MODERACIÓN Y CONTROL (STREAMER & MODS) ─────────
@@ -1246,8 +1244,8 @@ if (command === '!alertas' || command === '!hbalertas' || command === '!cumpleal
         }
     }
 
-    // COMANDO MOD 4: !mod / !hbmod (Panel de Estado Rápido)
-    if (command === '!mod' || command === '!hbmod' || command === '!hbadmin' || command === '!hbestado') {
+    // COMANDO MOD 4: !hbmod / !cumplemod (Panel de Estado Rápido)
+    if (command === '!hbmod' || command === '!cumplemod' || command === '!hbadmin' || command === '!hbestado') {
         if (!isStreamerOrMod(tags, channel)) {
             return sendChat(`⛔ @${sender}, panel exclusivo de mods 🛡️`);
         }
@@ -1262,8 +1260,8 @@ if (command === '!alertas' || command === '!hbalertas' || command === '!cumpleal
         return sendChat(`🛡️ [Mods] Estado: ${recMode} · Bot: ${testMode} · Alertas: ${bdayAct} · Felicitaciones: ${felicAct} · Timer: ${mins}m | !listo @u · !relanzar @u · !libre @u · !alertas on/off · !rec on/off`);
     }
 
-    // COMANDO MOD 5: !silencio / !test / !hbpruebas [on|off]
-    if (command === '!silencio' || command === '!test' || command === '!hbpruebas' || command === '!hbsilencio' || command === '!hbsilent' || command === '!hbmodoprueba') {
+    // COMANDO MOD 5: !silencio / !hbpruebas [on|off]
+    if (command === '!silencio' || command === '!hbpruebas' || command === '!hbsilencio' || command === '!hbsilent' || command === '!hbmodoprueba') {
         if (!isStreamerOrMod(tags, channel)) {
             return sendChat(`⛔ @${sender}, comando exclusivo de mods 🛡️`);
         }
@@ -1273,7 +1271,7 @@ if (command === '!alertas' || command === '!hbalertas' || command === '!cumpleal
             botConfig.silent_mode = true;
             if (saveSettingsCallback) saveSettingsCallback({ twitch_bot: botConfig });
             console.log('[TwitchBot] 🧪 Modo pruebas / silencio de chat ACTIVADO');
-            return sendChat(`🧪 @${sender}, Modo Pruebas ACTIVADO 🤫 (Bot silenciado en Twitch chat). Desactivar: !test off`);
+            return sendChat(`🧪 @${sender}, Modo Pruebas ACTIVADO 🤫 (Bot silenciado en Twitch chat). Desactivar: !silencio off`);
         } else if (subAction === 'off' || subAction === 'desactivar' || subAction === '0' || subAction === 'hablar') {
             botConfig.silent_mode = false;
             if (saveSettingsCallback) saveSettingsCallback({ twitch_bot: botConfig });
@@ -1281,7 +1279,7 @@ if (command === '!alertas' || command === '!hbalertas' || command === '!cumpleal
             return sendChat(`🔊 @${sender}, Modo Pruebas DESACTIVADO 💬 (Bot hablando normal en Twitch chat)`);
         } else {
             const isSilent = !!botConfig.silent_mode;
-            return sendChat(`🧪 @${sender}, Modo Pruebas: ${isSilent ? 'ACTIVADO 🤫 (Silencio)' : 'DESACTIVADO 🔊 (Normal)'}. Cambiar: !test on/off`);
+            return sendChat(`🧪 @${sender}, Modo Pruebas: ${isSilent ? 'ACTIVADO 🤫 (Silencio)' : 'DESACTIVADO 🔊 (Normal)'}. Cambiar: !silencio on/off`);
         }
     }
 
