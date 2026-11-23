@@ -540,7 +540,7 @@
         role: 'bday',
         roleText: '👑 Cumpleañero',
         desc: 'Personaliza la dedicatoria o frase corta que aparecerá en pantalla cuando suene tu alerta en vivo (máx 60 caracteres).',
-        aliases: ['!msg', '!hbcambio', '!mifrase', '!cambiarfrase'],
+        aliases: ['!hbcambio', '!mifrase', '!cambiarfrase', '!hbfrase'],
         example: '!frase ¡Un año más festejando con los capibaras!',
         explanation: 'Actualiza tu dedicatoria para que todos en el stream la vean.'
       },
@@ -550,7 +550,7 @@
         role: 'bday',
         roleText: '👑 Cumpleañero',
         desc: 'Elige la música o sonido de tu alerta: 1 = Silbato Festivo 🎺, 2 = Música de Fiesta 🎵, 3 = Felicitación de Voz 🎤.',
-        aliases: ['!audio', '!hbsonido', '!misonido', '!rola'],
+        aliases: ['!audio', '!hbsonido', '!misonido'],
         example: '!sonido 2',
         explanation: 'Elige tu rola favorita para que resuene en directo.'
       },
@@ -587,14 +587,14 @@
         explanation: 'Lista directa y compacta en el chat de Twitch.'
       },
       {
-        cmd: '!cmds',
+        cmd: '!cumplecmds',
         cat: 'query',
         role: 'all',
         roleText: '👤 Todos',
-        desc: 'Enlace web directo a esta guía interactiva y resumen de los comandos más usados.',
-        aliases: ['!comandos', '!ayuda', '!help', '!bot'],
-        example: '!cmds',
-        explanation: 'Respuesta directa con el enlace a /comandos.'
+        desc: 'Enlace web directo a esta guía interactiva y resumen de los comandos de cumpleaños (sin chocar con StreamElements).',
+        aliases: ['!ccmds', '!cumpleayuda', '!cumpleinfo', '!cumpleguia'],
+        example: '!cumplecmds  ·  !ccmds',
+        explanation: 'Muestra los comandos exclusivos de cumpleaños en el chat.'
       },
 
       // ─── MINIJUEGOS & CHAT ───
@@ -603,9 +603,9 @@
         cat: 'pinata',
         role: 'all',
         roleText: '👤 Streamer/Mods',
-        desc: 'Inicia el minijuego de la piñata comunitaria de capibara (por defecto 30 golpes). Cancela con !stop.',
-        aliases: ['!pata', '!pinata', '!stop', '!piñatastop'],
-        example: '!piñata  ·  !piñata @amigo 50  ·  !stop',
+        desc: 'Inicia el minijuego de la piñata comunitaria de capibara (por defecto 30 golpes). Cancela con !pstop.',
+        aliases: ['!pata', '!pinata', '!pstop', '!piñatastop'],
+        example: '!piñata  ·  !piñata @amigo 50  ·  !pstop',
         explanation: 'Invocable por streamer o mods. Aparece colgada para batearla.'
       },
       {
@@ -624,20 +624,20 @@
         role: 'all',
         roleText: '👤 Todos',
         desc: 'Envía confeti y una tarjeta flotante de felicitación a la pantalla del stream.',
-        aliases: ['!gg', '!hb', '!felicitar', '!felicidades', '!festejar'],
+        aliases: ['!hb', '!felicitar', '!felicidades', '!festejar'],
         example: '!feliz ¡Muchas felicidades pásala genial!',
         explanation: 'Muestra una tarjeta de felicitación flotante en directo.'
       },
 
       // ─── MODERACIÓN & STREAMER ───
       {
-        cmd: '!mod',
+        cmd: '!hbmod',
         cat: 'mod',
         role: 'mod',
         roleText: '🛡️ Streamer & Mods',
         desc: 'Panel de estado rápido en el chat: estado de alertas, grabación, timer y resumen de acciones.',
-        aliases: ['!hbmod', '!hbadmin', '!hbestado'],
-        example: '!mod',
+        aliases: ['!cumplemod', '!hbadmin', '!hbestado'],
+        example: '!hbmod',
         explanation: 'Resumen directo de 1 sola línea para moderadores.'
       },
       {
@@ -685,10 +685,10 @@
         cat: 'mod',
         role: 'mod',
         roleText: '🛡️ Streamer & Mods',
-        desc: 'Modo Grabación: silencia alertas y felicitaciones en un comando durante grabaciones de YouTube/TikTok.',
+        desc: 'Modo Grabación: silencia alertas y felicitaciones en un comando para momentos que requieren cero interrupciones en el stream de Twitch.',
         aliases: ['!grabar', '!hbgrabacion', '!hbmodovideo'],
         example: '!rec on  ·  !rec off',
-        explanation: 'Pausa total sin borrar configuraciones.'
+        explanation: 'Pausa total de alertas sin borrar configuraciones.'
       },
       {
         cmd: '!silencio [on|off]',
@@ -696,8 +696,10 @@
         role: 'mod',
         roleText: '🛡️ Streamer & Mods',
         desc: 'Modo Pruebas / Silencio: procesa todo en el overlay de OBS sin enviar mensajes de bot al chat de Twitch.',
-        aliases: ['!test', '!hbpruebas', '!hbsilencio'],
+        aliases: ['!hbpruebas', '!hbsilencio'],
         example: '!silencio on  ·  !silencio off',
+        explanation: 'Perfecto para hacer pruebas sin generar spam en el chat.'
+      }
         explanation: 'Perfecto para hacer pruebas sin generar spam en el chat.'
       }
     ];
