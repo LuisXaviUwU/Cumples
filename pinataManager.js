@@ -67,6 +67,7 @@ class PinataManager {
             lastHitBy: null,
             recentHits: [], // Timestamps de golpes para activar Frenesí
             frenzyUntil: 0, // Timestamp de fin de Frenesí
+            lastFrenzyEnd: 0, // Timestamp del último fin de Frenesí (anti-duplicado)
             extraTimeGranted: false, // Control de tiempo extra de remontada
             timerHandle: setTimeout(() => {
                 this.handleTimeout();
@@ -158,9 +159,20 @@ class PinataManager {
         this.activePinata.recentHits.push(now);
 
         // Activar Frenesí si hay 4 o más golpes en 3.5 segundos
-        if (!isFrenzy && this.activePinata.recentHits.length >= 4) {
+        // Solo se puede re-activar si han pasado al menos 8s desde el último frenesí (evita duplicados)
+        const lastFrenzyEnd = this.activePinata.lastFrenzyEnd || 0;
+        const cooldownFrenzy = now > lastFrenzyEnd + 8000;
+        if (!isFrenzy && cooldownFrenzy && this.activePinata.recentHits.length >= 4) {
             isFrenzy = true;
             this.activePinata.frenzyUntil = now + 7000; // 7 segundos de Frenesí
+            // Limpiar recentHits para evitar reactivación inmediata en el siguiente golpe
+            this.activePinata.recentHits = [];
+            // Programar el fin del frenesí para registrar lastFrenzyEnd
+            setTimeout(() => {
+                if (this.activePinata) {
+                    this.activePinata.lastFrenzyEnd = Date.now();
+                }
+            }, 7000);
             if (this.broadcastFn) {
                 this.broadcastFn({
                     type: 'pinata_frenzy_start',
@@ -168,7 +180,7 @@ class PinataManager {
                 });
             }
             if (this.sendChatFn) {
-                this.sendChatFn('🔥 ¡MODO FRENESÍ ACTIVADO EN PANTALLA! ¡Daño doble para todos, spameen !dale! 🏑💥').catch(() => {});
+                this.sendChatFn('🔥 ¡MODO FRENESÍ! ¡Daño x2, usen !dale! 🏑💥').catch(() => {});
             }
         }
 
