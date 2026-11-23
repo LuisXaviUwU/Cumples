@@ -1034,40 +1034,168 @@ body {
 /* ─── TODAY CELEBRANT CARDS ──────────────────────────────────────────────── */
 .today-cards-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  width: 100%;
 }
 
 .today-item-card {
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
   border-radius: 14px;
-  padding: 14px 16px;
+  padding: 16px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: space-between;
-  gap: 12px;
-  transition: all 0.18s ease;
+  gap: 14px;
+  min-width: 0;
+  box-sizing: border-box;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  position: relative;
+  overflow: hidden;
 }
 
 .today-item-card:hover {
-  border-color: rgba(124, 58, 237, 0.35);
+  border-color: rgba(145, 70, 255, 0.45);
   background: var(--panel-bg-hover);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
-.today-item-left {
+.today-card-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
+  min-width: 0;
 }
 
 .today-avatar {
-  width: 42px;
-  height: 42px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
-  border: 1.5px solid var(--c-accent);
+  border: 2px solid var(--c-accent);
   object-fit: cover;
+  flex-shrink: 0;
+}
+
+.today-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.today-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.today-display-name {
+  font-family: var(--font-h);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.today-username-sub {
+  font-size: 0.75rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.today-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.today-status-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.today-card-body {
+  min-width: 0;
+}
+
+.today-phrase {
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 8px 10px;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.today-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 12px;
+}
+
+.today-sound-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.today-sound-select {
+  flex: 1;
+  min-width: 0;
+  background: #18122c;
+  border: 1px solid rgba(145, 70, 255, 0.3);
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.today-sound-select:focus {
+  border-color: var(--c-accent);
+  box-shadow: 0 0 8px rgba(124, 58, 237, 0.4);
+}
+
+.today-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.today-btn-group .btn-alert-direct {
+  flex: 1.2;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.today-btn-group .btn-copy {
+  flex: 1;
+  justify-content: center;
+  white-space: nowrap;
 }
 
 .btn-alert-direct {
@@ -1075,20 +1203,21 @@ body {
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 8px 14px;
+  padding: 8px 12px;
   font-family: var(--font-h);
   font-size: 0.8rem;
   font-weight: 800;
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   transition: all 0.15s ease;
   box-shadow: 0 3px 12px rgba(124, 58, 237, 0.25);
 }
 
 .btn-alert-direct:hover {
-  transform: scale(1.03);
+  transform: translateY(-1px);
   box-shadow: 0 5px 16px rgba(124, 58, 237, 0.4);
 }
 
