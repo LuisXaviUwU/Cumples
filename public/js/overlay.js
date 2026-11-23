@@ -373,6 +373,12 @@ function connectSSE() {
       if (data.type === 'pinata_hit') {
         hitPinataUI(data);
       }
+      if (data.type === 'pinata_frenzy_start') {
+        frenzyPinataUI(data);
+      }
+      if (data.type === 'pinata_extra_time') {
+        extraTimePinataUI(data);
+      }
       if (data.type === 'pinata_broken') {
         brokenPinataUI(data);
       }
@@ -535,6 +541,8 @@ const pinataImg = document.getElementById('pinata-img');
 
 let pinataTimerInterval = null;
 let pinataAudioCtx = null;
+let pinataSecondsLeft = 0;
+let pinataFrenzyTimeout = null;
 
 function getPinataAudioContext() {
   if (!pinataAudioCtx) {
@@ -586,6 +594,73 @@ function playPinataSound(type) {
       clickGain.connect(masterGain);
       clickOsc.start(now);
       clickOsc.stop(now + 0.06);
+
+    } else if (type === 'crit') {
+      // Golpe crítico: pegada resonante y doble tono agudo de impacto contundente
+      const osc = ctx.createOscillator();
+      const oscGain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(340, now);
+      osc.frequency.exponentialRampToValueAtTime(40, now + 0.18);
+      oscGain.gain.setValueAtTime(1.15, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+      osc.connect(oscGain);
+      oscGain.connect(masterGain);
+      osc.start(now);
+      osc.stop(now + 0.22);
+
+      const chime = ctx.createOscillator();
+      const chimeGain = ctx.createGain();
+      chime.type = 'sine';
+      chime.frequency.setValueAtTime(620, now);
+      chime.frequency.exponentialRampToValueAtTime(940, now + 0.12);
+      chimeGain.gain.setValueAtTime(0.55, now);
+      chimeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+      chime.connect(chimeGain);
+      chimeGain.connect(masterGain);
+      chime.start(now);
+      chime.stop(now + 0.18);
+
+    } else if (type === 'mega') {
+      // Super Crítico o Bate de Oro del Cumpleañero: golpe sísmico + fanfarria estelar
+      const bass = ctx.createOscillator();
+      const bassGain = ctx.createGain();
+      bass.type = 'triangle';
+      bass.frequency.setValueAtTime(220, now);
+      bass.frequency.exponentialRampToValueAtTime(32, now + 0.26);
+      bassGain.gain.setValueAtTime(1.3, now);
+      bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+      bass.connect(bassGain);
+      bassGain.connect(masterGain);
+      bass.start(now);
+      bass.stop(now + 0.3);
+
+      [523.25, 783.99, 1046.5].forEach((freq, idx) => {
+        const chordOsc = ctx.createOscillator();
+        const chordGain = ctx.createGain();
+        chordOsc.type = 'triangle';
+        chordOsc.frequency.setValueAtTime(freq, now + idx * 0.03);
+        chordGain.gain.setValueAtTime(0.35, now + idx * 0.03);
+        chordGain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.03 + 0.32);
+        chordOsc.connect(chordGain);
+        chordGain.connect(masterGain);
+        chordOsc.start(now + idx * 0.03);
+        chordOsc.stop(now + idx * 0.03 + 0.35);
+      });
+
+    } else if (type === 'frenzy') {
+      // Sonido de ignición / modo frenesí
+      const sweep = ctx.createOscillator();
+      const sweepGain = ctx.createGain();
+      sweep.type = 'sawtooth';
+      sweep.frequency.setValueAtTime(240, now);
+      sweep.frequency.exponentialRampToValueAtTime(880, now + 0.32);
+      sweepGain.gain.setValueAtTime(0.45, now);
+      sweepGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+      sweep.connect(sweepGain);
+      sweepGain.connect(masterGain);
+      sweep.start(now);
+      sweep.stop(now + 0.42);
 
     } else if (type === 'broken') {
       // Fanfarria triunfal de fiesta: C5 - E5 - G5 - C6
@@ -640,8 +715,17 @@ function startPinataUI(data) {
     clearInterval(pinataTimerInterval);
     pinataTimerInterval = null;
   }
+  if (pinataFrenzyTimeout) {
+    clearTimeout(pinataFrenzyTimeout);
+    pinataFrenzyTimeout = null;
+  }
 
-  // Ocultar tarjetas de fin de juego anteriores
+  // Ocultar banners y tarjetas de fin de juego anteriores
+  const frenzyBanner = document.getElementById('pinata-frenzy-banner');
+  if (frenzyBanner) frenzyBanner.style.display = 'none';
+  pinataWrapper.classList.remove('frenzy-mode');
+
+  if (pinataTimer) pinataTimer.classList.remove('extra-time-pulse');
   if (pinataResultCard) pinataResultCard.style.display = 'none';
   if (pinataTimeoutCard) pinataTimeoutCard.style.display = 'none';
   if (pinataBody) pinataBody.style.opacity = '1';
@@ -658,16 +742,16 @@ function startPinataUI(data) {
   if (pinataHpText) pinataHpText.textContent = `${data.maxHp} / ${data.maxHp} HP`;
 
   // Timer regresivo
-  let secondsLeft = data.durationSec || 35;
-  if (pinataTimer) pinataTimer.textContent = `⏳ ${secondsLeft}s`;
+  pinataSecondsLeft = data.durationSec || 35;
+  if (pinataTimer) pinataTimer.textContent = `⏳ ${pinataSecondsLeft}s`;
 
   pinataTimerInterval = setInterval(() => {
-    secondsLeft--;
-    if (secondsLeft < 0) {
+    pinataSecondsLeft--;
+    if (pinataSecondsLeft < 0) {
       clearInterval(pinataTimerInterval);
       pinataTimerInterval = null;
     } else {
-      if (pinataTimer) pinataTimer.textContent = `⏳ ${secondsLeft}s`;
+      if (pinataTimer) pinataTimer.textContent = `⏳ ${pinataSecondsLeft}s`;
     }
   }, 1000);
 
@@ -686,7 +770,10 @@ function startPinataUI(data) {
 }
 
 function hitPinataUI(data) {
-  playPinataSound('hit');
+  const isSuper = data.hitType === 'super_crit' || data.hitType === 'birthday';
+  const isCrit = data.hitType === 'crit';
+  const soundType = isSuper ? 'mega' : (isCrit ? 'crit' : 'hit');
+  playPinataSound(soundType);
 
   // Actualizar Barra de HP
   const pct = Math.max(0, data.percentage !== undefined ? data.percentage : 100);
@@ -714,11 +801,15 @@ function hitPinataUI(data) {
     pinataImpactStar.classList.add('is-popping');
   }
 
-  // Sacudida de la piñata
+  // Sacudida de la piñata (impacto regular vs impacto crítico pesado)
   if (pinataBody) {
-    pinataBody.classList.remove('is-hit');
+    pinataBody.classList.remove('is-hit', 'is-crit-hit');
     void pinataBody.offsetWidth;
-    pinataBody.classList.add('is-hit');
+    if (isCrit || isSuper) {
+      pinataBody.classList.add('is-crit-hit');
+    } else {
+      pinataBody.classList.add('is-hit');
+    }
   }
 
   // Salto de animación en las capibaras porristas
@@ -730,30 +821,101 @@ function hitPinataUI(data) {
 
   // Chispas de confeti desde el impacto
   if (typeof confetti === 'function') {
+    const particleCount = isSuper ? 35 : (isCrit ? 25 : 14);
+    const colors = isSuper
+      ? ['#ffd700', '#f43f5e', '#ffffff', '#a855f7']
+      : (isCrit ? ['#fbbf24', '#f59e0b', '#38bdf8'] : ['#fbbf24', '#f43f5e', '#06b6d4']);
     confetti({
-      particleCount: 15,
-      spread: 45,
+      particleCount,
+      spread: isCrit || isSuper ? 60 : 45,
       origin: { x: 0.52 + (Math.random() - 0.5) * 0.05, y: 0.45 + (Math.random() - 0.5) * 0.05 },
-      colors: ['#fbbf24', '#f43f5e', '#06b6d4'],
-      scalar: 0.8,
+      colors,
+      scalar: isSuper ? 1.0 : 0.8,
       ticks: 70
     });
   }
 
-  // Badge flotante del bateador (+1 @usuario)
+  // Número de daño flotante (-1, -2, -3, -4, etc.)
+  if (pinataHitsFeed) {
+    const dmgPop = document.createElement('div');
+    const popType = isSuper ? (data.hitType === 'birthday' ? 'birthday' : 'super_crit') : (isCrit ? 'crit' : '');
+    dmgPop.className = `pinata-damage-pop ${popType}`.trim();
+    dmgPop.textContent = `-${data.damage || 1}`;
+
+    const rndX = 160 + (Math.random() - 0.5) * 70;
+    const rndY = 120 + (Math.random() - 0.5) * 40;
+    dmgPop.style.left = `${rndX}px`;
+    dmgPop.style.top = `${rndY}px`;
+
+    pinataHitsFeed.appendChild(dmgPop);
+    setTimeout(() => dmgPop.remove(), 1100);
+  }
+
+  // Badge flotante del bateador con estilo visual según el tipo de golpe
   if (pinataHitsFeed) {
     const badge = document.createElement('div');
-    badge.className = 'pinata-hit-badge';
+    badge.className = `pinata-hit-badge ${isSuper ? 'is-mega' : (isCrit ? 'is-crit' : '')}`.trim();
     const avatarSrc = (data.avatar && data.avatar.startsWith('http')) ? data.avatar : 'img/yocapi.png';
-    badge.innerHTML = `<img src="${avatarSrc}" onerror="this.src='img/yocapi.png'" alt=""> <span>+1 @${data.user || 'Amigo'}</span>`;
+    const badgeText = data.hitText || `+${data.damage || 1} @${data.user || 'Amigo'}`;
+    badge.innerHTML = `<img src="${avatarSrc}" onerror="this.src='img/yocapi.png'" alt=""> <span>${badgeText}</span>`;
 
-    const rndX = 140 + Math.random() * 80;
+    const rndX = 130 + Math.random() * 80;
     const rndY = 160 + (Math.random() - 0.5) * 60;
     badge.style.left = `${rndX}px`;
     badge.style.top = `${rndY}px`;
 
     pinataHitsFeed.appendChild(badge);
-    setTimeout(() => badge.remove(), 1300);
+    setTimeout(() => badge.remove(), 1400);
+  }
+}
+
+function frenzyPinataUI(data) {
+  playPinataSound('frenzy');
+  const banner = document.getElementById('pinata-frenzy-banner');
+  if (banner) {
+    banner.style.display = 'block';
+  }
+  if (pinataWrapper) {
+    pinataWrapper.classList.add('frenzy-mode');
+  }
+
+  if (typeof confetti === 'function') {
+    confetti({
+      particleCount: 50,
+      spread: 90,
+      origin: { y: 0.4 },
+      colors: ['#ff4500', '#ff8c00', '#ffd700', '#f43f5e']
+    });
+  }
+
+  if (pinataFrenzyTimeout) clearTimeout(pinataFrenzyTimeout);
+  pinataFrenzyTimeout = setTimeout(() => {
+    if (banner) banner.style.display = 'none';
+    if (pinataWrapper) pinataWrapper.classList.remove('frenzy-mode');
+    pinataFrenzyTimeout = null;
+  }, data.durationMs || 7000);
+}
+
+function extraTimePinataUI(data) {
+  const extra = data.extraSec || 10;
+  pinataSecondsLeft += extra;
+  if (pinataTimer) {
+    pinataTimer.textContent = `⏳ ${pinataSecondsLeft}s`;
+    pinataTimer.classList.remove('extra-time-pulse');
+    void pinataTimer.offsetWidth;
+    pinataTimer.classList.add('extra-time-pulse');
+    setTimeout(() => {
+      if (pinataTimer) pinataTimer.classList.remove('extra-time-pulse');
+    }, 2000);
+  }
+
+  if (typeof confetti === 'function') {
+    confetti({
+      particleCount: 30,
+      spread: 60,
+      origin: { y: 0.3 },
+      colors: ['#38ef7d', '#11998e', '#ffffff']
+    });
   }
 }
 
@@ -762,6 +924,13 @@ function brokenPinataUI(data) {
     clearInterval(pinataTimerInterval);
     pinataTimerInterval = null;
   }
+  if (pinataFrenzyTimeout) {
+    clearTimeout(pinataFrenzyTimeout);
+    pinataFrenzyTimeout = null;
+  }
+  const frenzyBanner = document.getElementById('pinata-frenzy-banner');
+  if (frenzyBanner) frenzyBanner.style.display = 'none';
+  if (pinataWrapper) pinataWrapper.classList.remove('frenzy-mode');
 
   playPinataSound('broken');
 
@@ -836,6 +1005,13 @@ function timeoutPinataUI(data) {
     clearInterval(pinataTimerInterval);
     pinataTimerInterval = null;
   }
+  if (pinataFrenzyTimeout) {
+    clearTimeout(pinataFrenzyTimeout);
+    pinataFrenzyTimeout = null;
+  }
+  const frenzyBanner = document.getElementById('pinata-frenzy-banner');
+  if (frenzyBanner) frenzyBanner.style.display = 'none';
+  if (pinataWrapper) pinataWrapper.classList.remove('frenzy-mode');
 
   playPinataSound('timeout');
 
@@ -860,7 +1036,13 @@ function cancelPinataUI() {
     clearInterval(pinataTimerInterval);
     pinataTimerInterval = null;
   }
-  if (pinataWrapper) pinataWrapper.classList.remove('active');
+  if (pinataFrenzyTimeout) {
+    clearTimeout(pinataFrenzyTimeout);
+    pinataFrenzyTimeout = null;
+  }
+  const frenzyBanner = document.getElementById('pinata-frenzy-banner');
+  if (frenzyBanner) frenzyBanner.style.display = 'none';
+  if (pinataWrapper) pinataWrapper.classList.remove('active', 'frenzy-mode');
   if (pinataResultCard) pinataResultCard.style.display = 'none';
   if (pinataTimeoutCard) pinataTimeoutCard.style.display = 'none';
 }
