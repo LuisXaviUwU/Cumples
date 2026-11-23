@@ -268,40 +268,34 @@ async function buildAnnouncementMessage() {
 
         if (todayPending.length > 0) {
             const list = todayPending.map(b => `@${b.name}`).join(', ');
-            let extra = '';
-            if (todayCelebrated.length > 0) {
-                const listDone = todayCelebrated.map(b => `@${b.name}`).join(', ');
-                extra = ` (¡felicidades a ${listDone} que ya festejó!)`;
-            }
-            return `🎂 ¡Hoy cumple años ${list}${extra}! Lanza tu alerta con !cumplehoy o en ${appUrlRef} 🎉`;
+            return `🎂 Cumple hoy: ${list} | !cumplehoy 🎉`;
         }
 
         if (todayCelebrated.length > 0) {
             const list = todayCelebrated.map(b => `@${b.name}`).join(', ');
-            return `🎂 ¡Felicidades a ${list} que cumple años hoy y ya festejó en directo! 💖✨`;
+            return `🎂 ¡Feliz cumple a ${list}! 💖`;
         }
 
         // 2. Prioridad: Cumpleaños en Período de Gracia (que aún no han lanzado)
         if (graceBirthdays.length > 0) {
             const list = graceBirthdays.map(b => `@${b.name}`).join(', ');
-            return `🎈 ${list} aún puedes detonar tu alerta de cumpleaños con !cumplehoy 👉 ${appUrlRef} 🎂`;
+            return `🎈 Festejo activo: ${list} | !cumplehoy 🎂`;
         }
 
         // 3. Prioridad: Cumpleaños muy cercanos (1 a 3 días)
         if (upcomingVerySoon.length > 0) {
             upcomingVerySoon.sort((a, b) => a.days - b.days);
             const list = upcomingVerySoon.map(u => {
-                const when = u.days === 1 ? '¡Mañana!' : `en ${u.days}d (${u.day}/${u.month})`;
+                const when = u.days === 1 ? 'mañana' : `${u.days}d`;
                 return `@${u.name} (${when})`;
-            }).join(' · ');
-            return `⏳ Próximos cumples: ${list} 🎂🥳`;
+            }).join(', ');
+            return `⏳ Próximos: ${list} 🎂`;
         }
 
-        // 4. Mensajes rotativos de invitación a la comunidad
+        // 4. Mensajes rotativos de invitación a la comunidad (cortos y directos)
         const communityInvites = [
-            `🎂 Registra tu cumpleaños gratis con !reg DD-MM o en ${appUrlRef} para sonar en stream 🎈`,
-            `✨ ¿Cumples pronto? Anótate con !reg DD-MM o entra a ${appUrlRef} para tu alerta con música 🍰`,
-            `📜 Conoce todos los comandos del bot en: ${appUrlRef}/comandos 🪅`
+            `🎂 Anota tu cumple con !reg DD-MM ✨`,
+            `📜 Comandos de cumple: !cmds 🪅`
         ];
         return communityInvites[Math.floor(Math.random() * communityInvites.length)];
     } catch (e) {
@@ -646,14 +640,14 @@ async function handleChatMessage(channel, tags, message, self) {
             dbRef.deduplicateUsers().catch(() => { });
 
             if (isSelf) {
-                return sendChat(`🎉 @${sender}, fecha guardada: ${regDay} de ${monthName} 🎂 ¡Ese día escribe !cumplehoy para tu alerta en stream!`);
+                return sendChat(`🎉 @${sender}, fecha guardada: ${regDay} de ${monthName} 🎂`);
             } else {
-                return sendChat(`🎉 @${sender} registró a @${targetLogin} para el ${regDay} de ${monthName} 🎂`);
+                return sendChat(`🎉 @${sender} registró a @${targetLogin} (${regDay} de ${monthName}) 🎂`);
             }
 
         } catch (e) {
             console.error('[TwitchBot] Error en !registro:', e);
-            return sendChat(`❌ @${sender}, ocurrió un error al guardar. Inténtalo de nuevo en un momento.`);
+            return sendChat(`❌ @${sender}, error al guardar. Reintenta en un momento.`);
         }
     }
 
@@ -684,13 +678,13 @@ async function handleChatMessage(channel, tags, message, self) {
             if (bStatus.isToday) {
                 if (isSelf) {
                     if (alreadyCelebrated) {
-                        return sendChat(`👑 @${displayName}, ¡ya celebraste tu cumpleaños este año en stream! 🎂✨`);
+                        return sendChat(`🎂 @${displayName}, ¡ya festejaste este año! 💖`);
                     } else {
-                        return sendChat(`🎂👑 ¡HOY ES TU CUMPLEAÑOS @${displayName}! Lanza tu alerta ahora con !cumplehoy 🎉`);
+                        return sendChat(`🎂 ¡HOY es tu cumple @${displayName}! Usa !cumplehoy 🎉`);
                     }
                 } else {
                     if (alreadyCelebrated) {
-                        return sendChat(`👑 ¡Hoy es el cumple de @${displayName} y ya festejó en directo! 🎂🎉`);
+                        return sendChat(`🎂 ¡Hoy cumple @${displayName} (ya festejó)! 💖`);
                     } else {
                         return sendChat(`🎂 ¡Hoy es el cumple de @${displayName}! Dile que use !cumplehoy 🎉`);
                     }
@@ -702,15 +696,15 @@ async function handleChatMessage(channel, tags, message, self) {
 
                 if (isSelf) {
                     if (alreadyCelebrated) {
-                        return sendChat(`🥳 @${displayName}, ya disfrutaste tu alerta este año 🎂`);
+                        return sendChat(`🎂 @${displayName}, ya festejaste este año 💖`);
                     } else {
-                        return sendChat(`⏰ @${displayName}, te quedan ${daysLeftText} de gracia. ¡Lanza tu alerta con !cumplehoy! 🎂`);
+                        return sendChat(`⏰ @${displayName}, te quedan ${daysLeftText} de gracia. ¡Usa !cumplehoy! 🎂`);
                     }
                 } else {
                     if (alreadyCelebrated) {
                         return sendChat(`🎈 @${displayName} cumplió el ${user.birth_day} de ${monthText} y ya celebró 🎂`);
                     } else {
-                        return sendChat(`🎈 @${displayName} cumplió el ${user.birth_day} de ${monthText} (${daysLeftText} de gracia restantes) 🎂`);
+                        return sendChat(`🎈 @${displayName} cumplió el ${user.birth_day} de ${monthText} (${daysLeftText} de gracia) 🎂`);
                     }
                 }
             }
@@ -718,9 +712,9 @@ async function handleChatMessage(channel, tags, message, self) {
 
         const days = bStatus.daysUntilBirthday;
         if (days === 1) {
-            return sendChat(`😱 ¡Mañana es el cumpleaños de @${displayName} (${user.birth_day} de ${monthText})! 🎂🎉`);
+            return sendChat(`🎉 ¡Mañana cumple @${displayName}! (${user.birth_day} de ${monthText}) 🎂`);
         } else {
-            return sendChat(`🗓️ @${displayName}: ${user.birth_day} de ${monthText} (faltan ${days} días) 🎂`);
+            return sendChat(`🗓️ @${displayName}: ${user.birth_day} de ${monthText} (faltan ${days}d) 🎂`);
         }
     }
 
