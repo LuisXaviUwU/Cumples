@@ -2321,6 +2321,9 @@ app.get('/api/bot/month', async (req, res) => {
 // ─── Rutas Frontend ─────────────────────────────────────────────────────────
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/overlay', (req, res) => res.sendFile(path.join(__dirname, 'public', 'overlay.html')));
+app.get('/calendario', (req, res) => res.sendFile(path.join(__dirname, 'public', 'calendario.html')));
+app.get('/comandos', (req, res) => res.sendFile(path.join(__dirname, 'public', 'comandos.html')));
+app.get('/ayuda', (req, res) => res.sendFile(path.join(__dirname, 'public', 'comandos.html')));
 
 // Ruta secreta del Dashboard
 app.get(`/${DASHBOARD_SECRET_PATH}`, (req, res) => {

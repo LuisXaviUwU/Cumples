@@ -108,6 +108,52 @@ function updateCmdResponse(cmd, text) {
 const MONTH_NAMES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
+const SPANISH_MONTHS = {
+    enero: 1, en: 1, ene: 1,
+    febrero: 2, feb: 2,
+    marzo: 3, mar: 3,
+    abril: 4, abr: 4,
+    mayo: 5, may: 5,
+    junio: 6, jun: 6,
+    julio: 7, jul: 7,
+    agosto: 8, ago: 8,
+    septiembre: 9, setiembre: 9, sep: 9, set: 9,
+    octubre: 10, oct: 10,
+    noviembre: 11, nov: 11,
+    diciembre: 12, dic: 12
+};
+
+function parseSmartDate(str) {
+    if (!str) return null;
+    const clean = str.trim().toLowerCase();
+
+    // 1. Formato numérico DD-MM, DD/MM, DD.MM
+    const numMatch = clean.match(/^(\d{1,2})[-\/.](\d{1,2})$/);
+    if (numMatch) {
+        return { day: parseInt(numMatch[1], 10), month: parseInt(numMatch[2], 10) };
+    }
+
+    // 2. Formato "15 de mayo" o "15 mayo"
+    const textMatch = clean.match(/^(\d{1,2})(?:\s+de)?\s+([a-záéíóúñ]+)$/i);
+    if (textMatch) {
+        const d = parseInt(textMatch[1], 10);
+        const mKey = textMatch[2].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const m = SPANISH_MONTHS[mKey];
+        if (m) return { day: d, month: m };
+    }
+
+    // 3. Formato inverso "mayo 15"
+    const revMatch = clean.match(/^([a-záéíóúñ]+)\s+(\d{1,2})$/i);
+    if (revMatch) {
+        const mKey = revMatch[1].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const m = SPANISH_MONTHS[mKey];
+        const d = parseInt(revMatch[2], 10);
+        if (m) return { day: d, month: m };
+    }
+
+    return null;
+}
+
 function formatChannelName(ch) {
     if (!ch) return '#yocapi_pr';
     const clean = ch.toLowerCase().trim();
@@ -225,37 +271,37 @@ async function buildAnnouncementMessage() {
             let extra = '';
             if (todayCelebrated.length > 0) {
                 const listDone = todayCelebrated.map(b => `@${b.name}`).join(', ');
-                extra = ` (¡y felicidades a ${listDone} que ya festejó en vivo!)`;
+                extra = ` (¡felicidades a ${listDone} que ya festejó!)`;
             }
-            return `🎂 ¡ALERTA DE FIESTA EN DIRECTO! 🎉 Hoy cumple años ${list}${extra} 🥳 ¡Llenen el chat de amor, mañanitas y recuérdenle entrar a lanzar su alerta con música en pantalla! 👉 ${appUrlRef} 👑✨`;
+            return `🎂 ¡Hoy cumple años ${list}${extra}! Lanza tu alerta con !cumplehoy o en ${appUrlRef} 🎉`;
         }
 
         if (todayCelebrated.length > 0) {
             const list = todayCelebrated.map(b => `@${b.name}`).join(', ');
-            return `🎂 ¡HOY ES CUMPLEAÑOS! 🎉 Felicidades a ${list} que hoy cumple años y ya festejó con su alerta especial en pantalla 🥳 ¡Sigan dejándole mucho amor y mañanitas en el chat! 💖✨`;
+            return `🎂 ¡Felicidades a ${list} que cumple años hoy y ya festejó en directo! 💖✨`;
         }
 
         // 2. Prioridad: Cumpleaños en Período de Gracia (que aún no han lanzado)
         if (graceBirthdays.length > 0) {
             const list = graceBirthdays.map(b => `@${b.name}`).join(', ');
-            return `🎈 ¡Tiempo extra de fiesta! ${list} aún está en período de gracia. ¡Entra a detonar tu alerta festiva en directo antes de que se termine tu plazo! 👉 ${appUrlRef} 🍰✨`;
+            return `🎈 ${list} aún puedes detonar tu alerta de cumpleaños con !cumplehoy 👉 ${appUrlRef} 🎂`;
         }
 
         // 3. Prioridad: Cumpleaños muy cercanos (1 a 3 días)
         if (upcomingVerySoon.length > 0) {
             upcomingVerySoon.sort((a, b) => a.days - b.days);
             const list = upcomingVerySoon.map(u => {
-                const when = u.days === 1 ? '¡MAÑANA!' : `en ${u.days} días (${u.day} de ${u.month})`;
+                const when = u.days === 1 ? '¡Mañana!' : `en ${u.days}d (${u.day}/${u.month})`;
                 return `@${u.name} (${when})`;
             }).join(' · ');
-            return `⏳ ¡SE ACERCA FIESTA EN STREAM! ${list} 🎂 ¡Vayan alistando los confetis y emotes para felicitarles en directo! 🎉🥳`;
+            return `⏳ Próximos cumples: ${list} 🎂🥳`;
         }
 
-        // 4. Mensajes rotativos de invitación a la comunidad (más dinámicos y divertidos)
+        // 4. Mensajes rotativos de invitación a la comunidad
         const communityInvites = [
-            `✨ ¿Cumples años pronto? ¡Regístrate gratis para que Yocapi y el chat te festejen en vivo con tu música y alerta favorita en pantalla! 👉 ${appUrlRef} 🎂🎈`,
-            `👑 ¡Que no pase tu cumple sin fiestón! Anota tu fecha gratis en el sistema de Yocapi y el día de tu cumple activa tu propia tarjeta con sonido en vivo 👉 ${appUrlRef} 🎉🍰`,
-            `🎈 ¿Sabías que tenemos sistema de cumpleaños en vivo? Regístrate gratis para que el bot te recuerde y celebres tu día especial junto a toda la comunidad 👉 ${appUrlRef} 🎂✨`
+            `🎂 Registra tu cumpleaños gratis con !reg DD-MM o en ${appUrlRef} para sonar en stream 🎈`,
+            `✨ ¿Cumples pronto? Anótate con !reg DD-MM o entra a ${appUrlRef} para tu alerta con música 🍰`,
+            `📜 Conoce todos los comandos del bot en: ${appUrlRef}/comandos 🪅`
         ];
         return communityInvites[Math.floor(Math.random() * communityInvites.length)];
     } catch (e) {
@@ -375,7 +421,7 @@ async function handleChatMessage(channel, tags, message, self) {
     const sender = tags['display-name'] || tags.username || 'amigo';
 
     // ─── MINIJUEGO: GOLPES A LA PIÑATA DE CAPIBARA (!dale, !pegar, !hit, etc.) ─
-    const PINATA_HIT_COMMANDS = ['!dale', '!pegar', '!hit', '!palo', '!golpe', '!batear'];
+    const PINATA_HIT_COMMANDS = ['!dale', '!pegar', '!hit', '!palo', '!golpe', '!batear', '!darle', '!pega', '!romper', '!golpear'];
     if (PINATA_HIT_COMMANDS.includes(command)) {
         if (pinataManagerRef) {
             const pinataStatus = pinataManagerRef.getStatus();
@@ -411,22 +457,33 @@ async function handleChatMessage(channel, tags, message, self) {
 
     // 2. COOLDOWN ANTI-SPAM (Evita que el mismo usuario dispare el mismo comando repetidamente en < 3s)
     const KNOWN_COMMANDS = [
-        '!registro', '!regcumple', '!registrarme',
-        '!cumple', '!micumple', '!proximos', '!cumplemes',
-        '!cumpleinfo', '!ayudacumple', '!hoyesmicumple', '!hoyesmicum', '!mialerta', '!lanzarmicumple',
-        '!felicidades', '!felicidades1', '!felicidades2', '!felicidades3',
+        // Registro
+        '!reg', '!registro', '!regcumple', '!registrarme', '!registrar', '!anotarme', '!cumpleregistro',
+        // Consulta
+        '!cumple', '!micumple', '!cumpleaños', '!cumpleanos', '!mifecha', '!fechacumple', '!cuandocumplo',
+        '!prox', '!proximos', '!siguientes', '!cumples', '!mes', '!cumplemes', '!cumplesmes', '!mescumple',
+        // Información & Ayuda
+        '!cmds', '!comandos', '!commands', '!ayuda', '!help', '!cumpleinfo', '!ayudacumple', '!guiacomandos', '!bot',
+        // Alerta de Cumpleaños
+        '!cumplehoy', '!alerta', '!mialerta', '!fiesta', '!festejo', '!hoyesmicumple', '!hoyesmicum', '!lanzarmicumple', '!micumplealerta', '!lanzarcumple', '!cumplealerta',
+        // Felicitaciones & Confeti
+        '!feliz', '!gg', '!hb', '!felicidades', '!felicidades1', '!felicidades2', '!felicidades3',
         '!felicitar', '!felicitar1', '!felicitar2', '!felicitar3',
-        '!piñata', '!piñatastop',
-        '!hbcambio', '!hbfrase', '!micumplefrase',
-        '!hbsonido', '!cambiarsonido', '!misonido',
-        '!hbalertas', '!cumplealertas', '!alertascumple',
-        '!hbfelicitar', '!hbfelicitaciones', '!felicitaciones',
-        '!hbgrabacion', '!hbmodovideo', '!hbcine', '!hbpausa',
-        '!hbmod', '!hbadmin', '!hbestado',
-        '!hblibre', '!hbdesbloquear',
-        '!hbyacelebro', '!hbcelebrado', '!hblisto',
-        '!hbrelanzar', '!hbreiniciar',
-        '!hbpruebas', '!hbsilencio', '!hbsilent', '!hbmodoprueba'
+        '!felicitaciones', '!felicitacion', '!festejar',
+        // Piñata Minijuego
+        '!piñata', '!pinata', '!pata', '!stop', '!pstop', '!piñatastop', '!pinatastop', '!piñatita', '!pinatita',
+        // Personalización de Alerta
+        '!frase', '!msg', '!hbcambio', '!hbfrase', '!micumplefrase', '!cambiarfrase', '!mifrase',
+        '!sonido', '!audio', '!rola', '!cancion', '!hbsonido', '!cambiarsonido', '!misonido', '!cambiarmusica',
+        // Control & Moderación
+        '!alertas', '!hbalertas', '!cumplealertas', '!alertascumple',
+        '!hbfelicitar', '!hbfelicitaciones',
+        '!rec', '!grabar', '!hbgrabacion', '!hbmodovideo', '!hbcine', '!hbpausa',
+        '!mod', '!hbmod', '!hbadmin', '!hbestado', '!modcumple',
+        '!libre', '!abrir', '!hblibre', '!hbdesbloquear', '!hbabrir',
+        '!listo', '!hecho', '!yacelebro', '!hbyacelebro', '!hbcelebrado', '!hblisto', '!hbyafestejo',
+        '!relanzar', '!reinicio', '!hbrelanzar', '!hbreiniciar', '!hbreset',
+        '!silencio', '!test', '!hbpruebas', '!hbsilencio', '!hbsilent', '!hbmodoprueba'
     ];
     if (KNOWN_COMMANDS.includes(command)) {
         if (isCommandRateLimited(sender, command)) {
@@ -435,55 +492,74 @@ async function handleChatMessage(channel, tags, message, self) {
     }
 
     // ─── COMANDO 0: !registro DD-MM [usuario] (Registrarse o registrar a un compañero) ─────────
-    if (command === '!registro' || command === '!registrarme') {
+    if (command === '!reg' || command === '!registro' || command === '!regcumple' || command === '!registrarme' || command === '!registrar' || command === '!anotarme' || command === '!cumpleregistro') {
         if (!dbRef) return;
 
-        // Detectar si la fecha está en parts[1] o parts[2], y si hay un usuario objetivo
-        const arg1 = (parts[1] || '').trim();
-        const arg2 = (parts[2] || '').trim();
+        const argText = parts.slice(1).join(' ').trim();
+        if (!argText) {
+            return sendChat(`🎂 @${sender}, usa: !reg DD-MM (ej: !reg 11-06) o entra a ${appUrlRef} ✨`);
+        }
 
-        const match1 = arg1.match(/^(\d{1,2})[-\/](\d{1,2})$/);
-        const match2 = arg2.match(/^(\d{1,2})[-\/](\d{1,2})$/);
-
-        let match = null;
         let targetPart = '';
+        let datePart = argText;
 
-        if (match1) {
-            match = match1;
-            targetPart = arg2;
-        } else if (match2) {
-            match = match2;
-            targetPart = arg1;
+        const atMatch = argText.match(/@([a-z0-9_]+)/i);
+        if (atMatch) {
+            targetPart = atMatch[1];
+            datePart = argText.replace(atMatch[0], '').trim();
+        } else {
+            const tokens = argText.split(/\s+/);
+            if (tokens.length >= 2) {
+                if (parseSmartDate(tokens[0])) {
+                    datePart = tokens[0];
+                    targetPart = tokens.slice(1).join('_');
+                } else if (parseSmartDate(tokens.slice(0, 2).join(' '))) {
+                    datePart = tokens.slice(0, 2).join(' ');
+                    targetPart = tokens.slice(2).join('_');
+                } else if (parseSmartDate(tokens.slice(0, 3).join(' '))) {
+                    datePart = tokens.slice(0, 3).join(' ');
+                    targetPart = tokens.slice(3).join('_');
+                } else if (parseSmartDate(tokens[tokens.length - 1])) {
+                    datePart = tokens[tokens.length - 1];
+                    targetPart = tokens.slice(0, -1).join('_');
+                } else if (parseSmartDate(tokens.slice(-2).join(' '))) {
+                    datePart = tokens.slice(-2).join(' ');
+                    targetPart = tokens.slice(0, -2).join('_');
+                } else if (parseSmartDate(tokens.slice(-3).join(' '))) {
+                    datePart = tokens.slice(-3).join(' ');
+                    targetPart = tokens.slice(0, -3).join('_');
+                }
+            }
         }
 
-        if (!match) {
-            return sendChat(`🎂 @${sender}, para registrar tu cumpleaños escribe: !registro DD-MM ` +
-                `(Ej: !registro 11-06 para el 11 de junio). Para registrar a un compañero: !registro DD-MM usuario (Ej: !registro 11-06 capiluisxavihdx) 🎉`);
+        const parsed = parseSmartDate(datePart);
+        if (!parsed) {
+            return sendChat(`⚠️ @${sender}, fecha inválida. Usa: !reg DD-MM (ej: !reg 11-06) o entra a ${appUrlRef} 📅`);
         }
 
-        const regDay   = parseInt(match[1], 10);
-        const regMonth = parseInt(match[2], 10);
+        const regDay = parsed.day;
+        const regMonth = parsed.month;
 
         if (regMonth < 1 || regMonth > 12) {
-            return sendChat(`⚠️ @${sender}, el mes debe ser del 1 al 12. Ej: !registro 11-06 = 11 de Junio 📅`);
+            return sendChat(`⚠️ @${sender}, mes inválido (1 al 12) 📅`);
         }
         if (regDay < 1 || regDay > 31) {
-            return sendChat(`⚠️ @${sender}, el día debe ser del 1 al 31. Ej: !registro 11-06 = 11 de Junio 📅`);
+            return sendChat(`⚠️ @${sender}, día inválido (1 al 31) 📅`);
         }
 
-        const monthName      = MONTH_NAMES[regMonth] || regMonth;
-        const maxDay         = (regMonth === 2) ? 29 : ([4, 6, 9, 11].includes(regMonth) ? 30 : 31);
+        const monthName = MONTH_NAMES[regMonth] || regMonth;
+        const maxDay = (regMonth === 2) ? 29 : ([4, 6, 9, 11].includes(regMonth) ? 30 : 31);
         if (regDay > maxDay) {
-            return sendChat(`⚠️ @${sender}, ${monthName} solo tiene hasta ${maxDay} días 📅`);
+            return sendChat(`⚠️ @${sender}, ${monthName} solo tiene ${maxDay} días 📅`);
         }
 
         const senderLoginReg = (tags.username || sender).toLowerCase().replace(/[^a-z0-9_]/g, '');
 
-        const cleanTarget   = targetPart.toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '');
-        const isSelf        = !cleanTarget || cleanTarget === senderLoginReg;
-        const targetLogin   = isSelf ? senderLoginReg : cleanTarget;
+        const cleanTarget = targetPart.toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '');
+        const isSelf = !cleanTarget || cleanTarget === senderLoginReg;
+        const targetLogin = isSelf ? senderLoginReg : cleanTarget;
         const targetDisplay = isSelf ? (tags['display-name'] || senderLoginReg) : targetPart.replace(/^@/, '');
-        const twitchId      = isSelf && tags['user-id'] ? String(tags['user-id']).trim() : '';
+        const twitchId = isSelf && tags['user-id'] ? String(tags['user-id']).trim() : '';
 
         try {
             let existing = await dbRef.getUser(targetLogin);
@@ -514,14 +590,11 @@ async function handleChatMessage(channel, tags, message, self) {
                         : false;
 
                     if (isLocked && (existing.birth_month !== regMonth || existing.birth_day !== regDay)) {
+                        const mText = MONTH_NAMES[existing.birth_month] || existing.birth_month;
                         if (isSelf) {
-                            return sendChat(`🔒 @${sender}, tu fecha ya está registrada como el ` +
-                                `${existing.birth_day} de ${MONTH_NAMES[existing.birth_month] || existing.birth_month}. ` +
-                                `Solo puedes cambiarla una vez al año. Si hay un error, pide ayuda a la streamer o mods con !hblibre 🎂`);
+                            return sendChat(`🔒 @${sender}, tu fecha ya es el ${existing.birth_day} de ${mText}. Pide ayuda a un mod con !libre si hubo error 🎂`);
                         } else {
-                            return sendChat(`🔒 @${sender}, @${targetLogin} ya tiene fecha registrada como el ` +
-                                `${existing.birth_day} de ${MONTH_NAMES[existing.birth_month] || existing.birth_month}. ` +
-                                `Solo se puede cambiar una vez al año 🎂`);
+                            return sendChat(`🔒 @${sender}, @${targetLogin} ya tiene fecha (${existing.birth_day} de ${mText}) 🎂`);
                         }
                     }
                 }
@@ -529,57 +602,53 @@ async function handleChatMessage(channel, tags, message, self) {
                 // Misma fecha — confirmar que ya está registrado
                 if (existing.birth_month === regMonth && existing.birth_day === regDay && !isUnlocked) {
                     if (isSelf) {
-                        return sendChat(`✅ @${sender}, ¡ya tienes el ${regDay} de ${monthName} registrado! ` +
-                            `Cuando llegue tu día escribe !hoyesmicumple para lanzar tu alerta 🎉`);
+                        return sendChat(`✅ @${sender}, ya tienes el ${regDay} de ${monthName} registrado 🎂 ¡Lanza tu alerta ese día con !cumplehoy!`);
                     } else {
-                        return sendChat(`✅ @${sender}, ¡@${targetLogin} ya tenía registrado el ${regDay} de ${monthName}! 🎉🎂`);
+                        return sendChat(`✅ @${sender}, @${targetLogin} ya tiene registrado el ${regDay} de ${monthName} 🎂`);
                     }
                 }
 
                 // Actualizar fecha (permitido: desbloqueado por mod, o fecha diferente y sin lock)
                 const nowIso = new Date().toISOString();
-                existing.birth_month  = regMonth;
-                existing.birth_day    = regDay;
+                existing.birth_month = regMonth;
+                existing.birth_day = regDay;
                 existing.birthday_locked_at = nowIso;
                 existing.birthday_unlocked = false;
                 if (twitchId && !existing.twitch_id) existing.twitch_id = twitchId;
                 await dbRef.saveUser(existing);
 
                 if (isSelf) {
-                    return sendChat(`✅ @${sender}, ¡fecha de cumpleaños actualizada al ${regDay} de ${monthName}! ` +
-                        `🎉 El sistema ya te tiene en el radar para tu día especial en stream 🎂✨`);
+                    return sendChat(`✅ @${sender}, fecha actualizada al ${regDay} de ${monthName} 🎂`);
                 } else {
-                    return sendChat(`✅ @${sender}, ¡has actualizado la fecha de cumpleaños de @${targetLogin} al ${regDay} de ${monthName}! 🎉🎂✨`);
+                    return sendChat(`✅ @${sender}, fecha de @${targetLogin} actualizada al ${regDay} de ${monthName} 🎂`);
                 }
             }
 
             // ── Registro NUEVO desde chat ──
             const nowIso = new Date().toISOString();
             await dbRef.saveUser({
-                username:       targetLogin,
-                display_name:   targetDisplay,
-                pin_hash:       '',
-                recovery_hash:  '',
-                profile_image:  '/img/yocapi.png',
-                birth_month:    regMonth,
-                birth_day:      regDay,
+                username: targetLogin,
+                display_name: targetDisplay,
+                pin_hash: '',
+                recovery_hash: '',
+                profile_image: '/img/yocapi.png',
+                birth_month: regMonth,
+                birth_day: regDay,
                 custom_message: '',
                 selected_sound: 'HBSilbato.mp3',
                 birthday_unlocked: false,
                 birthday_locked_at: nowIso,
-                created_at:     nowIso,
-                registered_at:  nowIso,
-                twitch_id:      twitchId
+                created_at: nowIso,
+                registered_at: nowIso,
+                twitch_id: twitchId
             });
 
-            dbRef.deduplicateUsers().catch(() => {});
+            dbRef.deduplicateUsers().catch(() => { });
 
             if (isSelf) {
-                return sendChat(`🎉🎂 ¡@${sender} YA ESTÁ EN LA LISTA VIP DE CUMPLEAÑEROS! ` +
-                    `Fecha guardada: ${regDay} de ${monthName} 🥳 ` +
-                    `Cuando llegue tu día escribe !hoyesmicumple para lanzar tu alerta en pantalla con música 🎈`);
+                return sendChat(`🎉 @${sender}, fecha guardada: ${regDay} de ${monthName} 🎂 ¡Ese día escribe !cumplehoy para tu alerta en stream!`);
             } else {
-                return sendChat(`🎉🎂 ¡@${sender} ha registrado a @${targetLogin} en la lista VIP de cumpleañeros para el ${regDay} de ${monthName}! 🥳🎈 ¡Gracias por festejar a la comunidad!`);
+                return sendChat(`🎉 @${sender} registró a @${targetLogin} para el ${regDay} de ${monthName} 🎂`);
             }
 
         } catch (e) {
@@ -589,7 +658,7 @@ async function handleChatMessage(channel, tags, message, self) {
     }
 
     // ─── COMANDO 1: !cumple [usuario] o !micumple ─────────────────────────────
-    if (command === '!cumple' || command === '!micumple') {
+    if (command === '!cumple' || command === '!micumple' || command === '!cumpleaños' || command === '!cumpleanos' || command === '!mifecha' || command === '!fechacumple' || command === '!cuandocumplo') {
 
         const isSelf = !arg || arg.toLowerCase() === sender.toLowerCase();
         const targetLogin = (arg || sender).toLowerCase().replace(/[^a-z0-9_]/g, '');
@@ -599,9 +668,9 @@ async function handleChatMessage(channel, tags, message, self) {
 
         if (!user || !user.birth_month || !user.birth_day || user.birthday_unlocked) {
             if (isSelf) {
-                return sendChat(`⚠️ @${sender}, ¡todavía no estás en la lista VIP de cumpleañeros! 🎂 Regístrate gratis y asegura tu rolón con confeti en pantalla en tu día especial 👉 ${appUrlRef} ✨`);
+                return sendChat(`⚠️ @${sender}, aún no te registras. Usa !reg DD-MM o entra a ${appUrlRef} 🎂`);
             } else {
-                return sendChat(`👀 Oye @${sender}, @${arg} todavía no se anota en el libro de cumpleaños. ¡Pásale el link para que no se quede sin pastel ni fiesta en vivo! 👉 ${appUrlRef} 🎈`);
+                return sendChat(`⚠️ @${arg} no está registrado en el sistema 🎂`);
             }
         }
 
@@ -615,33 +684,33 @@ async function handleChatMessage(channel, tags, message, self) {
             if (bStatus.isToday) {
                 if (isSelf) {
                     if (alreadyCelebrated) {
-                        return sendChat(`👑 ¡Feliz cumpleaños @${displayName}! 🥳 Ya reventaste el stream con tu alerta en directo. ¡Esperamos que estés disfrutando tu día al máximo en el canal de Yocapi! 🎂✨`);
+                        return sendChat(`👑 @${displayName}, ¡ya celebraste tu cumpleaños este año en stream! 🎂✨`);
                     } else {
-                        return sendChat(`🚨 ¡PONGAN MÚSICA Y SAQUEN LOS REGALOS! 🎂👑 ¡HOY ES TU DÍA @${displayName}! 🎉🎈 El chat se viste de gala. ¡Entra a lanzar tu alerta en directo con tu canción favorita AHORA MISMO! 👉 ${appUrlRef} 🥳✨`);
+                        return sendChat(`🎂👑 ¡HOY ES TU CUMPLEAÑOS @${displayName}! Lanza tu alerta ahora con !cumplehoy 🎉`);
                     }
                 } else {
                     if (alreadyCelebrated) {
-                        return sendChat(`👑 ¡Hoy es el cumpleaños de @${displayName} y ya celebró en directo con su rola y alerta! 🎂🥳 ¡Llenen el chat de felicitaciones y amor! 🎊✨`);
+                        return sendChat(`👑 ¡Hoy es el cumple de @${displayName} y ya festejó en directo! 🎂🎉`);
                     } else {
-                        return sendChat(`🎂 ¡ATENCIÓN CHAT! ¡HOY es el cumpleaños de @${displayName}! 🎉 Dile que entre a lanzar su alerta en directo con música y confeti en pantalla 👉 ${appUrlRef} 👑✨`);
+                        return sendChat(`🎂 ¡Hoy es el cumple de @${displayName}! Dile que use !cumplehoy 🎉`);
                     }
                 }
             } else {
                 // Período de gracia
                 const daysLeft = bStatus.daysRemainingInGrace;
-                const daysLeftText = daysLeft === 1 ? 'solo 1 día' : `${daysLeft} días`;
+                const daysLeftText = daysLeft === 1 ? '1 día' : `${daysLeft} días`;
 
                 if (isSelf) {
                     if (alreadyCelebrated) {
-                        return sendChat(`🥳 ¡Cumpleaños celebrado @${displayName}! Ya disfrutaste tu alerta festiva este año. ¡A esperar la próxima vuelta al sol! 🎈🎂`);
+                        return sendChat(`🥳 @${displayName}, ya disfrutaste tu alerta este año 🎂`);
                     } else {
-                        return sendChat(`⏰ ¡Ojo @${displayName}! Tu cumple fue el ${user.birth_day} de ${monthText} y aún estás en tu semana de gracia (${daysLeftText} restantes). ¡No dejes que se te enfríe el pastel y lanza tu alerta en pantalla! 👉 ${appUrlRef} 🍰🎈`);
+                        return sendChat(`⏰ @${displayName}, te quedan ${daysLeftText} de gracia. ¡Lanza tu alerta con !cumplehoy! 🎂`);
                     }
                 } else {
                     if (alreadyCelebrated) {
-                        return sendChat(`🎈 @${displayName} cumplió años el ${user.birth_day} de ${monthText} y ya celebró en vivo este año. 🥳 ¡Déjale sus felicitaciones en el chat!`);
+                        return sendChat(`🎈 @${displayName} cumplió el ${user.birth_day} de ${monthText} y ya celebró 🎂`);
                     } else {
-                        return sendChat(`🎈 @${displayName} cumplió años el ${user.birth_day} de ${monthText} y aún está en período de gracia (${daysLeftText} restantes). ¡Dile que entre a activar su alerta en stream! 👉 ${appUrlRef}`);
+                        return sendChat(`🎈 @${displayName} cumplió el ${user.birth_day} de ${monthText} (${daysLeftText} de gracia restantes) 🎂`);
                     }
                 }
             }
@@ -649,28 +718,14 @@ async function handleChatMessage(channel, tags, message, self) {
 
         const days = bStatus.daysUntilBirthday;
         if (days === 1) {
-            if (isSelf) {
-                return sendChat(`😱 ¡DETENGAN TODO! ¡MAÑANA (${user.birth_day} de ${monthText}) es tu cumpleaños @${displayName}! 🎂🕯️ ¡Prepárate para reventar el stream mañana! 👉 ${appUrlRef} 🎉`);
-            } else {
-                return sendChat(`😱 ¡DETENGAN TODO! ¡MAÑANA (${user.birth_day} de ${monthText}) es el cumpleaños de @${displayName}! 🎂🕯️ ¡Vayan afinando las mañanitas y preparando los emotes para mañana en stream! 🎉✨`);
-            }
-        } else if (days <= 7) {
-            if (isSelf) {
-                return sendChat(`⏳ ¡Modo fiesta activándose! @${displayName}, faltan solo ${days} días para tu cumpleaños (${user.birth_day} de ${monthText}). 🎈 ¡Se viene fiestón en el stream de Yocapi! 🎂🥳`);
-            } else {
-                return sendChat(`⏳ ¡Cuenta regresiva activada! Faltan solo ${days} días para festejar a @${displayName} (${user.birth_day} de ${monthText}). 🎈 ¡Anoten la fecha en el calendario chat! 🎂🎉`);
-            }
+            return sendChat(`😱 ¡Mañana es el cumpleaños de @${displayName} (${user.birth_day} de ${monthText})! 🎂🎉`);
         } else {
-            if (isSelf) {
-                return sendChat(`🗓️ @${displayName}, tu fecha dorada en el calendario es el ${user.birth_day} de ${monthText} (faltan ${days} días). 🎂 ¡Ya tenemos la fiesta y el confeti listos en el stream de Yocapi! ✨🎈`);
-            } else {
-                return sendChat(`🗓️ El cumpleaños de @${displayName} está anotado para el ${user.birth_day} de ${monthText} (faltan ${days} días). 🎂 ¡A marcar la fecha en el calendario para llenarle el chat de amor! 🎈✨`);
-            }
+            return sendChat(`🗓️ @${displayName}: ${user.birth_day} de ${monthText} (faltan ${days} días) 🎂`);
         }
     }
 
-    // ─── COMANDO 2: !proximos ─────────────────────────────────────────────────
-    if (command === '!proximos') {
+    // ─── COMANDO 2: !proximos o !prox ─────────────────────────────────────────
+    if (command === '!prox' || command === '!proximos' || command === '!siguientes' || command === '!cumples') {
         if (!dbRef || !getBirthdayStatusRef) return;
         const users = await dbRef.getAllUsers();
         const upcoming = [];
@@ -689,16 +744,16 @@ async function handleChatMessage(channel, tags, message, self) {
         }
 
         if (upcoming.length === 0) {
-            return sendChat(`🎈 El calendario está tranquilo por los próximos 15 días... ¿o será que aún no te anotas? Registra tu fecha gratis aquí 👉 ${appUrlRef} 🎂✨`);
+            return sendChat(`🎈 Sin cumples en los próximos 15 días. ¡Regístrate con !reg DD-MM en ${appUrlRef}! 🎂`);
         }
 
         upcoming.sort((a, b) => a.days - b.days);
-        const list = upcoming.slice(0, 5).map(u => `@${u.name} (${u.day} de ${u.month}, en ${u.days} días)`).join(' · ');
-        return sendChat(`📅 Próximas velitas por soplar (15 días): ${list} 🎂🥳 ¡Preparen esos regalitos y emotes de fiesta en stream!`);
+        const list = upcoming.slice(0, 5).map(u => `@${u.name} (${u.day}/${u.month}, ${u.days}d)`).join(' · ');
+        return sendChat(`📅 Próximos cumples: ${list} 🎂`);
     }
 
-    // ─── COMANDO 3: !cumplemes ────────────────────────────────────────────────
-    if (command === '!cumplemes') {
+    // ─── COMANDO 3: !cumplemes o !mes ─────────────────────────────────────────
+    if (command === '!mes' || command === '!cumplemes' || command === '!cumplesmes' || command === '!mescumple') {
         if (!dbRef) return;
         const currentMonth = new Date().getMonth() + 1;
         const users = await dbRef.getAllUsers();
@@ -706,37 +761,37 @@ async function handleChatMessage(channel, tags, message, self) {
 
         const currentMonthName = MONTH_NAMES[currentMonth] || 'este mes';
         if (monthCelebrants.length === 0) {
-            return sendChat(`🗓️ Nadie registrado para ${currentMonthName}... ¡Sé la leyenda que inaugure los festejos de este mes entrando a: ${appUrlRef}! 🎈🎂`);
+            return sendChat(`🗓️ Sin cumpleañeros registrados en ${currentMonthName}. ¡Anótate con !reg DD-MM! 🎂`);
         }
 
         monthCelebrants.sort((a, b) => a.birth_day - b.birth_day);
-        const list = monthCelebrants.slice(0, 7).map(u => `@${u.display_name || u.username} (día ${u.birth_day})`).join(' · ');
-        return sendChat(`🗓️ Cartelera festiva de ${currentMonthName} (${monthCelebrants.length} cumpleañeros): ${list} 🎂🎈 ¡Este mes hay fiesta asegurada en el canal de Yocapi!`);
+        const list = monthCelebrants.slice(0, 7).map(u => `@${u.display_name || u.username} (${u.birth_day})`).join(', ');
+        return sendChat(`🗓️ Cumples de ${currentMonthName} (${monthCelebrants.length}): ${list} 🎂`);
     }
 
     // ─── COMANDO 4: !regcumple ────────────────────────────────────────────────
     if (command === '!regcumple') {
         const msg = customCmdResponses.regcumple
             ? customCmdResponses.regcumple.replace(/\{URL\}/gi, appUrlRef)
-            : `🎂 ¿Quieres que el stream de Yocapi explote con tu música y alerta personalizada en pantalla el día de tu cumpleaños? ¡Regístrate 100% gratis aquí! 👉 ${appUrlRef} 🎈✨`;
+            : `🎂 Regístrate gratis con !reg DD-MM o en ${appUrlRef} para sonar en stream 🎉`;
         return sendChat(msg);
     }
 
-    // ─── COMANDO 5: !hoyesmicumple (Lanzar la alerta del cumpleañero en directo) ───
-    if (command === '!hoyesmicumple' || command === '!hoyesmicum' || command === '!mialerta' || command === '!lanzarmicumple') {
+    // ─── COMANDO 5: !cumplehoy / !hoyesmicumple (Lanzar alerta del cumpleañero) ─
+    if (command === '!cumplehoy' || command === '!alerta' || command === '!fiesta' || command === '!festejo' || command === '!hoyesmicumple' || command === '!hoyesmicum' || command === '!mialerta' || command === '!lanzarmicumple' || command === '!micumplealerta' || command === '!lanzarcumple' || command === '!cumplealerta') {
         if (!dbRef || !getBirthdayStatusRef) return;
         const appSettings = getAppSettingsRef ? getAppSettingsRef() : {};
 
         // 1. SEGURIDAD: ¿Alertas del cumpleañero permitidas por la streamer / mods?
         if (appSettings.birthday_alerts_enabled === false) {
-            return sendChat(`🎬🤫 @${sender}, las alertas de cumpleaños en directo están temporalmente desactivadas por Yocapi (grabación o momento especial en stream). ¡No te preocupes, tu festejo no se pierde! Podrás activarlo en cuanto se reanuden 🎂✨`);
+            return sendChat(`🎬 @${sender}, alertas de cumple pausadas temporalmente por Yocapi 🤫`);
         }
 
         const senderLogin = sender.toLowerCase().replace(/[^a-z0-9_]/g, '');
         const user = await dbRef.getUser(senderLogin);
 
         if (!user || !user.birth_month || !user.birth_day || user.birthday_unlocked) {
-            return sendChat(`⚠️ @${sender}, ¡aún no estás registrado en el sistema de cumpleaños! Entra gratis a anotarte para activar tu alerta en vivo 👉 ${appUrlRef} 🎂`);
+            return sendChat(`⚠️ @${sender}, no estás registrado. Usa !reg DD-MM o entra a ${appUrlRef} 🎂`);
         }
 
         const bStatus = getBirthdayStatusRef(user.birth_month, user.birth_day);
@@ -745,13 +800,13 @@ async function handleChatMessage(channel, tags, message, self) {
 
         if (!bStatus.canCelebrate) {
             const days = bStatus.daysUntilBirthday;
-            return sendChat(`🗓️ @${displayName}, tu cumpleaños registrado es el ${user.birth_day} de ${monthText} (faltan ${days} días). ¡Tu alerta con música y confeti se desbloqueará en tu día especial! 🎂✨`);
+            return sendChat(`🗓️ @${displayName}, tu cumple es el ${user.birth_day} de ${monthText} (faltan ${days} días) 🎂`);
         }
 
         const alreadyCelebrated = isUserCelebratedThisYear(user, bStatus);
 
         if (alreadyCelebrated) {
-            return sendChat(`👑 @${displayName}, ¡ya lanzaste tu alerta de cumpleaños este año! Esperamos que hayas disfrutado tu festejo en stream. ¡Te esperamos para el próximo año! 🥳🎂`);
+            return sendChat(`👑 @${displayName}, ¡ya lanzaste tu alerta de cumpleaños este año! 🥳🎂`);
         }
 
         const sound = user.selected_sound || 'HBSilbato.mp3';
@@ -762,7 +817,7 @@ async function handleChatMessage(channel, tags, message, self) {
             if (!lockAcquired) {
                 const lockStatus = getMusicLockStatusRef ? getMusicLockStatusRef() : { remainingMs: 15000 };
                 const sec = Math.max(1, Math.ceil((lockStatus.remainingMs || 15000) / 1000));
-                return sendChat(`🎶 @${displayName}, hay una canción de cumpleaños sonando en directo en este momento. Espera ${sec}s y vuelve a escribir !hoyesmicumple 🎂`);
+                return sendChat(`🎶 @${displayName}, canción sonando en directo. Espera ${sec}s y reintenta 🎂`);
             }
         }
 
@@ -803,37 +858,47 @@ async function handleChatMessage(channel, tags, message, self) {
                 time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
                 payload: alertPayload
             });
-            return sendChat(`🎂 @${displayName}, ¡tu alerta fue guardada en fila! Yocapi tiene las alertas pausadas momentáneamente; saldrá en pantalla en cuanto reanude 🎈✨`);
+            return sendChat(`🎂 @${displayName}, alerta guardada en cola (alertas pausadas en vivo). Saldrá al reanudar 🎈`);
         }
 
         if (broadcastToOverlayRef) {
             broadcastToOverlayRef(alertPayload);
         }
 
-        return sendChat(`🚨🎂 ¡FIESTA TOTAL EN DIRECTO! 👑 ¡@${displayName} acaba de detonar su alerta de cumpleaños en pantalla con confeti y música! 🥳🎉 ¡Llenen el chat de felicitaciones y amor!`);
+        return sendChat(`🎂 ¡Feliz cumpleaños @${displayName}! Alerta sonando en pantalla 🥳🎉`);
     }
 
-    // ─── COMANDO 6: !felicidades [mensaje] o !felicidades1/2/3 ─────────────────
-    const felicitationCommands = [
-        '!felicidades', '!felicidades1', '!felicidades2', '!felicidades3',
-        '!felicitar', '!felicitar1', '!felicitar2', '!felicitar3'
-    ];
+// ─── COMANDO 6: !feliz / !felicidades / !gg / !hb [mensaje] ───────────────
+const felicitationCommands = [
+    '!feliz', '!gg', '!hb',
+    '!feliz1', '!feliz2', '!feliz3',
+    '!gg1', '!gg2', '!gg3',
+    '!hb1', '!hb2', '!hb3',
+    '!felicidades', '!felicidades1', '!felicidades2', '!felicidades3',
+    '!felicitar', '!felicitar1', '!felicitar2', '!felicitar3',
+    '!felicitaciones', '!felicitacion', '!festejar'
+];
 
-    if (felicitationCommands.includes(command)) {
-        if (!dbRef || !getBirthdayStatusRef) return;
-        const appSettings = getAppSettingsRef ? getAppSettingsRef() : {};
+if (felicitationCommands.includes(command)) {
+    if (!dbRef || !getBirthdayStatusRef) return;
+    const appSettings = getAppSettingsRef ? getAppSettingsRef() : {};
 
-        // Si es !felicitar a secas sin mensaje y sin que haya felicitaciones activas, mostrar mensaje informativo
-        if (command === '!felicitar' && !arg && !appSettings.felicitations_enabled) {
+    // Si es !feliz on/off, dejarlo pasar al bloque de control de mods
+    if ((command === '!feliz' || command === '!felicitar' || command === '!felicitaciones') && (arg === 'on' || arg === 'off')) {
+        // No procesar aquí, el bloque de mods más abajo lo manejará
+    } else {
+
+        // Si es comando a secas sin mensaje y sin que haya felicitaciones activas, mostrar info
+        if ((command === '!felicitar' || command === '!feliz' || command === '!gg' || command === '!hb') && !arg && !appSettings.felicitations_enabled) {
             const msg = customCmdResponses.felicitar
                 ? customCmdResponses.felicitar.replace(/\{URL\}/gi, appUrlRef)
-                : `💌 ¿Alguien cumple años hoy? ¡Mándale una felicitación en directo con tarjeta en pantalla entrando a: ${appUrlRef} 🎉🥳`;
+                : `💌 Felicita en vivo a los cumpleañeros con !feliz <mensaje> o entra a ${appUrlRef} 🎉`;
             return sendChat(msg);
         }
 
         // 1. Verificar si las felicitaciones están permitidas por la streamer
         if (!appSettings.felicitations_enabled) {
-            return sendChat(`⚠️ @${sender}, las felicitaciones en pantalla están cerradas o en pausa por Yocapi en este momento. ¡Atento a cuando las active en directo! 📺✨`);
+            return sendChat(`⚠️ @${sender}, felicitaciones en pantalla pausadas por ahora 📺`);
         }
 
         // 2. Verificar que el que felicita esté registrado en la BD
@@ -841,7 +906,7 @@ async function handleChatMessage(channel, tags, message, self) {
         const senderUser = await dbRef.getUser(senderLogin);
 
         if (!senderUser || !senderUser.birth_month || !senderUser.birth_day || senderUser.birthday_unlocked) {
-            return sendChat(`⚠️ @${sender}, para enviar felicitaciones con tu tarjeta a la pantalla debes registrar tu cumpleaños gratis primero 👉 ${appUrlRef} 🎈`);
+            return sendChat(`⚠️ @${sender}, regístrate con !reg DD-MM para poder felicitar en pantalla 🎈`);
         }
 
         // 3. Determinar el cumpleañero objetivo
@@ -871,7 +936,7 @@ async function handleChatMessage(channel, tags, message, self) {
             }
 
             if (activeCelebrants.length === 0) {
-                return sendChat(`🎈 @${sender}, en este momento no hay cumpleañeros activos en stream para felicitar. Usa !proximos para ver los siguientes en el calendario 🎂`);
+                return sendChat(`🎈 @${sender}, no hay cumpleañeros activos hoy. Usa !prox para ver quién sigue 🎂`);
             }
 
             const todayOne = activeCelebrants.find(c => c.status.isToday) || activeCelebrants[0];
@@ -881,32 +946,32 @@ async function handleChatMessage(channel, tags, message, self) {
 
         // 4. Evitar auto-felicitación
         if (targetUser.username.toLowerCase() === senderLogin) {
-            return sendChat(`😅 @${sender}, ¡no puedes auto-felicitarte! Para lanzar tu propia alerta en pantalla usa el comando !hoyesmicumple 🎂👑`);
+            return sendChat(`😅 @${sender}, usa !cumplehoy para lanzar tu propia alerta 🎂`);
         }
 
         // 5. Determinar el sonido y gestionar el mutex de música
         let chosenSound = 'HBSilbato.mp3';
         let soundLabel = '🎺 Silbato Festivo';
 
-        if (command === '!felicidades1' || command === '!felicitar1') {
+        if (command.endsWith('1')) {
             chosenSound = 'MBMusica.mp3';
             soundLabel = '🎵 Música de Fiesta';
-        } else if (command === '!felicidades2' || command === '!felicitar2') {
+        } else if (command.endsWith('2')) {
             chosenSound = 'HBSilbato.mp3';
             soundLabel = '🎺 Silbato Festivo';
-        } else if (command === '!felicidades3' || command === '!felicitar3') {
+        } else if (command.endsWith('3')) {
             chosenSound = 'HBVoz.mp3';
             soundLabel = '🎤 Felicitación con Voz';
         } else {
-            // !felicidades o !felicitar a secas -> Selección aleatoria de los 3
+            // Selección aleatoria
             const soundOptions = [
                 { file: 'MBMusica.mp3', label: '🎵 Música de Fiesta' },
                 { file: 'HBSilbato.mp3', label: '🎺 Silbato Festivo' },
                 { file: 'HBVoz.mp3', label: '🎤 Felicitación con Voz' }
             ];
             const musicLock = getMusicLockStatusRef ? getMusicLockStatusRef() : { locked: false };
-            const availableOptions = musicLock.locked 
-                ? soundOptions.filter(s => s.file !== 'MBMusica.mp3') 
+            const availableOptions = musicLock.locked
+                ? soundOptions.filter(s => s.file !== 'MBMusica.mp3')
                 : soundOptions;
             const picked = availableOptions[Math.floor(Math.random() * availableOptions.length)];
             chosenSound = picked.file;
@@ -918,7 +983,7 @@ async function handleChatMessage(channel, tags, message, self) {
             if (acquireMusicLockRef && !acquireMusicLockRef(sender)) {
                 const musicStatus = getMusicLockStatusRef ? getMusicLockStatusRef() : {};
                 const secsLeft = Math.ceil((musicStatus.remainingMs || 5000) / 1000);
-                return sendChat(`🎵 @${sender}, la música de cumpleaños ya está sonando (${secsLeft}s restantes). ¡Lanza !felicidades2 (silbato) o !felicidades3 (voz) mientras tanto! 🎺`);
+                return sendChat(`🎵 @${sender}, rola sonando (${secsLeft}s). ¡Usa !feliz2 mientras tanto! 🎺`);
             }
         }
 
@@ -943,212 +1008,202 @@ async function handleChatMessage(channel, tags, message, self) {
         }
 
         const toName = targetUser.display_name || targetUser.username;
-        const msgSnippet = customMsg ? ` con el mensaje: "${customMsg.slice(0, 45)}"` : '';
-        return sendChat(`💌 ¡Felicitación en pantalla! 🎉 @${sender} felicitó a @${toName} en directo (${soundLabel})${msgSnippet} 🥳✨`);
+        const msgSnippet = customMsg ? ` ("${customMsg.slice(0, 45)}")` : '';
+        return sendChat(`💌 @${sender} felicitó a @${toName} en pantalla${msgSnippet} 🎉`);
+    } // end else (not on/off control)
+}
+
+// ─── COMANDO 7: !frase / !msg / !hbcambio <frase> (Modificar frase de alerta) ──
+if (command === '!frase' || command === '!msg' || command === '!hbcambio' || command === '!hbfrase' || command === '!micumplefrase' || command === '!cambiarfrase' || command === '!mifrase') {
+    if (!dbRef) return;
+    const senderLogin = sender.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    const user = await dbRef.getUser(senderLogin);
+
+    if (!user || !user.birth_month || !user.birth_day || user.birthday_unlocked) {
+        return sendChat(`⚠️ @${sender}, regístrate con !reg DD-MM antes de cambiar tu frase 🎂`);
     }
 
-    // ─── COMANDO 7: !hbcambio <frase> (Modificar frase/descripción de la ficha) ──
-    if (command === '!hbcambio' || command === '!hbfrase' || command === '!micumplefrase') {
-        if (!dbRef) return;
-        const senderLogin = sender.toLowerCase().replace(/[^a-z0-9_]/g, '');
-        const user = await dbRef.getUser(senderLogin);
-
-        if (!user || !user.birth_month || !user.birth_day || user.birthday_unlocked) {
-            return sendChat(`⚠️ @${sender}, primero debes registrar tu cumpleaños en el sistema para personalizar tu frase 👉 ${appUrlRef} 🎂`);
-        }
-
-        const newPhrase = parts.slice(1).join(' ').trim();
-        if (!newPhrase) {
-            const currentPhrase = user.custom_message || '¡Hoy es mi cumpleaños!';
-            return sendChat(`💬 @${sender}, tu frase actual para la alerta es: "${currentPhrase}". Para cambiarla usa: !hbcambio Tu nueva frase aquí (máx 60 letras) 🎈`);
-        }
-
-        const cleanPhrase = newPhrase.slice(0, 60).trim();
-        user.custom_message = cleanPhrase;
-        await dbRef.saveUser(user);
-
-        return sendChat(`✨ @${sender}, ¡frase de tu alerta actualizada con éxito! Se mostrará: "${cleanPhrase}" cuando lances tu festejo en stream 🎂🎉`);
+    const newPhrase = parts.slice(1).join(' ').trim();
+    if (!newPhrase) {
+        const currentPhrase = user.custom_message || '¡Hoy es mi cumpleaños!';
+        return sendChat(`💬 @${sender}, tu frase actual es: "${currentPhrase}". Cambiar: !frase <tu texto> (máx 60 letras) 🎈`);
     }
 
-    // ─── COMANDO 8: !hbsonido <1 | 2 | 3> (Modificar sonido de la alerta) ─────────
-    if (command === '!hbsonido' || command === '!cambiarsonido' || command === '!misonido') {
-        if (!dbRef) return;
-        const senderLogin = sender.toLowerCase().replace(/[^a-z0-9_]/g, '');
-        const user = await dbRef.getUser(senderLogin);
+    const cleanPhrase = newPhrase.slice(0, 60).trim();
+    user.custom_message = cleanPhrase;
+    await dbRef.saveUser(user);
 
-        if (!user || !user.birth_month || !user.birth_day || user.birthday_unlocked) {
-            return sendChat(`⚠️ @${sender}, primero debes registrar tu cumpleaños en el sistema para elegir tu sonido 👉 ${appUrlRef} 🎂`);
-        }
+    return sendChat(`✨ @${sender}, frase de alerta actualizada: "${cleanPhrase}" 🎂`);
+}
 
-        const soundNames = {
-            'HBSilbato.mp3': '🎺 Silbato Festivo (Opción 1)',
-            'MBMusica.mp3': '🎵 Música de Fiesta (Opción 2)',
-            'HBVoz.mp3': '🎤 Felicitación con Voz (Opción 3)'
-        };
+// ─── COMANDO 8: !sonido / !audio / !hbsonido <1 | 2 | 3> ─────────────────────
+if (command === '!sonido' || command === '!audio' || command === '!hbsonido' || command === '!cambiarsonido' || command === '!misonido' || command === '!cambiarmusica' || command === '!rola' || command === '!cancion') {
+    if (!dbRef) return;
+    const senderLogin = sender.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    const user = await dbRef.getUser(senderLogin);
 
-        const choice = (parts[1] || '').trim().toLowerCase();
-        let chosenSound = null;
-        let soundLabel = '';
-
-        if (choice === '1' || choice === 'silbato') {
-            chosenSound = 'HBSilbato.mp3';
-            soundLabel = '🎺 Silbato Festivo';
-        } else if (choice === '2' || choice === 'musica' || choice === 'música' || choice === 'fiesta') {
-            chosenSound = 'MBMusica.mp3';
-            soundLabel = '🎵 Música de Fiesta';
-        } else if (choice === '3' || choice === 'voz' || choice === 'felicitacion' || choice === 'felicitación') {
-            chosenSound = 'HBVoz.mp3';
-            soundLabel = '🎤 Felicitación con Voz';
-        }
-
-        if (!chosenSound) {
-            const currentSoundName = soundNames[user.selected_sound] || '🎺 Silbato Festivo (Opción 1)';
-            return sendChat(`🎵 @${sender}, tu sonido actual es: ${currentSoundName}. Para cambiarlo usa: !hbsonido 1 (🎺 Silbato) · !hbsonido 2 (🎵 Música) · !hbsonido 3 (🎤 Voz) 🥳`);
-        }
-
-        user.selected_sound = chosenSound;
-        await dbRef.saveUser(user);
-
-        return sendChat(`🎵 @${sender}, ¡sonido de tu alerta actualizado a ${soundLabel}! Sonará cuando lances tu festejo en directo 🥳✨`);
+    if (!user || !user.birth_month || !user.birth_day || user.birthday_unlocked) {
+        return sendChat(`⚠️ @${sender}, regístrate con !reg DD-MM antes de elegir tu sonido 🎂`);
     }
 
-    // ─── COMANDO PIÑATA: !piñata [nombre] [golpes] o !piñatastop ──────────────────
-    // Uso: !piñata capiluisxavihdx       -> piñata para esa persona (30 hits default)
-    // Uso: !piñata capiluisxavihdx 60   -> piñata para esa persona con 60 hits
-    // Uso: !piñata cumpleañeros       -> piñata genérica "cumpleañeros"
-    // Uso: !piñata stop               -> detener piñata activa
-    // Solo streamer (@yocapi_pr), desarrollador y moderadores pueden iniciarlo o detenerlo.
-    if (command === '!piñata' || command === '!piñatastop') {
-        if (!pinataManagerRef) return;
+    const soundNames = {
+        'HBSilbato.mp3': '🎺 Silbato Festivo (Opción 1)',
+        'MBMusica.mp3': '🎵 Música de Fiesta (Opción 2)',
+        'HBVoz.mp3': '🎤 Felicitación con Voz (Opción 3)'
+    };
 
-        const subAction = (parts[1] || '').toLowerCase().trim();
-        if (subAction === 'stop' || subAction === 'detener' || subAction === 'cancelar' || command === '!piñatastop') {
-            if (!isStreamerOrMod(tags, channel)) {
-                return sendChat(`⛔ @${sender}, solo la streamer (@yocapi_pr) y los moderadores pueden detener la piñata 🛡️`);
-            }
-            const stopped = pinataManagerRef.stop(true);
-            if (!stopped) {
-                return sendChat(`ℹ️ @${sender}, no hay ninguna piñata de capibara activa en este momento.`);
-            }
-            return;
-        }
+    const choice = (parts[1] || '').trim().toLowerCase();
+    let chosenSound = null;
+    let soundLabel = '';
 
-        // Solo streamer, desarrollador y mods pueden iniciar la piñata
+    if (choice === '1' || choice === 'silbato') {
+        chosenSound = 'HBSilbato.mp3';
+        soundLabel = '🎺 Silbato Festivo';
+    } else if (choice === '2' || choice === 'musica' || choice === 'música' || choice === 'fiesta') {
+        chosenSound = 'MBMusica.mp3';
+        soundLabel = '🎵 Música de Fiesta';
+    } else if (choice === '3' || choice === 'voz' || choice === 'felicitacion' || choice === 'felicitación') {
+        chosenSound = 'HBVoz.mp3';
+        soundLabel = '🎤 Felicitación con Voz';
+    }
+
+    if (!chosenSound) {
+        const currentSoundName = soundNames[user.selected_sound] || '🎺 Silbato Festivo (Opción 1)';
+        return sendChat(`🎵 @${sender}, sonido actual: ${currentSoundName}. Cambiar: !sonido 1 (Silbato) · !sonido 2 (Música) · !sonido 3 (Voz) 🥳`);
+    }
+
+    user.selected_sound = chosenSound;
+    await dbRef.saveUser(user);
+
+    return sendChat(`🎵 @${sender}, sonido cambiado a: ${soundLabel} 🔊`);
+}
+
+// ─── COMANDO PIÑATA: !piñata / !pata / !stop ─────────────────────────────────
+if (command === '!piñata' || command === '!pinata' || command === '!pata' || command === '!p' || command === '!piñatastop' || command === '!pinatastop' || command === '!pstop' || command === '!stop' || command === '!detener') {
+    if (!pinataManagerRef) return;
+
+    const subAction = (parts[1] || '').toLowerCase().trim();
+    const isStopCmd = command === '!stop' || command === '!detener' || command === '!pstop' || command === '!piñatastop' || command === '!pinatastop' || subAction === 'stop' || subAction === 'detener' || subAction === 'cancelar';
+
+    if (isStopCmd) {
         if (!isStreamerOrMod(tags, channel)) {
-            const pStatus = pinataManagerRef.getStatus();
-            if (pStatus.active) {
-                return sendChat(`🪅 ¡La piñata de capibara está activa (${pStatus.currentHp}/${pStatus.maxHp} HP)! Escribe !dale o !pegar para batear 💥`);
-            }
-            return sendChat(`🪅 La piñata comunitaria de capibara es iniciada por la streamer (@yocapi_pr) o moderadores. ¡Atentos al stream! 🎉`);
+            return sendChat(`⛔ @${sender}, solo streamer (@yocapi_pr) y mods pueden detener la piñata 🛡️`);
+        }
+        const stopped = pinataManagerRef.stop(true);
+        if (!stopped) {
+            return sendChat(`ℹ️ @${sender}, no hay piñata activa en este momento.`);
+        }
+        return sendChat(`🛑 @${sender}, piñata cancelada por moderación.`);
+    }
+
+    // Solo streamer, desarrollador y mods pueden iniciar la piñata
+    if (!isStreamerOrMod(tags, channel)) {
+        const pStatus = pinataManagerRef.getStatus();
+        if (pStatus.active) {
+            return sendChat(`🪅 ¡Piñata activa (${pStatus.currentHp}/${pStatus.maxHp} HP)! Escribe !dale o !pegar para batear 💥`);
+        }
+        return sendChat(`🪅 La piñata comunitaria la inicia la streamer (@yocapi_pr) o mods. ¡Atentos! 🎉`);
+    }
+
+    const currentStatus = pinataManagerRef.getStatus();
+    if (currentStatus.active && subAction !== 'restart' && subAction !== 'reiniciar') {
+        return sendChat(`🪅 @${sender}, piñata en curso (${currentStatus.currentHp}/${currentStatus.maxHp} HP, ${currentStatus.remainingSec}s restantes). Usa !stop para cancelar.`);
+    }
+
+    // Parsear nombre y golpes
+    let targetName = 'la Comunidad';
+    let targetAvatar = '/img/yocapi.png';
+    let hp = 30;
+
+    const part1Raw = (parts[1] || '').replace(/^@/, '').trim();
+    const part1Num = parseInt(part1Raw, 10);
+    const part1IsNum = !isNaN(part1Num) && part1Raw !== '';
+
+    if (part1IsNum) {
+        hp = part1Num;
+    } else if (part1Raw && part1Raw !== 'start' && part1Raw !== 'iniciar') {
+        targetName = part1Raw;
+
+        if (dbRef) {
+            try {
+                const u = await dbRef.getUser(part1Raw.toLowerCase());
+                if (u) {
+                    targetName = u.display_name || u.username;
+                    if (u.profile_image) targetAvatar = u.profile_image;
+                }
+            } catch (_) { }
         }
 
-        const currentStatus = pinataManagerRef.getStatus();
-        if (currentStatus.active && subAction !== 'restart' && subAction !== 'reiniciar') {
-            return sendChat(`🪅 @${sender}, ya hay una piñata de capibara en curso (${currentStatus.currentHp}/${currentStatus.maxHp} HP, quedan ${currentStatus.remainingSec}s). Usa "!piñata stop" si deseas cancelarla.`);
+        const hpArg = parseInt((parts[2] || ''), 10);
+        if (!isNaN(hpArg) && hpArg >= 10 && hpArg <= 100) {
+            hp = hpArg;
         }
-
-        // ── Parsear nombre y golpes ────────────────────────────────────────
-        // parts[1] = nombre del cumpleañero (opcional)
-        // parts[2] = golpes / maxHp (opcional, número)
-        let targetName = 'la Comunidad';
-        let targetAvatar = '/img/yocapi.png';
-        let hp = 30;
-
-        // Determinar si parts[1] es un número (golpes directos) o nombre
-        const part1Raw = (parts[1] || '').replace(/^@/, '').trim();
-        const part1Num = parseInt(part1Raw, 10);
-        const part1IsNum = !isNaN(part1Num) && part1Raw !== '';
-
-        if (part1IsNum) {
-            // !piñata 60 → sin nombre, sólo golpes
-            hp = part1Num;
-        } else if (part1Raw && part1Raw !== 'start' && part1Raw !== 'iniciar') {
-            // !piñata capiluisxavihdx [60]
-            targetName = part1Raw;
-
-            // Buscar avatar y displayName en la BD
-            if (dbRef) {
-                try {
-                    const u = await dbRef.getUser(part1Raw.toLowerCase());
-                    if (u) {
+    } else {
+        if (dbRef && getBirthdayStatusRef) {
+            try {
+                const allUsers = await dbRef.getAllUsers();
+                for (const u of allUsers) {
+                    if (!u.birth_month || !u.birth_day) continue;
+                    const bStatus = getBirthdayStatusRef(u.birth_month, u.birth_day);
+                    if (bStatus.canCelebrate && bStatus.isToday) {
                         targetName = u.display_name || u.username;
-                        if (u.profile_image) targetAvatar = u.profile_image;
+                        targetAvatar = u.profile_image || '/img/yocapi.png';
+                        break;
                     }
-                } catch (_) {}
-            }
-
-            // Leer golpes en parts[2]
-            const hpArg = parseInt((parts[2] || ''), 10);
-            if (!isNaN(hpArg) && hpArg >= 10 && hpArg <= 100) {
-                hp = hpArg;
-            }
-        } else {
-            // Sin argumentos: buscar automáticamente el cumpleañero de hoy
-            if (dbRef && getBirthdayStatusRef) {
-                try {
-                    const allUsers = await dbRef.getAllUsers();
-                    for (const u of allUsers) {
-                        if (!u.birth_month || !u.birth_day) continue;
-                        const bStatus = getBirthdayStatusRef(u.birth_month, u.birth_day);
-                        if (bStatus.canCelebrate && bStatus.isToday) {
-                            targetName = u.display_name || u.username;
-                            targetAvatar = u.profile_image || '/img/yocapi.png';
-                            break;
-                        }
-                    }
-                } catch (_) {}
-            }
-        }
-
-        hp = Math.min(100, Math.max(10, hp));
-
-        await pinataManagerRef.start({
-            targetUser: targetName,
-            targetAvatar,
-            maxHp: hp,
-            // durationSec: null → pinataManager lo calcula automáticamente (35 hits=60s, 60 hits=90s)
-            durationSec: null,
-            initiatedBy: sender
-        });
-        return;
-    }
-
-    // ─── COMANDO 9: !cumpleinfo o !ayudacumple ────────────────────────────────
-    if (command === '!cumpleinfo' || command === '!ayudacumple') {
-        return sendChat(`🎉 Comandos de Fiesta: !hoyesmicumple · !felicidades [mensaje] · !dale (golpea la piñata 🪅) · !piñata [nombre] [golpes] · !hbcambio <frase> · !hbsonido <1/2/3> · !cumple · !proximos · !cumplemes 🎂✨`);
-    }
-
-    // ─── COMANDOS EXCLUSIVOS DE MODERACIÓN Y CONTROL (STREAMER & MODS) ─────────
-
-    // COMANDO MOD 1: !hbalertas [on|off] (Activar/Desactivar Alertas del Cumpleañero)
-    if (command === '!hbalertas' || command === '!cumplealertas' || command === '!alertascumple') {
-        if (!isStreamerOrMod(tags, channel)) {
-            return sendChat(`⛔ @${sender}, este comando de control es exclusivo para la streamer (@yocapi_pr) y los moderadores del canal 🛡️`);
-        }
-
-        const appSettings = getAppSettingsRef ? getAppSettingsRef() : {};
-        const subAction = (parts[1] || '').toLowerCase().trim();
-
-        if (subAction === 'on' || subAction === 'activar' || subAction === 'habilitar' || subAction === '1') {
-            appSettings.birthday_alerts_enabled = true;
-            if (saveSettingsCallback) saveSettingsCallback({ birthday_alerts_enabled: true });
-            if (broadcastToOverlayRef) broadcastToOverlayRef({ type: 'birthday_alerts_status', enabled: true });
-            return sendChat(`✅👑 @${sender}, ¡Alertas de cumpleaños del cumpleañero ACTIVADAS! Ya pueden detonar su festejo en directo con !hoyesmicumple 🎂🎉`);
-        } else if (subAction === 'off' || subAction === 'desactivar' || subAction === 'pausar' || subAction === 'bloquear' || subAction === '0') {
-            appSettings.birthday_alerts_enabled = false;
-            if (saveSettingsCallback) saveSettingsCallback({ birthday_alerts_enabled: false });
-            if (broadcastToOverlayRef) broadcastToOverlayRef({ type: 'birthday_alerts_status', enabled: false });
-            return sendChat(`🔒🎬 @${sender}, ¡Alertas de cumpleaños del cumpleañero DESACTIVADAS! Nadie podrá interrumpir en directo con !hoyesmicumple hasta que se reactiven 🤫🎥`);
-        } else {
-            const isEnabled = appSettings.birthday_alerts_enabled !== false;
-            return sendChat(`🛡️ @${sender}, las alertas del cumpleañero en pantalla están actualmente: ${isEnabled ? '✅ ACTIVADAS' : '🔒 DESACTIVADAS'}. Usa "!hbalertas on" para activar o "!hbalertas off" para desactivar 🎬`);
+                }
+            } catch (_) { }
         }
     }
 
-    // COMANDO MOD 2: !hbfelicitar [on|off] o !felicitaciones [on|off] (Control de Felicitaciones)
+    hp = Math.min(100, Math.max(10, hp));
+
+    await pinataManagerRef.start({
+        targetUser: targetName,
+        targetAvatar,
+        maxHp: hp,
+        durationSec: null,
+        initiatedBy: sender
+    });
+    return;
+}
+
+// ─── COMANDO 9: !cmds / !comandos / !ayuda ──────────────────────────────────
+if (command === '!cmds' || command === '!cmd' || command === '!comandos' || command === '!ayuda' || command === '!help' || command === '!commands' ||
+    command === '!cumpleinfo' || command === '!ayudacumple' || command === '!guiacomandos' || command === '!bot') {
+    return sendChat(`📜 Guía: ${appUrlRef}/comandos 🎂 | !cumplehoy (alerta) · !reg DD-MM · !cumple · !dale (piñata) · !feliz [msg] · !frase <texto> · !sonido <1/2/3>`);
+}
+
+// ─── COMANDOS EXCLUSIVOS DE MODERACIÓN Y CONTROL (STREAMER & MODS) ─────────
+
+// COMANDO MOD 1: !alertas [on|off]
+if (command === '!alertas' || command === '!hbalertas' || command === '!cumplealertas' || command === '!alertascumple') {
+    if (!isStreamerOrMod(tags, channel)) {
+        return sendChat(`⛔ @${sender}, comando exclusivo de mods 🛡️`);
+    }
+
+    const appSettings = getAppSettingsRef ? getAppSettingsRef() : {};
+    const subAction = (parts[1] || '').toLowerCase().trim();
+
+    if (subAction === 'on' || subAction === 'activar' || subAction === 'habilitar' || subAction === '1') {
+        appSettings.birthday_alerts_enabled = true;
+        if (saveSettingsCallback) saveSettingsCallback({ birthday_alerts_enabled: true });
+        if (broadcastToOverlayRef) broadcastToOverlayRef({ type: 'birthday_alerts_status', enabled: true });
+        return sendChat(`👑 @${sender}, Alertas de cumpleañero ACTIVADAS ✅ (!cumplehoy disponible)`);
+    } else if (subAction === 'off' || subAction === 'desactivar' || subAction === 'pausar' || subAction === 'bloquear' || subAction === '0') {
+        appSettings.birthday_alerts_enabled = false;
+        if (saveSettingsCallback) saveSettingsCallback({ birthday_alerts_enabled: false });
+        if (broadcastToOverlayRef) broadcastToOverlayRef({ type: 'birthday_alerts_status', enabled: false });
+        return sendChat(`👑 @${sender}, Alertas de cumpleañero DESACTIVADAS 🔒`);
+    } else {
+        const isEnabled = appSettings.birthday_alerts_enabled !== false;
+        return sendChat(`👑 @${sender}, Alertas: ${isEnabled ? 'ACTIVADAS ✅' : 'DESACTIVADAS 🔒'}. Cambiar: !alertas on/off`);
+    }
+}
+
+// COMANDO MOD 2: !hbfelicitar [on|off]
     if (command === '!hbfelicitar' || command === '!hbfelicitaciones' || ((command === '!felicitar' || command === '!felicitaciones') && (parts[1] === 'on' || parts[1] === 'off'))) {
         if (!isStreamerOrMod(tags, channel)) {
-            return sendChat(`⛔ @${sender}, este comando de control es exclusivo para la streamer (@yocapi_pr) y los moderadores del canal 🛡️`);
+            return sendChat(`⛔ @${sender}, comando exclusivo de mods 🛡️`);
         }
 
         const appSettings = getAppSettingsRef ? getAppSettingsRef() : {};
@@ -1158,22 +1213,22 @@ async function handleChatMessage(channel, tags, message, self) {
             appSettings.felicitations_enabled = true;
             if (saveSettingsCallback) saveSettingsCallback({ felicitations_enabled: true });
             if (broadcastToOverlayRef) broadcastToOverlayRef({ type: 'felicitations_status', enabled: true });
-            return sendChat(`✅💌 @${sender}, ¡Felicitaciones de la comunidad ACTIVADAS! Los espectadores ya pueden enviar tarjetas flotantes al stream con !felicidades 🥳🎈`);
+            return sendChat(`💌 @${sender}, Felicitaciones en stream ACTIVADAS ✅`);
         } else if (subAction === 'off' || subAction === 'desactivar' || subAction === 'pausar' || subAction === 'bloquear' || subAction === '0') {
             appSettings.felicitations_enabled = false;
             if (saveSettingsCallback) saveSettingsCallback({ felicitations_enabled: false });
             if (broadcastToOverlayRef) broadcastToOverlayRef({ type: 'felicitations_status', enabled: false });
-            return sendChat(`🔒💌 @${sender}, ¡Felicitaciones de la comunidad DESACTIVADAS! No saldrán tarjetas flotantes en pantalla hasta que se reactiven 🤫📺`);
+            return sendChat(`💌 @${sender}, Felicitaciones en stream DESACTIVADAS 🔒`);
         } else {
             const isEnabled = !!appSettings.felicitations_enabled;
-            return sendChat(`🛡️ @${sender}, las felicitaciones de los espectadores están actualmente: ${isEnabled ? '✅ ACTIVADAS' : '🔒 DESACTIVADAS'}. Usa "!hbfelicitar on" o "!hbfelicitar off" 💌`);
+            return sendChat(`💌 @${sender}, Felicitaciones: ${isEnabled ? 'ACTIVADAS ✅' : 'DESACTIVADAS 🔒'}. Cambiar: !hbfelicitar on/off`);
         }
     }
 
-    // COMANDO MOD 3: !hbgrabacion [on|off] (Modo Cero Interrupciones para Grabación de Videos)
-    if (command === '!hbgrabacion' || command === '!hbmodovideo' || command === '!hbcine' || command === '!hbpausa') {
+    // COMANDO MOD 3: !rec / !grabar / !hbgrabacion [on|off]
+    if (command === '!rec' || command === '!grabar' || command === '!hbgrabacion' || command === '!hbmodovideo' || command === '!hbcine' || command === '!hbpausa') {
         if (!isStreamerOrMod(tags, channel)) {
-            return sendChat(`⛔ @${sender}, este comando de grabación es exclusivo para la streamer (@yocapi_pr) y los moderadores del canal 🛡️`);
+            return sendChat(`⛔ @${sender}, comando exclusivo de mods 🛡️`);
         }
 
         const appSettings = getAppSettingsRef ? getAppSettingsRef() : {};
@@ -1184,39 +1239,39 @@ async function handleChatMessage(channel, tags, message, self) {
             appSettings.felicitations_enabled = false;
             if (saveSettingsCallback) saveSettingsCallback({ birthday_alerts_enabled: false, felicitations_enabled: false });
             if (broadcastToOverlayRef) broadcastToOverlayRef({ type: 'recording_mode', active: true });
-            return sendChat(`🎬🤫 @${sender}, ¡MODO GRABACIÓN ACTIVADO! Alertas del cumpleañero y felicitaciones del chat desactivadas. Cero interrupciones garantizadas en video. Escribe "!hbgrabacion off" al terminar 🎥✨`);
+            return sendChat(`🎬 @${sender}, Modo Grabación ACTIVADO 🔴 (Alertas silenciadas). Desactivar: !rec off`);
         } else if (subAction === 'off' || subAction === 'desactivar' || subAction === '0' || subAction === 'terminar') {
             appSettings.birthday_alerts_enabled = true;
             appSettings.felicitations_enabled = true;
             if (saveSettingsCallback) saveSettingsCallback({ birthday_alerts_enabled: true, felicitations_enabled: true });
             if (broadcastToOverlayRef) broadcastToOverlayRef({ type: 'recording_mode', active: false });
-            return sendChat(`🎉🎬 @${sender}, ¡MODO GRABACIÓN FINALIZADO! Se reactivaron las alertas de cumpleaños y las felicitaciones en directo para toda la comunidad 🎂🥳`);
+            return sendChat(`🎬 @${sender}, Modo Grabación DESACTIVADO 🟢 (Alertas y felicitaciones activas)`);
         } else {
             const isRecording = (appSettings.birthday_alerts_enabled === false && !appSettings.felicitations_enabled);
-            return sendChat(`🎬 @${sender}, Modo Grabación está: ${isRecording ? '🔴 ACTIVADO (Silencio Total)' : '⚪ DESACTIVADO (Normal)'}. Usa "!hbgrabacion on" para grabar sin alertas o "!hbgrabacion off" para reactivar 🎥`);
+            return sendChat(`🎬 @${sender}, Modo Grabación: ${isRecording ? 'ACTIVADO 🔴' : 'DESACTIVADO 🟢'}. Cambiar: !rec on/off`);
         }
     }
 
-    // COMANDO MOD 4: !hbmod (Panel de Estado Rápido para Mods en Chat)
-    if (command === '!hbmod' || command === '!hbadmin' || command === '!hbestado') {
+    // COMANDO MOD 4: !mod / !hbmod (Panel de Estado Rápido)
+    if (command === '!mod' || command === '!hbmod' || command === '!hbadmin' || command === '!hbestado') {
         if (!isStreamerOrMod(tags, channel)) {
-            return sendChat(`⛔ @${sender}, este panel de estado es exclusivo para la streamer (@yocapi_pr) y moderadores 🛡️`);
+            return sendChat(`⛔ @${sender}, panel exclusivo de mods 🛡️`);
         }
 
         const appSettings = getAppSettingsRef ? getAppSettingsRef() : {};
-        const bdayAct = appSettings.birthday_alerts_enabled !== false ? '✅ ACTIVO' : '🔒 PAUSADO';
-        const felicAct = appSettings.felicitations_enabled ? '✅ ACTIVO' : '🔒 PAUSADO';
-        const recMode = (appSettings.birthday_alerts_enabled === false && !appSettings.felicitations_enabled) ? '🔴 EN GRABACIÓN' : '🟢 NORMAL';
+        const bdayAct = appSettings.birthday_alerts_enabled !== false ? '✅' : '🔒';
+        const felicAct = appSettings.felicitations_enabled ? '✅' : '🔒';
+        const recMode = (appSettings.birthday_alerts_enabled === false && !appSettings.felicitations_enabled) ? '🔴 REC' : '🟢 OK';
         const mins = botConfig.timer_minutes || 60;
-        const testMode = botConfig.silent_mode ? '🧪 MODO PRUEBAS (Silencio en Twitch)' : '🔊 NORMAL';
+        const testMode = botConfig.silent_mode ? '🧪 SILENCIO' : '🔊 ACTIVO';
 
-        return sendChat(`🛡️ [Panel Mod] ${recMode} · ${testMode} · 👑 ${bdayAct} · 💌 ${felicAct} · ⏰ ${mins}m | Cmds: !hbalertas on/off · !hbfelicitar on/off · !hbgrabacion on/off · !hbyacelebro @usuario · !hbrelanzar @usuario · !hblibre @usuario · !hbpruebas on/off ✨`);
+        return sendChat(`🛡️ [Mods] Estado: ${recMode} · Bot: ${testMode} · Alertas: ${bdayAct} · Felicitaciones: ${felicAct} · Timer: ${mins}m | !listo @u · !relanzar @u · !libre @u · !alertas on/off · !rec on/off`);
     }
 
-    // COMANDO MOD 5: !hbpruebas [on|off] o !hbsilencio [on|off] (Modo Pruebas / Silencio en Chat de Twitch)
-    if (command === '!hbpruebas' || command === '!hbsilencio' || command === '!hbsilent' || command === '!hbmodoprueba') {
+    // COMANDO MOD 5: !silencio / !test / !hbpruebas [on|off]
+    if (command === '!silencio' || command === '!test' || command === '!hbpruebas' || command === '!hbsilencio' || command === '!hbsilent' || command === '!hbmodoprueba') {
         if (!isStreamerOrMod(tags, channel)) {
-            return sendChat(`⛔ @${sender}, este comando de pruebas es exclusivo para la streamer (@yocapi_pr), desarrollador y moderadores 🛡️`);
+            return sendChat(`⛔ @${sender}, comando exclusivo de mods 🛡️`);
         }
 
         const subAction = (parts[1] || '').toLowerCase().trim();
@@ -1224,51 +1279,51 @@ async function handleChatMessage(channel, tags, message, self) {
             botConfig.silent_mode = true;
             if (saveSettingsCallback) saveSettingsCallback({ twitch_bot: botConfig });
             console.log('[TwitchBot] 🧪 Modo pruebas / silencio de chat ACTIVADO');
-            return sendChat(`🧪🤫 @${sender}, ¡MODO PRUEBAS ACTIVADO! El bot procesará alertas en OBS, minijuegos y registros normalmente, pero NO enviará más mensajes al chat de Twitch para evitar spam. Usa "!hbpruebas off" para volver a hablar.`);
+            return sendChat(`🧪 @${sender}, Modo Pruebas ACTIVADO 🤫 (Bot silenciado en Twitch chat). Desactivar: !test off`);
         } else if (subAction === 'off' || subAction === 'desactivar' || subAction === '0' || subAction === 'hablar') {
             botConfig.silent_mode = false;
             if (saveSettingsCallback) saveSettingsCallback({ twitch_bot: botConfig });
             console.log('[TwitchBot] 🔊 Modo pruebas / silencio de chat DESACTIVADO');
-            return sendChat(`🔊💬 @${sender}, ¡MODO PRUEBAS DESACTIVADO! El bot responderá en el chat de Twitch de forma normal.`);
+            return sendChat(`🔊 @${sender}, Modo Pruebas DESACTIVADO 💬 (Bot hablando normal en Twitch chat)`);
         } else {
             const isSilent = !!botConfig.silent_mode;
-            return sendChat(`🧪 @${sender}, el Modo Pruebas (Silencio en Chat) está: ${isSilent ? '🟡 ACTIVADO (Bot no habla en Twitch)' : '⚪ DESACTIVADO (Normal)'}. Usa "!hbpruebas on" para silenciar o "!hbpruebas off" para hablar en directo 🤫`);
+            return sendChat(`🧪 @${sender}, Modo Pruebas: ${isSilent ? 'ACTIVADO 🤫 (Silencio)' : 'DESACTIVADO 🔊 (Normal)'}. Cambiar: !test on/off`);
         }
     }
 
-    // COMANDO MOD 6: !hblibre @usuario o !hbdesbloquear @usuario (Permitir a un seguidor cambiar su fecha)
-    if (command === '!hblibre' || command === '!hbdesbloquear') {
+    // COMANDO MOD 6: !libre / !abrir / !hblibre @usuario
+    if (command === '!libre' || command === '!abrir' || command === '!hblibre' || command === '!hbdesbloquear') {
         if (!isStreamerOrMod(tags, channel)) {
-            return sendChat(`⛔ @${sender}, este comando de desbloqueo es exclusivo para la streamer (@yocapi_pr) y moderadores 🛡️`);
+            return sendChat(`⛔ @${sender}, comando exclusivo de mods 🛡️`);
         }
         if (!dbRef) return;
         const target = (parts[1] || '').trim().replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '');
         if (!target) {
-            return sendChat(`🛡️ @${sender}, indica a quién desbloquear la fecha: !hblibre @usuario 📅`);
+            return sendChat(`🛡️ @${sender}, uso: !libre @usuario 📅`);
         }
         const targetUser = await dbRef.getUser(target);
         if (!targetUser) {
-            return sendChat(`⚠️ @${sender}, no se encontró al usuario @${target} en la base de datos.`);
+            return sendChat(`⚠️ @${sender}, no se encontró al usuario @${target}`);
         }
         targetUser.birthday_unlocked = true;
         targetUser.birthday_locked_at = null;
         await dbRef.saveUser(targetUser);
-        return sendChat(`🔓✅ @${sender}, la fecha de @${targetUser.display_name || targetUser.username} ha sido DESBLOQUEADA. Ya puede escribir "!registro DD-MM" o entrar a ${appUrlRef} para actualizar su fecha de cumpleaños 🎉`);
+        return sendChat(`🔓 @${sender}, fecha de @${targetUser.display_name || targetUser.username} desbloqueada 📅`);
     }
 
-    // COMANDO MOD 7: !hbyacelebro @usuario o !hbcelebrado @usuario (Marcar como ya celebrado este año)
-    if (command === '!hbyacelebro' || command === '!hbcelebrado' || command === '!hblisto') {
+    // COMANDO MOD 7: !listo / !hecho / !yacelebro / !hbyacelebro @usuario
+    if (command === '!listo' || command === '!hecho' || command === '!yacelebro' || command === '!hbyacelebro' || command === '!hbcelebrado' || command === '!hblisto') {
         if (!isStreamerOrMod(tags, channel)) {
-            return sendChat(`⛔ @${sender}, este comando es exclusivo para la streamer (@yocapi_pr) y moderadores 🛡️`);
+            return sendChat(`⛔ @${sender}, comando exclusivo de mods 🛡️`);
         }
         if (!dbRef) return;
         const target = (parts[1] || '').trim().replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '');
         if (!target) {
-            return sendChat(`ℹ️ @${sender}, indica a quién marcar como celebrado: !hbyacelebro @usuario 🎂`);
+            return sendChat(`ℹ️ @${sender}, uso: !listo @usuario 🎂`);
         }
         const targetUser = await dbRef.getUser(target);
         if (!targetUser) {
-            return sendChat(`⚠️ @${sender}, no se encontró al usuario @${target} en la base de datos.`);
+            return sendChat(`⚠️ @${sender}, no se encontró al usuario @${target}`);
         }
         const bStatus = getBirthdayStatusRef ? getBirthdayStatusRef(targetUser.birth_month, targetUser.birth_day) : null;
         const year = bStatus?.celebrationYear || new Date().getFullYear();
@@ -1277,29 +1332,29 @@ async function handleChatMessage(channel, tags, message, self) {
         targetUser.last_activated = new Date().toISOString();
         await dbRef.saveUser(targetUser);
 
-        return sendChat(`✅ @${sender}, @${targetUser.display_name || targetUser.username} ha sido marcado como YA CELEBRADO este año (${year}). ¡El bot ya no enviará recordatorios para su cumpleaños! 🥳🎉`);
+        return sendChat(`✅ @${sender}, @${targetUser.display_name || targetUser.username} marcado como YA CELEBRADO (${year}) 🎂`);
     }
 
-    // COMANDO MOD 8: !hbrelanzar @usuario o !hbreiniciar @usuario (Permitir volver a celebrar / relanzar)
-    if (command === '!hbrelanzar' || command === '!hbreiniciar') {
+    // COMANDO MOD 8: !relanzar / !reinicio / !hbrelanzar @usuario
+    if (command === '!relanzar' || command === '!reinicio' || command === '!hbrelanzar' || command === '!hbreiniciar') {
         if (!isStreamerOrMod(tags, channel)) {
-            return sendChat(`⛔ @${sender}, este comando es exclusivo para la streamer (@yocapi_pr) y moderadores 🛡️`);
+            return sendChat(`⛔ @${sender}, comando exclusivo de mods 🛡️`);
         }
         if (!dbRef) return;
         const target = (parts[1] || '').trim().replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '');
         if (!target) {
-            return sendChat(`ℹ️ @${sender}, indica a quién relanzar la celebración: !hbrelanzar @usuario 🔄`);
+            return sendChat(`ℹ️ @${sender}, uso: !relanzar @usuario 🔄`);
         }
         const targetUser = await dbRef.getUser(target);
         if (!targetUser) {
-            return sendChat(`⚠️ @${sender}, no se encontró al usuario @${target} en la base de datos.`);
+            return sendChat(`⚠️ @${sender}, no se encontró al usuario @${target}`);
         }
         targetUser.last_celebrated_year = 0;
         targetUser.last_played_date = null;
         targetUser.last_activated = null;
         await dbRef.saveUser(targetUser);
 
-        return sendChat(`🔄 @${sender}, se ha reiniciado la celebración de @${targetUser.display_name || targetUser.username}. ¡Ya puede volver a lanzar su alerta en stream con !hoyesmicumple o desde la web! 🎂✨`);
+        return sendChat(`🔄 @${sender}, celebración de @${targetUser.display_name || targetUser.username} reiniciada. Ya puede usar !cumplehoy 🎂`);
     }
 }
 
@@ -1325,7 +1380,7 @@ async function connectBot() {
             try {
                 client.removeAllListeners();
                 await client.disconnect();
-            } catch (_) {}
+            } catch (_) { }
             client = null;
         }
 
@@ -1343,7 +1398,7 @@ async function connectBot() {
                 username,
                 password
             },
-            channels: [ channel ]
+            channels: [channel]
         });
 
         client.on('message', handleChatMessage);
@@ -1380,7 +1435,7 @@ async function disconnectBot() {
     if (client) {
         try {
             await client.disconnect();
-        } catch (_) {}
+        } catch (_) { }
         client = null;
     }
     status = 'disconnected';
@@ -1483,7 +1538,7 @@ async function simulateChatMessage(senderName = 'capiluisxavihdx', messageText =
         try {
             const u = await dbRef.getUser(cleanLogin);
             if (u && u.twitch_id) tags['user-id'] = u.twitch_id;
-        } catch (_) {}
+        } catch (_) { }
     }
 
     const channel = formatChannelName(botConfig.channel);
