@@ -53,6 +53,12 @@ let appSettings = {
     felicitations_enabled: false,
     alerts_paused: false,
     overlay_config: { ...DEFAULT_OVERLAY_CONFIG },
+    stream_state: {
+        stream_live_only: true,
+        announce_on_stream_start: true,
+        detector_bot: 'streamelements',
+        keywords: ['en vivo', 'en directo', 'live', 'prendió', 'prendio', 'stream', 'online', 'yocapi']
+    },
     twitch_bot: {
         bot_username: process.env.TWITCH_BOT_USERNAME || '',
         oauth_token: process.env.TWITCH_BOT_TOKEN || '',
@@ -93,6 +99,7 @@ async function loadInitialSettings() {
                 ...appSettings, 
                 ...loaded,
                 overlay_config: { ...DEFAULT_OVERLAY_CONFIG, ...(loaded.overlay_config || {}) },
+                stream_state: { ...appSettings.stream_state, ...(loaded.stream_state || {}) },
                 twitch_bot: { ...appSettings.twitch_bot, ...(loaded.twitch_bot || {}) },
                 bot_cmd_responses: { ...(appSettings.bot_cmd_responses || {}), ...(loaded.bot_cmd_responses || {}) }
             };
@@ -110,6 +117,7 @@ async function loadInitialSettings() {
                 ...appSettings,
                 ...cloudConfig,
                 overlay_config: { ...DEFAULT_OVERLAY_CONFIG, ...(cloudConfig.overlay_config || {}) },
+                stream_state: { ...appSettings.stream_state, ...(cloudConfig.stream_state || {}) },
                 twitch_bot: { ...appSettings.twitch_bot, ...(cloudConfig.twitch_bot || {}) },
                 bot_cmd_responses: { ...(appSettings.bot_cmd_responses || {}), ...(cloudConfig.bot_cmd_responses || {}) }
             };
@@ -431,6 +439,7 @@ function initBotService() {
         isUserCelebratedThisYear,
         APP_URL,
         initialConfig: appSettings.twitch_bot,
+        streamConfig: appSettings.stream_state,
         cmdResponses: appSettings.bot_cmd_responses || {},
         broadcastToOverlay: (data) => broadcastToOverlay(data),
         getAppSettings: () => appSettings,
@@ -1173,6 +1182,9 @@ function authenticateDashboard(req, res, next) {
     if (req.cookies?.yocapi_dashboard_auth === DASHBOARD_KEY) {
         return next();
     }
+    if (req.headers['x-dashboard-key'] === DASHBOARD_KEY || req.headers.authorization === `Bearer ${DASHBOARD_KEY}`) {
+        return next();
+    }
     return res.status(403).json({ error: 'Acceso no autorizado al panel de streamer' });
 }
 
@@ -1677,6 +1689,202 @@ app.post('/api/dashboard/bot/cmd-response', authenticateDashboard, (req, res) =>
     // Pasar la respuesta actualizada al bot en memoria
     twitchBot.updateCmdResponse(cmd, response.trim());
     res.json({ success: true, message: `Respuesta de !${cmd} guardada` });
+});
+
+// ─── API GESTOR DE COMANDOS ESTILO STREAMELEMENTS ───────────────────────────
+// Listar todos los comandos
+app.get('/api/commands', async (req, res) => {
+    try {
+        let commands = twitchBot.getCustomCommandsList ? twitchBot.getCustomCommandsList() : [];
+        if (!commands || commands.length === 0) {
+            commands = await db.getAllCustomCommands();
+        }
+        const isAuth = req.cookies?.yocapi_dashboard_auth === DASHBOARD_KEY ||
+                       req.headers['x-dashboard-key'] === DASHBOARD_KEY;
+        
+        res.json({
+            success: true,
+            authenticated: isAuth,
+            total: commands.length,
+            commands
+        });
+    } catch (err) {
+        console.error('Error obteniendo comandos:', err);
+        res.status(500).json({ success: false, error: 'Error al obtener comandos' });
+    }
+});
+
+// Crear o editar comando (Protegido)
+app.post('/api/commands', authenticateDashboard, async (req, res) => {
+    try {
+        const { name, response, user_level, cooldown, enabled, aliases } = req.body;
+        if (!name || !name.trim()) {
+            return res.status(400).json({ success: false, error: 'El nombre del comando es obligatorio' });
+        }
+        if (!response || !response.trim()) {
+            return res.status(400).json({ success: false, error: 'La respuesta del comando es obligatoria' });
+        }
+
+        let cleanName = name.trim().toLowerCase();
+        if (!cleanName.startsWith('!')) cleanName = '!' + cleanName;
+
+        const cmdData = {
+            name: cleanName,
+            response: response.trim(),
+            user_level: ['everyone', 'moderator', 'streamer'].includes(user_level) ? user_level : 'everyone',
+            cooldown: Math.max(1, parseInt(cooldown, 10) || 5),
+            enabled: enabled !== false,
+            aliases: aliases ? String(aliases).trim() : ''
+        };
+
+        const saved = await twitchBot.saveCustomCommandCached(cmdData);
+        if (!saved) {
+            return res.status(500).json({ success: false, error: 'No se pudo guardar el comando' });
+        }
+
+        res.json({
+            success: true,
+            message: `Comando ${cleanName} guardado con éxito`,
+            command: saved
+        });
+    } catch (err) {
+        console.error('Error guardando comando:', err);
+        res.status(500).json({ success: false, error: err.message || 'Error al guardar comando' });
+    }
+});
+
+// Eliminar comando (Protegido)
+app.delete('/api/commands/:name', authenticateDashboard, async (req, res) => {
+    try {
+        const cmdName = req.params.name;
+        const ok = await twitchBot.deleteCustomCommandCached(cmdName);
+        if (!ok) {
+            return res.status(404).json({ success: false, error: 'El comando no fue encontrado' });
+        }
+        res.json({ success: true, message: `Comando ${cmdName} eliminado con éxito` });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Error al eliminar comando' });
+    }
+});
+
+// Alternar estado activo / inactivo de un comando (Protegido)
+app.post('/api/commands/:name/toggle', authenticateDashboard, async (req, res) => {
+    try {
+        const cmdName = req.params.name;
+        const existing = twitchBot.findCustomCommand(cmdName);
+        if (!existing) {
+            return res.status(404).json({ success: false, error: 'Comando no encontrado' });
+        }
+        const newEnabled = typeof req.body.enabled === 'boolean' ? req.body.enabled : !existing.enabled;
+        existing.enabled = newEnabled;
+        const saved = await twitchBot.saveCustomCommandCached(existing);
+        res.json({
+            success: true,
+            enabled: saved.enabled,
+            message: `Comando ${cmdName} ${saved.enabled ? 'activado' : 'desactivado'}`
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Error al cambiar estado del comando' });
+    }
+});
+
+// Probar simulación de un comando con variables y niveles de permiso
+app.post('/api/commands/test', async (req, res) => {
+    try {
+        const { commandName, template, userLevel, testRole, query } = req.body;
+        const testUser = testRole === 'streamer' ? 'yocapi_pr' : (testRole === 'moderator' ? 'ModCapibara' : 'SeguidorFeliz');
+        const role = testRole || 'everyone';
+        const required = userLevel || 'everyone';
+
+        let hasPerm = true;
+        if (required === 'streamer' && role !== 'streamer') hasPerm = false;
+        if (required === 'moderator' && role !== 'moderator' && role !== 'streamer') hasPerm = false;
+
+        if (!hasPerm) {
+            return res.json({
+                success: false,
+                permissionDenied: true,
+                message: required === 'streamer' 
+                    ? `⛔ @${testUser}, este comando es exclusivo de la streamer @yocapi_pr 👑` 
+                    : `⛔ @${testUser}, este comando es exclusivo de moderadores 🛡️`
+            });
+        }
+
+        const rawTemplate = template || '¡Hola {user}! Directo de {channel}';
+        let parsed = rawTemplate
+            .replace(/\{user\}|\$\{user\}/gi, `@${testUser}`)
+            .replace(/\{touser\}|\$\{touser\}|\$\{1\}|\{1\}/gi, query ? `@${query.replace(/^@/, '')}` : `@${testUser}`)
+            .replace(/\{channel\}|\$\{channel\}/gi, 'yocapi_pr')
+            .replace(/\{count\}|\$\{count\}/gi, '42')
+            .replace(/\{query\}|\$\{query\}/gi, query || '')
+            .replace(/\{random\s*(\d+)?(?:-(\d+))?\}|\$\{random\s*(\d+)?(?:-(\d+))?\}/gi, '77');
+
+        res.json({
+            success: true,
+            permissionDenied: false,
+            rendered: parsed,
+            testUser,
+            role
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Error al simular comando' });
+    }
+});
+
+// ─── API CONTROL DE STREAM Y DETECCIÓN DE STREAMELEMENTS ─────────────────────
+// Obtener estado actual del stream y StreamElements
+app.get('/api/stream/status', (req, res) => {
+    try {
+        const status = twitchBot.getStreamStatus ? twitchBot.getStreamStatus() : { is_live: false };
+        res.json({ success: true, ...status });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Error obteniendo estado de stream' });
+    }
+});
+
+// Cambiar estado En Vivo manualmente (Protegido)
+app.post('/api/stream/set-live', authenticateDashboard, (req, res) => {
+    try {
+        const { is_live, reason } = req.body;
+        const updated = twitchBot.setStreamLive(!!is_live, reason || 'Modificado manualmente en dashboard', 'dashboard');
+        res.json({
+            success: true,
+            is_live: updated.is_live,
+            message: updated.is_live ? '🔴 Modo En Vivo activado. ¡Recordatorios de cumpleaños activos!' : '⚪ Modo Offline activado. Recordatorios en pausa.',
+            stream_state: updated
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Error al modificar estado de stream' });
+    }
+});
+
+// Actualizar configuración de detección de StreamElements (Protegido)
+app.post('/api/stream/config', authenticateDashboard, (req, res) => {
+    try {
+        const updated = twitchBot.updateStreamConfig(req.body);
+        appSettings.stream_state = updated;
+        saveAppSettings();
+        res.json({
+            success: true,
+            message: 'Configuración de detección de StreamElements guardada',
+            stream_state: updated
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Error al actualizar configuración de stream' });
+    }
+});
+
+// Simular aviso de StreamElements (Yocapi prende stream)
+app.post('/api/stream/simulate-streamelements', authenticateDashboard, async (req, res) => {
+    try {
+        const { message, sender } = req.body;
+        const simMsg = message || '¡@yocapi_pr ya está en directo transmitiendo Just Chatting! 🎉✨';
+        const simSender = sender || 'StreamElements';
+        const result = await twitchBot.simulateStreamOnline(simMsg, simSender);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Error al simular aviso de StreamElements' });
+    }
 });
 
 // Obtener estado de felicitaciones en directo
@@ -2324,6 +2532,9 @@ app.get('/overlay', (req, res) => res.sendFile(path.join(__dirname, 'public', 'o
 app.get('/calendario', (req, res) => res.sendFile(path.join(__dirname, 'public', 'calendario.html')));
 app.get('/comandos', (req, res) => res.sendFile(path.join(__dirname, 'public', 'comandos.html')));
 app.get('/ayuda', (req, res) => res.sendFile(path.join(__dirname, 'public', 'comandos.html')));
+app.get(['/gestor-comandos', '/comandos-manager', '/bot-comandos', '/streamelements'], (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'gestor-comandos', 'index.html'));
+});
 
 // Ruta secreta del Dashboard
 app.get(`/${DASHBOARD_SECRET_PATH}`, (req, res) => {

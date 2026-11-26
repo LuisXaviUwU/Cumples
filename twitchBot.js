@@ -22,6 +22,22 @@ let botConfig = {
     silent_mode: false // Modo pruebas: no manda mensajes al chat de Twitch
 };
 
+// ─── ESTADO Y CONFIGURACIÓN DE STREAM / DETECCIÓN DE STREAMELEMENTS ─────────
+let streamState = {
+    is_live: false,
+    last_live_detected: null,
+    last_detected_message: null,
+    detected_by: null,
+    detector_bot: 'streamelements', // Usuario de Twitch que emite el mensaje de directo
+    keywords: ['en vivo', 'en directo', 'live', 'prendió', 'prendio', 'stream', 'online', 'yocapi'],
+    stream_live_only: true, // El recordatorio de cumpleaños solo aparece cuando detecta que yocapi prende
+    announce_on_stream_start: true // Al prender, manda el recordatorio de cumpleaños en directo
+};
+
+// Caché en memoria de comandos personalizados estilo StreamElements
+const customCommandsCache = new Map();
+const customCmdCooldowns = new Map();
+
 // Registro de los últimos mensajes emitidos por el bot (para visualizarlos en Dashboard en modo pruebas)
 const recentBotMessages = [];
 function recordBotMessageLog(message) {
@@ -167,42 +183,230 @@ function formatOauthToken(token) {
 }
 
 // ─── VERIFICADOR DE PERMISOS: STREAMER (@yocapi_pr), CREADOR O MODERADOR DE TWITCH ──────
-function isStreamerOrMod(tags, channel) {
+function isStreamer(tags, channel) {
     if (!tags) return false;
     const username = (tags.username || '').toLowerCase().trim();
     const cleanChannel = (channel || botConfig.channel || 'yocapi_pr').replace(/^#/, '').toLowerCase().trim();
-
-    // 0. Creador / Desarrollador del sistema (permisos totales de streamer/mod para pruebas y administración)
-    if (username === 'capiluisxavihdx' || username === 'capiluisxavi') {
-        return true;
-    }
-
-    // 1. Es la streamer oficial (dueña del canal o yocapi_pr)
-    if (username === cleanChannel || username === 'yocapi_pr') {
-        return true;
-    }
-
-    // 2. Mod flag nativo de Twitch
-    if (tags.mod === true || tags.mod === '1' || tags.mod === 1) {
-        return true;
-    }
-
-    // 3. Badges del usuario (broadcaster o moderator)
+    if (username === 'capiluisxavihdx' || username === 'capiluisxavi') return true;
+    if (username === cleanChannel || username === 'yocapi_pr') return true;
     if (tags.badges) {
-        if (tags.badges.broadcaster || tags.badges.moderator) return true;
-        if (typeof tags.badges === 'string' && (tags.badges.includes('broadcaster') || tags.badges.includes('moderator'))) {
-            return true;
-        }
+        if (tags.badges.broadcaster) return true;
+        if (typeof tags.badges === 'string' && tags.badges.includes('broadcaster')) return true;
     }
-
-    // 4. Badges raw de IRC
-    if (tags['badges-raw'] && typeof tags['badges-raw'] === 'string') {
-        if (tags['badges-raw'].includes('broadcaster') || tags['badges-raw'].includes('moderator')) {
-            return true;
-        }
+    if (tags['badges-raw'] && typeof tags['badges-raw'] === 'string' && tags['badges-raw'].includes('broadcaster')) {
+        return true;
     }
-
     return false;
+}
+
+function isMod(tags, channel) {
+    if (isStreamer(tags, channel)) return true;
+    if (!tags) return false;
+    if (tags.mod === true || tags.mod === '1' || tags.mod === 1) return true;
+    if (tags.badges) {
+        if (tags.badges.moderator) return true;
+        if (typeof tags.badges === 'string' && tags.badges.includes('moderator')) return true;
+    }
+    if (tags['badges-raw'] && typeof tags['badges-raw'] === 'string' && tags['badges-raw'].includes('moderator')) {
+        return true;
+    }
+    return false;
+}
+
+function isStreamerOrMod(tags, channel) {
+    return isMod(tags, channel);
+}
+
+function checkUserPermission(requiredLevel, tags, channel) {
+    if (!requiredLevel || requiredLevel === 'everyone') return true;
+    if (requiredLevel === 'moderator') return isMod(tags, channel);
+    if (requiredLevel === 'streamer') return isStreamer(tags, channel);
+    return true;
+}
+
+function parseCommandResponse(template, context) {
+    if (!template) return '';
+    let res = String(template);
+    const user = context.user || 'amigo';
+    const touser = context.touser ? String(context.touser).replace(/^@/, '') : user;
+    const channel = context.channel || botConfig.channel || 'yocapi_pr';
+    const count = context.count || 1;
+    const query = context.query || '';
+
+    res = res.replace(/\{user\}|\$\{user\}/gi, `@${user}`);
+    res = res.replace(/\{touser\}|\$\{touser\}|\$\{1\}|\{1\}/gi, `@${touser}`);
+    res = res.replace(/\{channel\}|\$\{channel\}/gi, channel);
+    res = res.replace(/\{count\}|\$\{count\}/gi, String(count));
+    res = res.replace(/\{query\}|\$\{query\}/gi, query);
+
+    // Variable aleatoria: {random} o {random X-Y}
+    res = res.replace(/\{random\s*(\d+)?(?:-(\d+))?\}|\$\{random\s*(\d+)?(?:-(\d+))?\}/gi, (_, min, max) => {
+        const minimum = parseInt(min, 10) || 1;
+        const maximum = parseInt(max, 10) || 100;
+        return Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
+    });
+
+    return res;
+}
+
+// ─── CONTROL Y DETECCIÓN DE STREAM ONLINE (STREAMELEMENTS) ───────────────────
+function getStreamStatus() {
+    return {
+        is_live: !!streamState.is_live,
+        last_live_detected: streamState.last_live_detected,
+        last_detected_message: streamState.last_detected_message,
+        detected_by: streamState.detected_by,
+        detector_bot: streamState.detector_bot || 'streamelements',
+        keywords: streamState.keywords || ['en vivo', 'en directo', 'live', 'prendió', 'prendio', 'stream', 'online', 'yocapi'],
+        stream_live_only: streamState.stream_live_only !== false,
+        announce_on_stream_start: streamState.announce_on_stream_start !== false
+    };
+}
+
+function setStreamLive(isLive, messageOrReason = '', triggeredBy = 'sistema') {
+    streamState.is_live = !!isLive;
+    if (isLive) {
+        streamState.last_live_detected = new Date().toISOString();
+        if (messageOrReason) streamState.last_detected_message = messageOrReason;
+        streamState.detected_by = triggeredBy;
+    }
+    console.log(`[TwitchBot] Estado de stream: ${streamState.is_live ? '🔴 EN VIVO' : '⚪ OFFLINE'} (Por: ${triggeredBy})`);
+
+    if (broadcastToOverlayRef) {
+        broadcastToOverlayRef({
+            type: 'stream_status',
+            stream_state: getStreamStatus()
+        });
+    }
+
+    if (saveSettingsCallback) {
+        saveSettingsCallback({ stream_state: getStreamStatus() });
+    }
+    return getStreamStatus();
+}
+
+function updateStreamConfig(newConf) {
+    if (!newConf || typeof newConf !== 'object') return getStreamStatus();
+    if (typeof newConf.stream_live_only === 'boolean') streamState.stream_live_only = newConf.stream_live_only;
+    if (typeof newConf.announce_on_stream_start === 'boolean') streamState.announce_on_stream_start = newConf.announce_on_stream_start;
+    if (typeof newConf.detector_bot === 'string' && newConf.detector_bot.trim()) {
+        streamState.detector_bot = newConf.detector_bot.trim().replace(/^@/, '').toLowerCase();
+    }
+    if (Array.isArray(newConf.keywords)) {
+        streamState.keywords = newConf.keywords.map(k => String(k).trim()).filter(Boolean);
+    }
+    if (typeof newConf.is_live === 'boolean') {
+        setStreamLive(newConf.is_live, 'Ajustado manualmente desde configuración', 'dashboard');
+    }
+    return getStreamStatus();
+}
+
+function checkStreamElementsLiveDetection(tags, text, channel) {
+    if (!text) return;
+    const senderLogin = (tags?.username || '').toLowerCase().trim();
+    const detector = (streamState.detector_bot || 'streamelements').toLowerCase().trim();
+
+    if (senderLogin === detector || senderLogin === 'streamelements') {
+        const lowerText = text.toLowerCase();
+        const keywords = Array.isArray(streamState.keywords) ? streamState.keywords : ['en vivo', 'en directo', 'live', 'prendió', 'prendio', 'stream', 'online', 'yocapi'];
+
+        const hasKeyword = keywords.some(kw => lowerText.includes(kw.toLowerCase()));
+        const mentionsStreamer = lowerText.includes('yocapi') || lowerText.includes((botConfig.channel || 'yocapi_pr').toLowerCase());
+
+        if (hasKeyword || (mentionsStreamer && (lowerText.includes('live') || lowerText.includes('directo') || lowerText.includes('stream') || lowerText.includes('prendi')))) {
+            console.log(`[TwitchBot] 🔴 DETECCIÓN DE STREAM: StreamElements anunció directo -> "${text}"`);
+            setStreamLive(true, text, tags['display-name'] || tags.username);
+
+            // Programar recordatorio inicial de cumpleaños post-aviso de StreamElements
+            if (streamState.announce_on_stream_start) {
+                setTimeout(async () => {
+                    if (streamState.is_live && status === 'connected') {
+                        try {
+                            const msg = await buildAnnouncementMessage();
+                            if (msg) {
+                                await sendChat(`🎂 ¡Yocapi prendió stream! ${msg}`);
+                            }
+                        } catch (err) {
+                            console.warn('[TwitchBot] Error enviando recordatorio post-StreamElements:', err.message);
+                        }
+                    }
+                }, 15000); // 15 segundos después del aviso de StreamElements
+            }
+        }
+    }
+}
+
+async function simulateStreamOnline(msgText = '¡@yocapi_pr ya está en directo jugando Just Chatting! 🎉', sender = 'StreamElements') {
+    const channel = formatChannelName(botConfig.channel);
+    const tags = {
+        username: sender.toLowerCase(),
+        'display-name': sender,
+        'user-id': 'sim_se_live_88',
+        mod: true,
+        badges: { moderator: '1' }
+    };
+    checkStreamElementsLiveDetection(tags, msgText, channel);
+    return {
+        success: true,
+        is_live: streamState.is_live,
+        detected_message: msgText,
+        detected_by: sender,
+        stream_state: getStreamStatus()
+    };
+}
+
+// ─── GESTIÓN DE CACHÉ DE COMANDOS PERSONALIZADOS ────────────────────────────
+async function loadCustomCommandsCache() {
+    if (!dbRef || !dbRef.getAllCustomCommands) return;
+    try {
+        const list = await dbRef.getAllCustomCommands();
+        customCommandsCache.clear();
+        for (const cmd of list) {
+            customCommandsCache.set(cmd.name.toLowerCase(), cmd);
+        }
+        console.log(`[TwitchBot] ✅ ${customCommandsCache.size} comandos personalizados cargados en caché de memoria.`);
+    } catch (e) {
+        console.error('[TwitchBot] Error cargando custom_commands en caché:', e.message);
+    }
+}
+
+function findCustomCommand(name) {
+    if (!name) return null;
+    const clean = name.toLowerCase().trim();
+    if (customCommandsCache.has(clean)) return customCommandsCache.get(clean);
+
+    for (const cmd of customCommandsCache.values()) {
+        if (!cmd.aliases) continue;
+        const aliases = cmd.aliases.split(',').map(a => a.trim().toLowerCase());
+        if (aliases.includes(clean) || aliases.includes(clean.replace(/^!/, '')) || aliases.includes('!' + clean)) {
+            return cmd;
+        }
+    }
+    return null;
+}
+
+function getCustomCommandsList() {
+    return Array.from(customCommandsCache.values());
+}
+
+async function saveCustomCommandCached(cmdData) {
+    if (!dbRef || !dbRef.saveCustomCommand) return false;
+    const saved = await dbRef.saveCustomCommand(cmdData);
+    if (saved) {
+        customCommandsCache.set(saved.name.toLowerCase(), saved);
+    }
+    return saved;
+}
+
+async function deleteCustomCommandCached(rawName) {
+    if (!dbRef || !dbRef.deleteCustomCommand) return false;
+    let clean = rawName.trim().toLowerCase();
+    if (!clean.startsWith('!')) clean = '!' + clean;
+    const ok = await dbRef.deleteCustomCommand(clean);
+    if (ok) {
+        customCommandsCache.delete(clean);
+    }
+    return ok;
 }
 
 async function sendChat(message) {
@@ -306,6 +510,13 @@ async function buildAnnouncementMessage() {
 
 async function runTimerTick() {
     if (!botConfig.timer_enabled || status !== 'connected') return;
+
+    // Solo enviar el recordatorio de cumpleaños cuando Yocapi está en vivo ("prende")
+    if (streamState.stream_live_only && !streamState.is_live) {
+        console.log('[TwitchBot Timer] ⏸️ Recordatorio en espera: Yocapi no está en vivo (esperando detección de StreamElements).');
+        return;
+    }
+
     const msg = await buildAnnouncementMessage();
     if (msg) {
         try {
@@ -402,6 +613,9 @@ async function handleChatMessage(channel, tags, message, self) {
         })();
     }
 
+    // ─── DETECCIÓN DE STREAM ONLINE ("YOCAPI PRENDE") POR STREAMELEMENTS ──────
+    checkStreamElementsLiveDetection(tags, text, channel);
+
     if (!text.startsWith('!')) return;
 
     // 1. DEDUPLICACIÓN DE MENSAJES (Evita que el mismo mensaje se procese dos veces)
@@ -413,6 +627,162 @@ async function handleChatMessage(channel, tags, message, self) {
     const command = parts[0].toLowerCase();
     const arg = (parts[1] || '').trim().replace(/^@/, '');
     const sender = tags['display-name'] || tags.username || 'amigo';
+
+    // ─── CONTROL Y ESTADO DE STREAM EN VIVO (!stream / !live) ─────────────────
+    if (command === '!stream' || command === '!live') {
+        const sub = (parts[1] || '').toLowerCase();
+        if (sub === 'on' || sub === 'prende' || sub === 'start' || sub === 'vivo') {
+            if (!isStreamerOrMod(tags, channel)) {
+                return sendChat(`⛔ @${sender}, comando exclusivo de mods 🛡️`);
+            }
+            setStreamLive(true, `Activado manualmente en chat por @${sender}`, sender);
+            return sendChat(`🔴 [Modo En Vivo] ¡Directo activado! Los recordatorios de cumpleaños están ahora activos ✨`);
+        }
+        if (sub === 'off' || sub === 'apaga' || sub === 'stop' || sub === 'offline') {
+            if (!isStreamerOrMod(tags, channel)) {
+                return sendChat(`⛔ @${sender}, comando exclusivo de mods 🛡️`);
+            }
+            setStreamLive(false, `Desactivado manualmente en chat por @${sender}`, sender);
+            return sendChat(`⚪ [Modo En Vivo] Directo desactivado. Recordatorios de cumpleaños en pausa 💤`);
+        }
+        const st = streamState.is_live ? '🔴 EN VIVO' : '⚪ OFFLINE';
+        return sendChat(`📺 Estado de stream: ${st} | Detector: @${streamState.detector_bot} | Recordatorios solo en directo: ${streamState.stream_live_only ? 'SÍ' : 'NO'}`);
+    }
+
+    // ─── GESTIÓN DE COMANDOS DESDE EL CHAT ESTILO STREAMELEMENTS (!cmd / !addcmd) ─
+    if (command === '!cmd' || command === '!command' || command === '!addcmd' || command === '!editcmd' || command === '!delcmd') {
+        if (!isStreamerOrMod(tags, channel)) {
+            return sendChat(`⛔ @${sender}, la gestión de comandos es exclusiva de mods y streamer 🛡️`);
+        }
+        
+        let action = (parts[1] || '').toLowerCase();
+        let cmdName = parts[2] || '';
+        let restIndex = 3;
+
+        if (command === '!addcmd') {
+            action = 'add';
+            cmdName = parts[1] || '';
+            restIndex = 2;
+        } else if (command === '!editcmd') {
+            action = 'edit';
+            cmdName = parts[1] || '';
+            restIndex = 2;
+        } else if (command === '!delcmd') {
+            action = 'del';
+            cmdName = parts[1] || '';
+            restIndex = 2;
+        }
+
+        if (action === 'add' || action === 'crear' || action === 'nuevo') {
+            if (!cmdName) return sendChat(`⚠️ Uso: !cmd add !nombre [everyone|mod|streamer] <respuesta>`);
+            if (!cmdName.startsWith('!')) cmdName = '!' + cmdName;
+
+            let userLevel = 'everyone';
+            let responseText = parts.slice(restIndex).join(' ').trim();
+            const possibleLevel = (parts[restIndex] || '').toLowerCase();
+            if (['everyone', 'mod', 'moderator', 'streamer'].includes(possibleLevel)) {
+                userLevel = possibleLevel === 'mod' ? 'moderator' : possibleLevel;
+                responseText = parts.slice(restIndex + 1).join(' ').trim();
+            }
+
+            if (!responseText) return sendChat(`⚠️ @${sender}, debes escribir la respuesta del comando.`);
+            await saveCustomCommandCached({
+                name: cmdName,
+                response: responseText,
+                user_level: userLevel,
+                cooldown: 5,
+                enabled: true
+            });
+            return sendChat(`✅ Comando ${cmdName} creado con éxito [Nivel: ${userLevel}].`);
+        }
+
+        if (action === 'edit' || action === 'editar') {
+            if (!cmdName) return sendChat(`⚠️ Uso: !cmd edit !nombre <nueva_respuesta>`);
+            if (!cmdName.startsWith('!')) cmdName = '!' + cmdName;
+            const existing = findCustomCommand(cmdName);
+            if (!existing) return sendChat(`⚠️ @${sender}, el comando ${cmdName} no existe.`);
+
+            const responseText = parts.slice(restIndex).join(' ').trim();
+            if (!responseText) return sendChat(`⚠️ @${sender}, ingresa la nueva respuesta.`);
+            existing.response = responseText;
+            await saveCustomCommandCached(existing);
+            return sendChat(`✏️ Comando ${cmdName} actualizado correctamente.`);
+        }
+
+        if (action === 'del' || action === 'delete' || action === 'borrar' || action === 'eliminar') {
+            if (!cmdName) return sendChat(`⚠️ Uso: !cmd del !nombre`);
+            if (!cmdName.startsWith('!')) cmdName = '!' + cmdName;
+            const ok = await deleteCustomCommandCached(cmdName);
+            return ok ? sendChat(`🗑️ Comando ${cmdName} eliminado.`) : sendChat(`⚠️ El comando ${cmdName} no existía.`);
+        }
+
+        if (action === 'perm' || action === 'permiso' || action === 'nivel') {
+            if (!cmdName) return sendChat(`⚠️ Uso: !cmd perm !nombre <everyone|mod|streamer>`);
+            if (!cmdName.startsWith('!')) cmdName = '!' + cmdName;
+            const newLvl = (parts[3] || '').toLowerCase();
+            const normalizedLvl = newLvl === 'mod' ? 'moderator' : newLvl;
+            if (!['everyone', 'moderator', 'streamer'].includes(normalizedLvl)) {
+                return sendChat(`⚠️ Nivel inválido. Opciones: everyone, mod, streamer`);
+            }
+            const existing = findCustomCommand(cmdName);
+            if (!existing) return sendChat(`⚠️ El comando ${cmdName} no existe.`);
+            existing.user_level = normalizedLvl;
+            await saveCustomCommandCached(existing);
+            return sendChat(`🛡️ Permiso de ${cmdName} actualizado a: ${normalizedLvl}`);
+        }
+
+        if (action === 'list' || action === 'lista') {
+            const list = getCustomCommandsList();
+            if (list.length === 0) return sendChat(`📜 No hay comandos personalizados activos aún.`);
+            const names = list.map(c => `${c.name} (${c.user_level})`).join(', ');
+            return sendChat(`📜 Comandos configurados: ${names}`);
+        }
+
+        return sendChat(`ℹ️ Opciones de !cmd: add, edit, del, perm, list | Ej: !cmd add !redes Sígueme en...`);
+    }
+
+    // ─── EJECUCIÓN DE COMANDOS PERSONALIZADOS ESTILO STREAMELEMENTS ──────────
+    const customCmd = findCustomCommand(command);
+    if (customCmd && customCmd.enabled) {
+        // 1. Verificación de permisos según user_level
+        if (!checkUserPermission(customCmd.user_level, tags, channel)) {
+            if (customCmd.user_level === 'streamer') {
+                return sendChat(`⛔ @${sender}, comando exclusivo de la streamer @yocapi_pr 👑`);
+            }
+            if (customCmd.user_level === 'moderator') {
+                return sendChat(`⛔ @${sender}, comando exclusivo de moderadores 🛡️`);
+            }
+            return;
+        }
+
+        // 2. Cooldown anti-spam
+        const now = Date.now();
+        const lastRun = customCmdCooldowns.get(customCmd.name.toLowerCase()) || 0;
+        const cdMs = (customCmd.cooldown || 5) * 1000;
+        if (now - lastRun < cdMs) {
+            return; // En cooldown silencioso (estilo StreamElements)
+        }
+        customCmdCooldowns.set(customCmd.name.toLowerCase(), now);
+
+        // 3. Procesamiento de variables en la respuesta
+        const fullQuery = parts.slice(1).join(' ').trim();
+        const parsedResponse = parseCommandResponse(customCmd.response, {
+            user: sender,
+            touser: arg,
+            channel: botConfig.channel || 'yocapi_pr',
+            count: (customCmd.execution_count || 0) + 1,
+            query: fullQuery
+        });
+
+        await sendChat(parsedResponse);
+
+        // 4. Conteo de ejecuciones
+        customCmd.execution_count = (customCmd.execution_count || 0) + 1;
+        if (dbRef && dbRef.incrementCommandCount) {
+            dbRef.incrementCommandCount(customCmd.name);
+        }
+        return;
+    }
 
     // ─── MINIJUEGO: GOLPES A LA PIÑATA DE CAPIBARA (!dale, !pegar, !hit, etc.) ─
     const PINATA_HIT_COMMANDS = ['!dale', '!pegar', '!hit', '!palo', '!golpe', '!batear', '!darle', '!pega', '!romper', '!golpear'];
@@ -1450,6 +1820,13 @@ function initTwitchBot(options) {
         botConfig = { ...botConfig, ...options.initialConfig };
     }
 
+    if (options.streamConfig) {
+        updateStreamConfig(options.streamConfig);
+    }
+
+    // Cargar comandos personalizados desde la BD
+    loadCustomCommandsCache().catch(e => console.warn('[TwitchBot] Error al cargar custom_commands:', e.message));
+
     // Cargar respuestas personalizadas desde settings guardados
     if (options.cmdResponses) {
         for (const [cmd, text] of Object.entries(options.cmdResponses)) {
@@ -1555,5 +1932,16 @@ module.exports = {
     buildAnnouncementMessage,
     simulateChatMessage,
     getRecentBotMessages,
-    handleChatMessage
+    handleChatMessage,
+    // Stream status & StreamElements live detection
+    getStreamStatus,
+    setStreamLive,
+    updateStreamConfig,
+    simulateStreamOnline,
+    // StreamElements-style custom commands
+    loadCustomCommandsCache,
+    findCustomCommand,
+    getCustomCommandsList,
+    saveCustomCommandCached,
+    deleteCustomCommandCached
 };

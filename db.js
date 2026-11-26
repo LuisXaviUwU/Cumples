@@ -121,6 +121,19 @@ function initDatabase() {
             value TEXT NOT NULL,
             updated_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS custom_commands (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL UNIQUE,
+            response TEXT NOT NULL,
+            user_level TEXT DEFAULT 'everyone',
+            cooldown INTEGER DEFAULT 5,
+            enabled INTEGER DEFAULT 1,
+            aliases TEXT DEFAULT '',
+            execution_count INTEGER DEFAULT 0,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
     `);
 
     try {
@@ -556,6 +569,287 @@ const db = {
         } catch (err) {
             console.error('⚠️ [DB] Error guardando app_config en base de datos:', err.message);
             return false;
+        }
+    },
+
+    // ─── GESTOR DE COMANDOS PERSONALIZADOS ESTILO STREAMELEMENTS ──────────────
+    async getAllCustomCommands() {
+        if (mode === 'firestore') {
+            try {
+                const snapshot = await firestoreDb.collection('custom_commands').get();
+                if (snapshot.empty) {
+                    await this.seedDefaultCommandsIfEmpty();
+                    const seededSnapshot = await firestoreDb.collection('custom_commands').get();
+                    return seededSnapshot.docs.map(doc => doc.data());
+                }
+                return snapshot.docs.map(doc => doc.data());
+            } catch (err) {
+                console.error('⚠️ [DB] Error obteniendo custom_commands de Firestore:', err.message);
+                return [];
+            }
+        } else {
+            try {
+                const countStmt = sqliteDb.prepare('SELECT COUNT(*) as total FROM custom_commands');
+                const { total } = countStmt.get() || { total: 0 };
+                if (total === 0) {
+                    await this.seedDefaultCommandsIfEmpty();
+                }
+                const stmt = sqliteDb.prepare('SELECT * FROM custom_commands ORDER BY name ASC');
+                const rows = stmt.all();
+                return rows.map(r => ({
+                    ...r,
+                    enabled: Boolean(r.enabled),
+                    execution_count: parseInt(r.execution_count, 10) || 0,
+                    cooldown: parseInt(r.cooldown, 10) || 5
+                }));
+            } catch (err) {
+                console.error('⚠️ [DB] Error leyendo custom_commands de SQLite:', err.message);
+                return [];
+            }
+        }
+    },
+
+    async getCustomCommand(rawName) {
+        if (!rawName) return null;
+        let cleanName = rawName.trim().toLowerCase();
+        if (!cleanName.startsWith('!')) cleanName = '!' + cleanName;
+
+        if (mode === 'firestore') {
+            try {
+                const docId = cleanName.replace(/[^a-z0-9_]/g, '_');
+                const doc = await firestoreDb.collection('custom_commands').doc(docId).get();
+                if (doc.exists) return doc.data();
+
+                // Buscar por alias
+                const snapshot = await firestoreDb.collection('custom_commands').get();
+                for (const d of snapshot.docs) {
+                    const data = d.data();
+                    const aliases = (data.aliases || '').split(',').map(a => a.trim().toLowerCase()).filter(Boolean);
+                    if (aliases.includes(cleanName) || aliases.includes(cleanName.replace(/^!/, ''))) {
+                        return data;
+                    }
+                }
+                return null;
+            } catch (err) {
+                return null;
+            }
+        } else {
+            try {
+                const stmt = sqliteDb.prepare('SELECT * FROM custom_commands WHERE LOWER(name) = ?');
+                const row = stmt.get(cleanName);
+                if (row) {
+                    return {
+                        ...row,
+                        enabled: Boolean(row.enabled),
+                        execution_count: parseInt(row.execution_count, 10) || 0,
+                        cooldown: parseInt(row.cooldown, 10) || 5
+                    };
+                }
+                // Buscar por alias
+                const allStmt = sqliteDb.prepare('SELECT * FROM custom_commands');
+                const allRows = allStmt.all();
+                for (const r of allRows) {
+                    const aliases = (r.aliases || '').split(',').map(a => a.trim().toLowerCase()).filter(Boolean);
+                    if (aliases.includes(cleanName) || aliases.includes(cleanName.replace(/^!/, ''))) {
+                        return {
+                            ...r,
+                            enabled: Boolean(r.enabled),
+                            execution_count: parseInt(r.execution_count, 10) || 0,
+                            cooldown: parseInt(r.cooldown, 10) || 5
+                        };
+                    }
+                }
+                return null;
+            } catch (err) {
+                return null;
+            }
+        }
+    },
+
+    async saveCustomCommand(cmdData) {
+        if (!cmdData || !cmdData.name || !cmdData.response) return false;
+        let cleanName = cmdData.name.trim().toLowerCase();
+        if (!cleanName.startsWith('!')) cleanName = '!' + cleanName;
+
+        const now = new Date().toISOString();
+        const userLevel = ['everyone', 'moderator', 'streamer'].includes(cmdData.user_level) 
+            ? cmdData.user_level 
+            : 'everyone';
+
+        const record = {
+            id: cmdData.id || ('cmd_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7)),
+            name: cleanName,
+            response: String(cmdData.response).trim(),
+            user_level: userLevel,
+            cooldown: Math.max(1, parseInt(cmdData.cooldown, 10) || 5),
+            enabled: cmdData.enabled !== false && cmdData.enabled !== 0 ? 1 : 0,
+            aliases: (cmdData.aliases || '').toString().trim(),
+            execution_count: parseInt(cmdData.execution_count, 10) || 0,
+            created_at: cmdData.created_at || now,
+            updated_at: now
+        };
+
+        if (mode === 'firestore') {
+            try {
+                const docId = cleanName.replace(/[^a-z0-9_]/g, '_');
+                await firestoreDb.collection('custom_commands').doc(docId).set({
+                    ...record,
+                    enabled: Boolean(record.enabled)
+                }, { merge: true });
+                return record;
+            } catch (err) {
+                console.error('⚠️ [DB] Error guardando comando en Firestore:', err.message);
+                return false;
+            }
+        } else {
+            try {
+                const stmt = sqliteDb.prepare(`
+                    INSERT INTO custom_commands (
+                        id, name, response, user_level, cooldown, enabled, aliases, execution_count, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(name) DO UPDATE SET
+                        response = excluded.response,
+                        user_level = excluded.user_level,
+                        cooldown = excluded.cooldown,
+                        enabled = excluded.enabled,
+                        aliases = excluded.aliases,
+                        execution_count = CASE WHEN excluded.execution_count > 0 THEN excluded.execution_count ELSE custom_commands.execution_count END,
+                        updated_at = excluded.updated_at
+                `);
+                stmt.run(
+                    record.id,
+                    record.name,
+                    record.response,
+                    record.user_level,
+                    record.cooldown,
+                    record.enabled,
+                    record.aliases,
+                    record.execution_count,
+                    record.created_at,
+                    record.updated_at
+                );
+                return {
+                    ...record,
+                    enabled: Boolean(record.enabled)
+                };
+            } catch (err) {
+                console.error('⚠️ [DB] Error guardando comando en SQLite:', err.message);
+                return false;
+            }
+        }
+    },
+
+    async deleteCustomCommand(rawName) {
+        if (!rawName) return false;
+        let cleanName = rawName.trim().toLowerCase();
+        if (!cleanName.startsWith('!')) cleanName = '!' + cleanName;
+
+        if (mode === 'firestore') {
+            try {
+                const docId = cleanName.replace(/[^a-z0-9_]/g, '_');
+                await firestoreDb.collection('custom_commands').doc(docId).delete();
+                return true;
+            } catch (err) {
+                return false;
+            }
+        } else {
+            try {
+                const stmt = sqliteDb.prepare('DELETE FROM custom_commands WHERE LOWER(name) = ?');
+                const result = stmt.run(cleanName);
+                return result.changes > 0;
+            } catch (err) {
+                return false;
+            }
+        }
+    },
+
+    async incrementCommandCount(rawName) {
+        if (!rawName) return;
+        let cleanName = rawName.trim().toLowerCase();
+        if (!cleanName.startsWith('!')) cleanName = '!' + cleanName;
+
+        if (mode === 'firestore') {
+            try {
+                const docId = cleanName.replace(/[^a-z0-9_]/g, '_');
+                const docRef = firestoreDb.collection('custom_commands').doc(docId);
+                await firestoreDb.runTransaction(async t => {
+                    const doc = await t.get(docRef);
+                    if (doc.exists) {
+                        const current = doc.data().execution_count || 0;
+                        t.update(docRef, { execution_count: current + 1 });
+                    }
+                });
+            } catch (_) {}
+        } else {
+            try {
+                const stmt = sqliteDb.prepare('UPDATE custom_commands SET execution_count = execution_count + 1 WHERE LOWER(name) = ?');
+                stmt.run(cleanName);
+            } catch (_) {}
+        }
+    },
+
+    async seedDefaultCommandsIfEmpty() {
+        const defaultSeeds = [
+            {
+                name: '!discord',
+                response: '🟣 ¡Únete a la comunidad de Discord oficial de Yocapi! Charlas, anuncios de streams y dinámicas exclusivas 👉 discord.gg/yocapi {user}',
+                user_level: 'everyone',
+                cooldown: 5,
+                enabled: 1,
+                aliases: '!dc',
+                execution_count: 0
+            },
+            {
+                name: '!redes',
+                response: '🌟 Sigue a Yocapi en todas sus redes oficiales: TikTok, Twitter, Instagram y YouTube 👉 linktr.ee/yocapi_pr ✨',
+                user_level: 'everyone',
+                cooldown: 5,
+                enabled: 1,
+                aliases: '!links,!social',
+                execution_count: 0
+            },
+            {
+                name: '!horario',
+                response: '📅 Horarios habituales de directo de Yocapi: Lunes, Miércoles y Viernes a partir de las 7:00 PM (hora local). ¡No te los pierdas {user}!',
+                user_level: 'everyone',
+                cooldown: 10,
+                enabled: 1,
+                aliases: '!streams,!agenda',
+                execution_count: 0
+            },
+            {
+                name: '!reglas',
+                response: '📜 Reglas del chat: 1. Respeto mutuo 2. Cero spam y mayúsculas excesivas 3. No spoilers ni backseat gaming 4. ¡Disfrutar el stream y pasarla bien! 💖',
+                user_level: 'everyone',
+                cooldown: 10,
+                enabled: 1,
+                aliases: '!rules',
+                execution_count: 0
+            },
+            {
+                name: '!modinfo',
+                response: '🛡️ Canal oficial de @yocapi_pr. Equipo de moderadores activo para mantener un ambiente seguro y divertido para toda la comunidad.',
+                user_level: 'moderator',
+                cooldown: 5,
+                enabled: 1,
+                aliases: '!mods',
+                execution_count: 0
+            },
+            {
+                name: '!vipinfo',
+                response: '👑 ¡Un agradecimiento muy especial a todos los VIPs y suscriptores por su apoyo incondicional al canal de @yocapi_pr! ✨',
+                user_level: 'streamer',
+                cooldown: 5,
+                enabled: 1,
+                aliases: '!vip',
+                execution_count: 0
+            }
+        ];
+
+        for (const item of defaultSeeds) {
+            try {
+                await this.saveCustomCommand(item);
+            } catch (_) {}
         }
     }
 };
