@@ -54,17 +54,26 @@ let appSettings = {
     alerts_paused: false,
     overlay_config: { ...DEFAULT_OVERLAY_CONFIG },
     stream_state: {
+        is_live: false,
         stream_live_only: true,
         announce_on_stream_start: true,
         detector_bot: 'streamelements',
-        keywords: ['en vivo', 'en directo', 'live', 'prendió', 'prendio', 'stream', 'online', 'yocapi']
+        keywords: [
+            'ya está en directo',
+            'está en directo',
+            'ya está en vivo',
+            'está en vivo',
+            'acaba de prender',
+            'is now live',
+            'went live'
+        ]
     },
     twitch_bot: {
         bot_username: process.env.TWITCH_BOT_USERNAME || '',
         oauth_token: process.env.TWITCH_BOT_TOKEN || '',
         channel: process.env.TWITCH_BOT_CHANNEL || STREAMER_LOGIN || 'yocapi_pr',
         enabled: _botAutoEnabled, // true si están definidas las vars de entorno
-        timer_enabled: true,
+        timer_enabled: false, // Desactivado: sin spam periódico, solo anuncio único al prender
         timer_minutes: 60
     }
 };
@@ -140,6 +149,19 @@ async function loadInitialSettings() {
     if (process.env.TWITCH_BOT_TOKEN)    appSettings.twitch_bot.oauth_token  = process.env.TWITCH_BOT_TOKEN;
     if (process.env.TWITCH_BOT_CHANNEL)  appSettings.twitch_bot.channel       = process.env.TWITCH_BOT_CHANNEL;
     if (_botAutoEnabled)                  appSettings.twitch_bot.enabled        = true;
+
+    // Asegurar que el temporizador periódico esté desactivado por defecto (solo aviso al prender directo)
+    appSettings.twitch_bot.timer_enabled = false;
+    appSettings.stream_state.is_live = false;
+    appSettings.stream_state.keywords = [
+        'ya está en directo',
+        'está en directo',
+        'ya está en vivo',
+        'está en vivo',
+        'acaba de prender',
+        'is now live',
+        'went live'
+    ];
 }
 
 // ─── Middleware ─────────────────────────────────────────────────────────────

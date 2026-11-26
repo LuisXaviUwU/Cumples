@@ -17,7 +17,7 @@ let botConfig = {
     oauth_token: '',
     channel: 'yocapi_pr',
     enabled: false,
-    timer_enabled: true,
+    timer_enabled: false, // Desactivado: sin recordatorios periódicos en chat, solo aviso único al prender
     timer_minutes: 60,
     silent_mode: false // Modo pruebas: no manda mensajes al chat de Twitch
 };
@@ -29,10 +29,22 @@ let streamState = {
     last_detected_message: null,
     detected_by: null,
     detector_bot: 'streamelements', // Usuario de Twitch que emite el mensaje de directo
-    keywords: ['en vivo', 'en directo', 'live', 'prendió', 'prendio', 'stream', 'online', 'yocapi'],
+    keywords: [
+        'ya está en directo',
+        'está en directo',
+        'ya está en vivo',
+        'está en vivo',
+        'acaba de prender',
+        'is now live',
+        'went live'
+    ],
     stream_live_only: true, // El recordatorio de cumpleaños solo aparece cuando detecta que yocapi prende
-    announce_on_stream_start: true // Al prender, manda el recordatorio de cumpleaños en directo
+    announce_on_stream_start: true // Al prender, manda el recordatorio de cumpleaños en directo (una sola vez)
 };
+
+// Control de sesión para evitar múltiples avisos en el mismo directo
+let streamAnnouncedThisSession = false;
+let streamWatchdogInterval = null;
 
 // Caché en memoria de comandos personalizados estilo StreamElements
 const customCommandsCache = new Map();
@@ -250,6 +262,106 @@ function parseCommandResponse(template, context) {
 }
 
 // ─── CONTROL Y DETECCIÓN DE STREAM ONLINE (STREAMELEMENTS) ───────────────────
+// Patrones de exclusión: Timers rutinarios, enlaces y comandos de puntos de StreamElements que NO son aviso de directo
+const SE_NON_LIVE_PATTERNS = [
+    /https?:\/\//i,
+    /www\./i,
+    /linktr\.ee/i,
+    /discord/i,
+    /github\.io/i,
+    /twitch\.tv/i,
+    /tiktok\.com/i,
+    /twitter\.com|x\.com/i,
+    /instagram\.com/i,
+    /puntos|points/i,
+    /leaderboard/i,
+    /ruleta|gamble|slots/i,
+    /registra tu cumple/i,
+    /redes sociales/i,
+    /tienda|merch/i,
+    /uptime|tiempo/i,
+    /canción|song/i
+];
+
+// Consulta en tiempo real a la API de Twitch (DecAPI Uptime) para confirmar si el canal está verdaderamente ONLINE
+async function verifyChannelLiveOnTwitch(channelName = 'yocapi_pr') {
+    try {
+        const cleanChan = (channelName || botConfig.channel || 'yocapi_pr').toLowerCase().replace(/^#/, '');
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 4500);
+
+        const res = await fetch(`https://decapi.me/twitch/uptime/${cleanChan}`, {
+            signal: controller.signal,
+            headers: { 'User-Agent': 'YocapiLiveDetector/2.0' }
+        });
+        clearTimeout(timeout);
+
+        if (!res.ok) return null;
+        const text = (await res.text()).trim().toLowerCase();
+
+        // DecAPI responde "{channel} is offline" cuando el directo no está activo
+        if (text.includes('offline') || text.includes('not found') || text.includes('user not found')) {
+            return false;
+        }
+
+        // Si responde un tiempo de uptime (ej: "25 minutes, 10 seconds"), está 100% ONLINE
+        return true;
+    } catch (_) {
+        return null;
+    }
+}
+
+// Dispara el aviso festivo de bienvenida al directo UNA SOLA VEZ por stream
+async function triggerStreamStartAnnouncement() {
+    if (streamAnnouncedThisSession) {
+        console.log('[TwitchBot] Aviso festivo de inicio de stream ya fue enviado en esta sesión. Omitiendo.');
+        return;
+    }
+    streamAnnouncedThisSession = true;
+
+    if (!streamState.announce_on_stream_start) return;
+
+    setTimeout(async () => {
+        if (!streamState.is_live || status !== 'connected') return;
+        try {
+            const msg = await buildAnnouncementMessage();
+            if (msg) {
+                await sendChat(`🎂 ¡Yocapi prendió stream! ${msg}`);
+                console.log('[TwitchBot] ✅ Recordatorio único de directo emitido exitosamente.');
+            }
+        } catch (err) {
+            console.warn('[TwitchBot] Error enviando recordatorio post-StreamElements:', err.message);
+        }
+    }, 12000); // 12 segundos de cortesía tras iniciar directo
+}
+
+// Watchdog silencioso que revisa cada 3 minutos si Yocapi apagó o prendió stream
+function startStreamWatchdog() {
+    if (streamWatchdogInterval) clearInterval(streamWatchdogInterval);
+    streamWatchdogInterval = setInterval(async () => {
+        try {
+            const chan = botConfig.channel || 'yocapi_pr';
+            const isLive = await verifyChannelLiveOnTwitch(chan);
+
+            if (isLive === false) {
+                // Si el sistema lo tenía marcado en vivo y Twitch confirma que apagó:
+                if (streamState.is_live) {
+                    console.log(`[StreamWatchdog] ⚪ Yocapi apagó stream (confirmado offline por Twitch). Transición a OFFLINE.`);
+                    setStreamLive(false, 'Stream apagado confirmado por Twitch API', 'watchdog');
+                    streamAnnouncedThisSession = false; // Listo para la próxima sesión
+                }
+            } else if (isLive === true) {
+                // Si Twitch confirma que prendió y el bot no lo tenía registrado
+                if (!streamState.is_live) {
+                    console.log(`[StreamWatchdog] 🔴 Yocapi prendió stream (detectado por Watchdog). Transición a EN VIVO.`);
+                    setStreamLive(true, 'Directo detectado por Twitch API', 'watchdog');
+                    triggerStreamStartAnnouncement();
+                }
+            }
+        } catch (_) {}
+    }, 3 * 60 * 1000);
+}
+
 function getStreamStatus() {
     return {
         is_live: !!streamState.is_live,
@@ -257,9 +369,18 @@ function getStreamStatus() {
         last_detected_message: streamState.last_detected_message,
         detected_by: streamState.detected_by,
         detector_bot: streamState.detector_bot || 'streamelements',
-        keywords: streamState.keywords || ['en vivo', 'en directo', 'live', 'prendió', 'prendio', 'stream', 'online', 'yocapi'],
+        keywords: streamState.keywords || [
+            'ya está en directo',
+            'está en directo',
+            'ya está en vivo',
+            'está en vivo',
+            'acaba de prender',
+            'is now live',
+            'went live'
+        ],
         stream_live_only: streamState.stream_live_only !== false,
-        announce_on_stream_start: streamState.announce_on_stream_start !== false
+        announce_on_stream_start: streamState.announce_on_stream_start !== false,
+        announced_this_session: streamAnnouncedThisSession
     };
 }
 
@@ -269,6 +390,8 @@ function setStreamLive(isLive, messageOrReason = '', triggeredBy = 'sistema') {
         streamState.last_live_detected = new Date().toISOString();
         if (messageOrReason) streamState.last_detected_message = messageOrReason;
         streamState.detected_by = triggeredBy;
+    } else {
+        streamAnnouncedThisSession = false; // Resetear bandera al apagar directo
     }
     console.log(`[TwitchBot] Estado de stream: ${streamState.is_live ? '🔴 EN VIVO' : '⚪ OFFLINE'} (Por: ${triggeredBy})`);
 
@@ -301,51 +424,57 @@ function updateStreamConfig(newConf) {
     return getStreamStatus();
 }
 
-function checkStreamElementsLiveDetection(tags, text, channel) {
+async function checkStreamElementsLiveDetection(tags, text, channel) {
     if (!text) return;
     const senderLogin = (tags?.username || '').toLowerCase().trim();
     const detector = (streamState.detector_bot || 'streamelements').toLowerCase().trim();
 
-    if (senderLogin === detector || senderLogin === 'streamelements') {
-        const lowerText = text.toLowerCase();
-        const keywords = Array.isArray(streamState.keywords) ? streamState.keywords : ['en vivo', 'en directo', 'live', 'prendió', 'prendio', 'stream', 'online', 'yocapi'];
-
-        const hasKeyword = keywords.some(kw => lowerText.includes(kw.toLowerCase()));
-        const mentionsStreamer = lowerText.includes('yocapi') || lowerText.includes((botConfig.channel || 'yocapi_pr').toLowerCase());
-
-        if (hasKeyword || (mentionsStreamer && (lowerText.includes('live') || lowerText.includes('directo') || lowerText.includes('stream') || lowerText.includes('prendi')))) {
-            console.log(`[TwitchBot] 🔴 DETECCIÓN DE STREAM: StreamElements anunció directo -> "${text}"`);
-            setStreamLive(true, text, tags['display-name'] || tags.username);
-
-            // Programar recordatorio inicial de cumpleaños post-aviso de StreamElements
-            if (streamState.announce_on_stream_start) {
-                setTimeout(async () => {
-                    if (streamState.is_live && status === 'connected') {
-                        try {
-                            const msg = await buildAnnouncementMessage();
-                            if (msg) {
-                                await sendChat(`🎂 ¡Yocapi prendió stream! ${msg}`);
-                            }
-                        } catch (err) {
-                            console.warn('[TwitchBot] Error enviando recordatorio post-StreamElements:', err.message);
-                        }
-                    }
-                }, 15000); // 15 segundos después del aviso de StreamElements
-            }
-        }
+    // Solo escuchar mensajes de StreamElements
+    if (senderLogin !== detector && senderLogin !== 'streamelements') {
+        return;
     }
+
+    const lowerText = text.toLowerCase();
+
+    // 1. Descartar de inmediato si contiene enlaces, timers de puntos, redes, discord, etc.
+    if (SE_NON_LIVE_PATTERNS.some(pat => pat.test(lowerText))) {
+        return;
+    }
+
+    // 2. Verificar que contenga frase explícita de transmisión iniciada
+    const keywords = Array.isArray(streamState.keywords) && streamState.keywords.length > 0
+        ? streamState.keywords
+        : ['ya está en directo', 'está en directo', 'ya está en vivo', 'está en vivo', 'acaba de prender', 'is now live', 'went live'];
+
+    const hasLivePhrase = keywords.some(kw => lowerText.includes(kw.toLowerCase()));
+    if (!hasLivePhrase) {
+        return;
+    }
+
+    console.log(`[TwitchBot] 🔍 StreamElements mencionó inicio de directo: "${text}". Verificando con Twitch API...`);
+
+    // 3. Confirmar que el canal está realmente en vivo en Twitch antes de anunciar
+    const isLiveOnTwitch = await verifyChannelLiveOnTwitch(channel || botConfig.channel || 'yocapi_pr');
+    if (isLiveOnTwitch === false) {
+        console.log(`[TwitchBot] 🛑 Falso positivo bloqueado: StreamElements envió un mensaje pero Twitch confirma que el canal está OFFLINE.`);
+        return;
+    }
+
+    if (streamAnnouncedThisSession) {
+        console.log(`[TwitchBot] Stream ya marcado activo para esta sesión. No duplicar aviso.`);
+        return;
+    }
+
+    console.log(`[TwitchBot] 🔴 DETECCIÓN DE STREAM CONFIRMADA: StreamElements anunció directo y Twitch está LIVE.`);
+    setStreamLive(true, text, tags['display-name'] || tags.username);
+    triggerStreamStartAnnouncement();
 }
 
 async function simulateStreamOnline(msgText = '¡@yocapi_pr ya está en directo jugando Just Chatting! 🎉', sender = 'StreamElements') {
     const channel = formatChannelName(botConfig.channel);
-    const tags = {
-        username: sender.toLowerCase(),
-        'display-name': sender,
-        'user-id': 'sim_se_live_88',
-        mod: true,
-        badges: { moderator: '1' }
-    };
-    checkStreamElementsLiveDetection(tags, msgText, channel);
+    setStreamLive(true, msgText, sender);
+    streamAnnouncedThisSession = false; // Permitir que la simulación emita el recordatorio de prueba
+    triggerStreamStartAnnouncement();
     return {
         success: true,
         is_live: streamState.is_live,
@@ -1801,12 +1930,17 @@ async function connectBot() {
             connectedAt = new Date().toISOString();
             console.log(`[TwitchBot] ✅ Conectado como ${username} al canal ${channel} (${addr}:${port})`);
             startTimer();
+            startStreamWatchdog();
         });
 
         client.on('disconnected', (reason) => {
             status = 'disconnected';
             console.log(`[TwitchBot] Desconectado: ${reason}`);
             stopTimer();
+            if (streamWatchdogInterval) {
+                clearInterval(streamWatchdogInterval);
+                streamWatchdogInterval = null;
+            }
         });
 
         await client.connect();
@@ -1824,6 +1958,10 @@ async function connectBot() {
 
 async function disconnectBot() {
     stopTimer();
+    if (streamWatchdogInterval) {
+        clearInterval(streamWatchdogInterval);
+        streamWatchdogInterval = null;
+    }
     if (client) {
         try {
             await client.disconnect();
