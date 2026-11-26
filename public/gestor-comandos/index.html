@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>⚡ Gestor de Comandos Estilo StreamElements — yocapi_pr</title>
+  <link rel="icon" type="image/png" href="/img/yocapi.png">
+
+  <!-- Fuentes Oficiales -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    :root {
+      --bg-dark: #0c0915;
+      --bg-card: rgba(22, 17, 38, 0.78);
+      --bg-card-hover: rgba(32, 24, 54, 0.9);
+      --border-subtle: rgba(145, 70, 255, 0.18);
+      --border-glow: rgba(145, 70, 255, 0.45);
+      --twitch-purple: #9146ff;
+      --twitch-light: #bf94ff;
+      --twitch-glow: rgba(145, 70, 255, 0.35);
+      --text-main: #f1f0f5;
+      --text-muted: #9e97b3;
+      --text-dim: #6c6485;
+      --gold: #fbbf24;
+      --green: #10b981;
+      --green-glow: rgba(16, 185, 129, 0.28);
+      --red: #f43f5e;
+      --blue: #38bdf8;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-pill: 9999px;
+      --transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    body {
+      background: radial-gradient(circle at 18% 12%, rgba(145, 70, 255, 0.14) 0%, transparent 45%),
+                  radial-gradient(circle at 82% 85%, rgba(244, 63, 94, 0.10) 0%, transparent 50%),
+                  var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+
+    .se-container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 24px 20px 90px;
+    }
+
+    /* Header Principal */
+    .se-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      backdrop-filter: blur(18px);
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .se-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .se-brand img {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2px solid var(--twitch-purple);
+      box-shadow: 0 0 16px var(--twitch-glow);
+    }
+
+    .se-brand-info h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      letter-spacing: -0.02em;
+    }
+
+    .se-brand-info h1 span.badge-se {
+      font-size: 0.7rem;
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      color: #fff;
+      padding: 3px 9px;
+      border-radius: var(--radius-pill);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .se-brand-info p {
+      margin: 2px 0 0;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .se-nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-nav-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .btn-nav-action:hover {
+      background: rgba(145, 70, 255, 0.18);
+      border-color: var(--twitch-purple);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    .btn-nav-action.active {
+      background: linear-gradient(135deg, var(--twitch-purple), #7c3aed);
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 4px 14px var(--twitch-glow);
+    }
+
+    /* ─── BANNER DETECCIÓN DE STREAM (STREAMELEMENTS) ─── */
+    .stream-radar-card {
+      background: linear-gradient(135deg, rgba(28, 20, 52, 0.9), rgba(17, 13, 31, 0.95));
+      border: 1px solid var(--border-glow);
+      border-radius: var(--radius-lg);
+      padding: 22px 26px;
+      margin-bottom: 28px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stream-radar-card::before {
+      content: '';
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, var(--twitch-glow) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .radar-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .radar-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 16px;
+      border-radius: var(--radius-pill);
+      font-size: 0.85rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .radar-status-badge.live {
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid #10b981;
+      color: #34d399;
+      box-shadow: 0 0 18px var(--green-glow);
+    }
+
+    .radar-status-badge.offline {
+      background: rgba(244, 63, 94, 0.12);
+      border: 1px solid rgba(244, 63, 94, 0.45);
+      color: #fb7185;
+    }
+
+    .radar-pulse-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 10px currentColor;
+      animation: pulse-ring 1.8s infinite;
+    }
+
+    @keyframes pulse-ring {
+      0% { transform: scale(0.9); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.7; }
+      100% { transform: scale(0.9); opacity: 1; }
+    }
+
+    .radar-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-radar {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 18px;
+      border-radius: var(--radius-pill);
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+      transition: var(--transition);
+    }
+
+    .btn-radar:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-radar.btn-sim {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      border-color: transparent;
+    }
+
+    .btn-radar.btn-sim:hover {
+      box-shadow: 0 0 20px rgba(37, 99, 235, 0.5);
+    }
+
+    .btn-radar.btn-live-toggle {
+      background: rgba(244, 63, 94, 0.15);
+      border-color: #f43f5e;
+      color: #fda4af;
+    }
+
+    .btn-radar.btn-live-toggle:hover {
+      background: #f43f5e;
+      color: #fff;
+    }
+
+    .radar-info-box {
+      background: rgba(0, 0, 0, 0.28);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .radar-desc {
+      font-size: 0.92rem;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .radar-msg-highlight {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.84rem;
+      color: #a78bfa;
+      background: rgba(167, 139, 250, 0.1);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border-left: 3px solid var(--twitch-purple);
+      word-break: break-word;
+    }
+
+    /* ─── TARJETAS DE MÉTRICAS (KPIs) ─── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .kpi-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-glow);
+      transform: translateY(-2px);
+    }
+
+    .kpi-icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      background: rgba(145, 70, 255, 0.12);
+      border: 1px solid var(--border-subtle);
+      color: var(--twitch-light);
+    }
+
+    .kpi-icon-wrap.everyone { background: rgba(16, 185, 129, 0.14); color: #34d399; }
+    .kpi-icon-wrap.mod { background: rgba(56, 189, 248, 0.14); color: #38bdf8; }
+    .kpi-icon-wrap.streamer { background: rgba(251, 191, 36, 0.14); color: #fbbf24; }
+
+    .kpi-details h3 {
+      margin: 0;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .kpi-details .kpi-number {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin: 2px 0 0;
+      color: #fff;
+    }
+
+    /* ─── BARRA DE HERRAMIENTAS Y FILTROS ─── */
+    .se-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .se-search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .se-search-input {
+      width: 100%;
+      padding: 12px 16px 12px 42px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      transition: var(--transition);
+      box-sizing: border-box;
+    }
+
+    .se-search-input:focus {
+      border-color: var(--twitch-purple);
+      box-shadow: 0 0 16px var(--twitch-glow);
+    }
+
+    .se-search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.5;
+      font-size: 1rem;
+    }
+
+    .se-filters {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 9px 16px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .filter-btn:hover {
+      background: rgba(145, 70, 255, 0.12);
+      color: #fff;
+    }
+
+    .filter-btn.active {
+      background: linear-gradient(135deg, var(--twitch-purple), #7c3aed);
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 4px 12px var(--twitch-glow);
+    }
+
+    .btn-primary-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 22px;
+      border-radius: var(--radius-pill);
+      background: linear-gradient(135deg, #10b981, #059669);
+      border: none;
+      color: #fff;
+      font-size: 0.88rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
+    }
+
+    .btn-primary-action:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.5);
+    }
+
+    /* ─── TABLA DE COMANDOS ESTILO STREAMELEMENTS ─── */
+    .table-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      overflow-x: auto;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.3);
+    }
+
+    .se-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .se-table th {
+      padding: 16px 20px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(14, 10, 24, 0.6);
+    }
+
+    .se-table td {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 0.9rem;
+      vertical-align: middle;
+    }
+
+    .se-table tr:hover td {
+      background: rgba(145, 70, 255, 0.04);
+    }
+
+    /* Insignias de Nivel de Permiso */
+    .perm-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 12px;
+      border-radius: var(--radius-pill);
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .perm-badge.everyone {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #34d399;
+    }
+
+    .perm-badge.moderator {
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #38bdf8;
+    }
+
+    .perm-badge.streamer {
+      background: rgba(251, 191, 36, 0.14);
+      border: 1px solid rgba(251, 191, 36, 0.45);
+      color: #fbbf24;
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
+    }
+
+    .cmd-name-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .cmd-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: #fff;
+      font-size: 0.92rem;
+      background: rgba(145, 70, 255, 0.12);
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(145, 70, 255, 0.25);
+      display: inline-block;
+      width: fit-content;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .cmd-code:hover {
+      background: var(--twitch-purple);
+      color: #fff;
+    }
+
+    .cmd-aliases {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .cmd-response-preview {
+      max-width: 440px;
+      line-height: 1.4;
+      color: #d1d5db;
+      font-size: 0.88rem;
+      word-break: break-word;
+    }
+
+    .cmd-variable-tag {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(168, 85, 247, 0.16);
+      color: #c084fc;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    /* Switch Activo / Desactivado */
+    .switch-toggle {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+
+    .switch-toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #374151;
+      transition: .3s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #10b981;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Botones de Acción de Tabla */
+    .action-btn-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-action-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.95rem;
+    }
+
+    .btn-action-icon:hover {
+      background: rgba(145, 70, 255, 0.2);
+      border-color: var(--twitch-purple);
+      color: #fff;
+      transform: scale(1.08);
+    }
+
+    .btn-action-icon.btn-del:hover {
+      background: rgba(244, 63, 94, 0.2);
+      border-color: #f43f5e;
+      color: #fda4af;
+    }
+
+    /* ─── MODAL DIÁLOGO FLOTANTE (ESTILO STREAMELEMENTS) ─── */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(7, 5, 12, 0.85);
+      backdrop-filter: blur(14px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 99999;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+      animation: modal-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modal-fade-in {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-card {
+      background: #140e26;
+      border: 1px solid var(--border-glow);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 620px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      max-height: 90vh;
+    }
+
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.3rem;
+      cursor: pointer;
+      padding: 4px;
+      transition: var(--transition);
+    }
+
+    .btn-modal-close:hover {
+      color: #fff;
+    }
+
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-label {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .form-input, .form-textarea, .form-select {
+      width: 100%;
+      padding: 12px 14px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.9rem;
+      box-sizing: border-box;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .form-input:focus, .form-textarea:focus, .form-select:focus {
+      border-color: var(--twitch-purple);
+      box-shadow: 0 0 14px var(--twitch-glow);
+    }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .variable-chips-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .btn-chip {
+      background: rgba(145, 70, 255, 0.12);
+      border: 1px solid rgba(145, 70, 255, 0.3);
+      color: var(--twitch-light);
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-chip:hover {
+      background: var(--twitch-purple);
+      color: #fff;
+    }
+
+    .preview-chat-box {
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .preview-chat-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--twitch-purple);
+    }
+
+    .preview-chat-content {
+      font-size: 0.88rem;
+      line-height: 1.4;
+    }
+
+    .preview-chat-botname {
+      font-weight: 800;
+      color: var(--twitch-light);
+      margin-right: 6px;
+    }
+
+    .modal-footer {
+      padding: 18px 24px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .btn-secondary {
+      padding: 10px 20px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    /* Notificación Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 100000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast-msg {
+      background: #1c1533;
+      border: 1px solid var(--border-glow);
+      padding: 14px 20px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: toast-in 0.25s ease-out;
+      pointer-events: auto;
+    }
+
+    @keyframes toast-in {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="se-container">
+
+    <!-- ─── HEADER PRINCIPAL ─── -->
+    <header class="se-header">
+      <a href="/gestor-comandos" class="se-brand">
+        <img src="/img/yocapi.png" alt="yocapi_pr">
+        <div class="se-brand-info">
+          <h1>
+            Comandos de Chat
+            <span class="badge-se">StreamElements Style</span>
+          </h1>
+          <p>Editor nativo de comandos de Twitch & Control de Directo</p>
+        </div>
+      </a>
+
+      <nav class="se-nav-actions">
+        <button type="button" class="btn-nav-action active" id="btn-refresh-data" title="Actualizar comandos">
+          <span>🔄</span>
+          <span>Actualizar</span>
+        </button>
+        <a href="/comandos" class="btn-nav-action" title="Guía visual para la comunidad">
+          <span>📜</span>
+          <span>Guía Pública</span>
+        </a>
+        <a href="/" class="btn-nav-action" title="Portal de cumpleaños">
+          <span>🎂</span>
+          <span>Portal</span>
+        </a>
+      </nav>
+    </header>
+
+    <!-- ─── CARD DE CONTROL DE DIRECTO (STREAMELEMENTS RADAR) ─── -->
+    <section class="stream-radar-card" id="radar-card">
+      <div class="radar-top-row">
+        <div>
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+            <div id="radar-pill" class="radar-status-badge offline">
+              <span class="radar-pulse-dot"></span>
+              <span id="radar-status-text">OFFLINE — Esperando que Yocapi prenda</span>
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-dim);" id="radar-detector-tag">Detector: @streamelements</span>
+          </div>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; margin: 0; font-weight: 800;">
+            Detección de Stream & Recordatorios de Cumpleaños
+          </h2>
+        </div>
+
+        <div class="radar-controls">
+          <button type="button" class="btn-radar btn-sim" id="btn-simulate-se" title="Simular que StreamElements avisa que Yocapi prendió directo">
+            <span>🧪</span>
+            <span>Simular StreamElements</span>
+          </button>
+          <button type="button" class="btn-radar btn-live-toggle" id="btn-toggle-live" title="Forzar cambio de estado en vivo">
+            <span id="toggle-live-icon">🔴</span>
+            <span id="toggle-live-label">Activar En Vivo</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="radar-info-box">
+        <div class="radar-desc">
+          <span>📢</span>
+          <span id="radar-expl-text">
+            <strong>Regla activa:</strong> El recordatorio periódico de cumpleaños <strong>solo se enviará al chat</strong> cuando StreamElements avise que @yocapi_pr ya prendió directo.
+          </span>
+        </div>
+        <div class="radar-msg-highlight" id="radar-last-msg">
+          Último mensaje recibido: <em>(Esperando primera transmisión de StreamElements...)</em>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── TARJETAS DE MÉTRICAS (KPIS) ─── -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap">⚡</div>
+        <div class="kpi-details">
+          <h3>Total Comandos</h3>
+          <div class="kpi-number" id="kpi-total">0</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap everyone">🟢</div>
+        <div class="kpi-details">
+          <h3>Everyone (Todos)</h3>
+          <div class="kpi-number" id="kpi-everyone">0</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap mod">🛡️</div>
+        <div class="kpi-details">
+          <h3>Moderadores</h3>
+          <div class="kpi-number" id="kpi-mod">0</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap streamer">👑</div>
+        <div class="kpi-details">
+          <h3>Solo Streamer</h3>
+          <div class="kpi-number" id="kpi-streamer">0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── TOOLBAR & FILTROS ─── -->
+    <div class="se-toolbar">
+      <div class="se-search-wrap">
+        <span class="se-search-icon">🔍</span>
+        <input type="text" id="input-search-cmd" class="se-search-input" placeholder="Buscar comando por nombre, alias o respuesta...">
+      </div>
+
+      <div class="se-filters">
+        <button type="button" class="filter-btn active" data-filter="all">Todos</button>
+        <button type="button" class="filter-btn" data-filter="everyone">🟢 Everyone</button>
+        <button type="button" class="filter-btn" data-filter="moderator">🛡️ Moderadores</button>
+        <button type="button" class="filter-btn" data-filter="streamer">👑 Streamer</button>
+      </div>
+
+      <button type="button" class="btn-primary-action" id="btn-open-create-modal">
+        <span>+</span>
+        <span>Añadir Nuevo Comando</span>
+      </button>
+    </div>
+
+    <!-- ─── TABLA DE COMANDOS ─── -->
+    <div class="table-container">
+      <table class="se-table">
+        <thead>
+          <tr>
+            <th style="width: 180px;">Comando</th>
+            <th style="width: 130px;">Permisos</th>
+            <th>Respuesta en Chat</th>
+            <th style="width: 80px; text-align: center;">Cooldown</th>
+            <th style="width: 80px; text-align: center;">Usos</th>
+            <th style="width: 90px; text-align: center;">Estado</th>
+            <th style="width: 130px; text-align: right;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="commands-tbody">
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
+              Cargando comandos desde la base de datos... ⏳
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ─── MODAL CREAR / EDITAR COMANDO ─── -->
+  <div class="modal-overlay" id="modal-cmd">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="modal-title">✨ Añadir Nuevo Comando</h2>
+        <button type="button" class="btn-modal-close" id="btn-close-modal">✕</button>
+      </div>
+
+      <form id="form-command" class="modal-body">
+        <input type="hidden" id="form-cmd-id">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label class="form-label" for="form-cmd-name">
+              <span>Nombre del Comando</span>
+              <small style="color: var(--text-dim); font-size: 0.75rem;">(ej: !redes)</small>
+            </label>
+            <input type="text" id="form-cmd-name" class="form-input" placeholder="!mi_comando" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="form-cmd-userlevel">
+              <span>Nivel de Usuario</span>
+            </label>
+            <select id="form-cmd-userlevel" class="form-select">
+              <option value="everyone">🟢 Everyone (Cualquier espectador)</option>
+              <option value="moderator">🛡️ Moderadores (Mods y Streamer)</option>
+              <option value="streamer">👑 Solo Streamer (@yocapi_pr)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label class="form-label" for="form-cmd-cooldown">
+              <span>Cooldown (segundos)</span>
+            </label>
+            <input type="number" id="form-cmd-cooldown" class="form-input" min="1" max="300" value="5">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="form-cmd-aliases">
+              <span>Aliases opcionales</span>
+              <small style="color: var(--text-dim); font-size: 0.75rem;">(separados por coma)</small>
+            </label>
+            <input type="text" id="form-cmd-aliases" class="form-input" placeholder="!alias1, !alias2">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="form-cmd-response">
+            <span>Respuesta del Bot en el Chat</span>
+          </label>
+          <textarea id="form-cmd-response" class="form-textarea" placeholder="Escribe el mensaje que enviará el bot en Twitch..." required></textarea>
+          
+          <div class="variable-chips-row">
+            <span style="font-size: 0.76rem; color: var(--text-muted); align-self: center; margin-right: 4px;">Insertar variable:</span>
+            <button type="button" class="btn-chip" data-var="{user}">{user}</button>
+            <button type="button" class="btn-chip" data-var="{touser}">{touser}</button>
+            <button type="button" class="btn-chip" data-var="{channel}">{channel}</button>
+            <button type="button" class="btn-chip" data-var="{count}">{count}</button>
+            <button type="button" class="btn-chip" data-var="{query}">{query}</button>
+            <button type="button" class="btn-chip" data-var="{random}">{random}</button>
+          </div>
+        </div>
+
+        <!-- Vista Previa en Vivo -->
+        <div class="form-group">
+          <label class="form-label">
+            <span>Vista previa de chat Twitch</span>
+          </label>
+          <div class="preview-chat-box">
+            <img src="/img/yocapi.png" class="preview-chat-avatar" alt="Bot">
+            <div class="preview-chat-content">
+              <span class="preview-chat-botname">yocapi_bot:</span>
+              <span id="preview-text" style="color: #f3f4f6;">Escribe una respuesta para previsualizar...</span>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="btn-cancel-modal">Cancelar</button>
+        <button type="button" class="btn-primary-action" id="btn-save-command">
+          <span>💾</span>
+          <span>Guardar Comando</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── MODAL PROBAR COMANDO ─── -->
+  <div class="modal-overlay" id="modal-test">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h2>🧪 Probar Ejecución de Comando</h2>
+        <button type="button" class="btn-modal-close" id="btn-close-test-modal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Comando a probar</label>
+          <div id="test-modal-cmd-name" class="cmd-code">!comando</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="select-test-role">Simular como:</label>
+          <select id="select-test-role" class="form-select">
+            <option value="everyone">🟢 Espectador Normal (Everyone)</option>
+            <option value="moderator">🛡️ Moderador de Twitch</option>
+            <option value="streamer">👑 Streamer (@yocapi_pr)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="input-test-query">Argumento opcional (ej: @amigo)</label>
+          <input type="text" id="input-test-query" class="form-input" placeholder="@usuario">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Resultado obtenido en chat:</label>
+          <div class="preview-chat-box" id="test-result-box" style="min-height: 50px;">
+            <div id="test-result-rendered" style="font-size: 0.9rem; line-height: 1.45;">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="btn-close-test-bottom">Cerrar</button>
+        <button type="button" class="btn-primary-action" id="btn-run-sim-test">
+          <span>🚀</span>
+          <span>Ejecutar Prueba</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenedor Toast -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- ─── SCRIPT DE CONTROL ─── -->
+  <script>
+    let commandsList = [];
+    let currentFilter = 'all';
+    let currentTestingCmd = null;
+
+    // Toast de Notificación
+    function showToast(message, icon = '✅') {
+      const cont = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast-msg';
+      toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+      cont.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // ─── CARGA DE COMANDOS ───
+    async function loadCommands() {
+      const tbody = document.getElementById('commands-tbody');
+      try {
+        const res = await fetch('/api/commands');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.commands)) {
+          commandsList = data.commands;
+          renderCommandsTable();
+          updateKPIs();
+        } else {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 40px; color: #f43f5e;">⚠️ Error al cargar comandos</td></tr>`;
+        }
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 40px; color: #f43f5e;">⚠️ Error de conexión con el servidor</td></tr>`;
+      }
+    }
+
+    // Renderizar KPIs
+    function updateKPIs() {
+      const total = commandsList.length;
+      const everyone = commandsList.filter(c => (c.user_level || 'everyone') === 'everyone').length;
+      const mod = commandsList.filter(c => c.user_level === 'moderator').length;
+      const streamer = commandsList.filter(c => c.user_level === 'streamer').length;
+
+      document.getElementById('kpi-total').textContent = total;
+      document.getElementById('kpi-everyone').textContent = everyone;
+      document.getElementById('kpi-mod').textContent = mod;
+      document.getElementById('kpi-streamer').textContent = streamer;
+    }
+
+    // Renderizar Tabla
+    function renderCommandsTable() {
+      const tbody = document.getElementById('commands-tbody');
+      const searchVal = (document.getElementById('input-search-cmd').value || '').trim().toLowerCase();
+
+      let filtered = commandsList.filter(cmd => {
+        // Filtro por categoría
+        if (currentFilter !== 'all' && (cmd.user_level || 'everyone') !== currentFilter) {
+          return false;
+        }
+        // Filtro por búsqueda
+        if (searchVal) {
+          const inName = (cmd.name || '').toLowerCase().includes(searchVal);
+          const inAliases = (cmd.aliases || '').toLowerCase().includes(searchVal);
+          const inResp = (cmd.response || '').toLowerCase().includes(searchVal);
+          return inName || inAliases || inResp;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align:center; padding: 50px 20px; color: var(--text-muted);">
+              <div style="font-size: 2.2rem; margin-bottom: 8px;">🔍</div>
+              <strong style="font-size: 1rem; color: #fff;">No se encontraron comandos</strong>
+              <p style="margin: 4px 0 0; font-size: 0.85rem;">Prueba con otro filtro o añade uno nuevo con el botón superior.</p>
+            </td>
+          </tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(cmd => {
+        const lvl = cmd.user_level || 'everyone';
+        let badgeIcon = '🟢';
+        let badgeLabel = 'Everyone';
+        if (lvl === 'moderator') { badgeIcon = '🛡️'; badgeLabel = 'Moderador'; }
+        if (lvl === 'streamer') { badgeIcon = '👑'; badgeLabel = 'Streamer'; }
+
+        // Resaltar variables en la respuesta
+        const formattedResp = escapeHTML(cmd.response || '')
+          .replace(/(\{user\}|\$\{user\})/gi, '<span class="cmd-variable-tag">$1</span>')
+          .replace(/(\{touser\}|\$\{touser\}|\$\{1\}|\{1\})/gi, '<span class="cmd-variable-tag">$1</span>')
+          .replace(/(\{channel\}|\$\{channel\})/gi, '<span class="cmd-variable-tag">$1</span>')
+          .replace(/(\{count\}|\$\{count\})/gi, '<span class="cmd-variable-tag">$1</span>')
+          .replace(/(\{query\}|\$\{query\})/gi, '<span class="cmd-variable-tag">$1</span>')
+          .replace(/(\{random[^\}]*\}|\$\{random[^\}]*\})/gi, '<span class="cmd-variable-tag">$1</span>');
+
+        const isChecked = cmd.enabled !== false ? 'checked' : '';
+
+        return `
+          <tr data-name="${escapeHTML(cmd.name)}">
+            <td>
+              <div class="cmd-name-box">
+                <span class="cmd-code" onclick="navigator.clipboard.writeText('${escapeHTML(cmd.name)}'); showToast('Copiado: ${escapeHTML(cmd.name)}', '📋');" title="Clic para copiar">
+                  ${escapeHTML(cmd.name)}
+                </span>
+                ${cmd.aliases ? `<span class="cmd-aliases">Alias: ${escapeHTML(cmd.aliases)}</span>` : ''}
+              </div>
+            </td>
+            <td>
+              <span class="perm-badge ${lvl}">
+                <span>${badgeIcon}</span>
+                <span>${badgeLabel}</span>
+              </span>
+            </td>
+            <td>
+              <div class="cmd-response-preview">${formattedResp}</div>
+            </td>
+            <td style="text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-muted);">
+              ${cmd.cooldown || 5}s
+            </td>
+            <td style="text-align: center; font-family: 'Outfit', sans-serif; font-weight: 700; color: #fff;">
+              ${cmd.execution_count || 0}
+            </td>
+            <td style="text-align: center;">
+              <label class="switch-toggle" title="Activar / Desactivar comando">
+                <input type="checkbox" ${isChecked} onchange="toggleCommandStatus('${escapeHTML(cmd.name)}', this.checked)">
+                <span class="slider"></span>
+              </label>
+            </td>
+            <td style="text-align: right;">
+              <div class="action-btn-group" style="justify-content: flex-end;">
+                <button type="button" class="btn-action-icon" onclick="openTestModal('${escapeHTML(cmd.name)}')" title="Probar simulación de comando">
+                  🧪
+                </button>
+                <button type="button" class="btn-action-icon" onclick="openEditModal('${escapeHTML(cmd.name)}')" title="Editar comando">
+                  ✏️
+                </button>
+                <button type="button" class="btn-action-icon btn-del" onclick="deleteCommand('${escapeHTML(cmd.name)}')" title="Eliminar comando">
+                  🗑️
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // ─── ESTADO DE STREAM (STREAMELEMENTS) ───
+    async function loadStreamStatus() {
+      try {
+        const res = await fetch('/api/stream/status');
+        const data = await res.json();
+        if (data.success) {
+          updateStreamRadarUI(data);
+        }
+      } catch (e) {
+        console.warn('Error cargando stream status:', e);
+      }
+    }
+
+    function updateStreamRadarUI(data) {
+      const isLive = !!data.is_live;
+      const pill = document.getElementById('radar-pill');
+      const text = document.getElementById('radar-status-text');
+      const toggleBtn = document.getElementById('btn-toggle-live');
+      const toggleIcon = document.getElementById('toggle-live-icon');
+      const toggleLabel = document.getElementById('toggle-live-label');
+      const lastMsg = document.getElementById('radar-last-msg');
+      const detectorTag = document.getElementById('radar-detector-tag');
+
+      detectorTag.textContent = `Detector: @${data.detector_bot || 'streamelements'}`;
+
+      if (isLive) {
+        pill.className = 'radar-status-badge live';
+        text.textContent = '🔴 EN VIVO — Stream iniciado (Avisos de cumple activos)';
+        toggleIcon.textContent = '⚪';
+        toggleLabel.textContent = 'Desactivar En Vivo';
+      } else {
+        pill.className = 'radar-status-badge offline';
+        text.textContent = '⚪ OFFLINE — Esperando que StreamElements avise directo';
+        toggleIcon.textContent = '🔴';
+        toggleLabel.textContent = 'Activar En Vivo';
+      }
+
+      if (data.last_detected_message) {
+        const timeStr = data.last_live_detected ? new Date(data.last_live_detected).toLocaleTimeString() : '';
+        lastMsg.innerHTML = `<strong>Aviso detectado (${timeStr}):</strong> "${escapeHTML(data.last_detected_message)}"`;
+      } else {
+        lastMsg.innerHTML = `Último aviso: <em>(Esperando primera transmisión de StreamElements...)</em>`;
+      }
+    }
+
+    // ─── EVENTOS Y ACCIONES ───
+    // Simular que StreamElements dijo que yocapi prendió
+    document.getElementById('btn-simulate-se').addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/stream/simulate-streamelements', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: '¡@yocapi_pr ya está en directo! Jugando Just Chatting y festejando cumpleaños con la comunidad 🎉✨'
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('¡Aviso de StreamElements simulado! Modo En Vivo activado.', '🔴');
+          updateStreamRadarUI(data.stream_state);
+        } else {
+          showToast(data.error || 'No autorizado o error al simular', '⚠️');
+        }
+      } catch (e) {
+        showToast('Error de conexión', '⚠️');
+      }
+    });
+
+    // Alternar En Vivo Manualmente
+    document.getElementById('btn-toggle-live').addEventListener('click', async () => {
+      const isCurrentlyLive = document.getElementById('radar-pill').classList.contains('live');
+      const newLiveState = !isCurrentlyLive;
+      try {
+        const res = await fetch('/api/stream/set-live', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_live: newLiveState, reason: 'Cambio manual desde panel StreamElements' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message, newLiveState ? '🔴' : '⚪');
+          updateStreamRadarUI(data.stream_state);
+        } else {
+          showToast(data.error || 'Acceso no autorizado', '🔒');
+        }
+      } catch (e) {
+        showToast('Error modificando estado', '⚠️');
+      }
+    });
+
+    // Alternar Switch Activo/Inactivo
+    window.toggleCommandStatus = async function(cmdName, isChecked) {
+      try {
+        const res = await fetch(`/api/commands/${encodeURIComponent(cmdName)}/toggle`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: isChecked })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message, isChecked ? '🟢' : '⚪');
+          const found = commandsList.find(c => c.name.toLowerCase() === cmdName.toLowerCase());
+          if (found) found.enabled = isChecked;
+        } else {
+          showToast(data.error || 'Error al cambiar estado', '⚠️');
+          loadCommands();
+        }
+      } catch (e) {
+        showToast('Error de conexión', '⚠️');
+        loadCommands();
+      }
+    };
+
+    // Eliminar Comando
+    window.deleteCommand = async function(cmdName) {
+      if (!confirm(`¿Estás seguro de eliminar el comando ${cmdName}?`)) return;
+      try {
+        const res = await fetch(`/api/commands/${encodeURIComponent(cmdName)}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Comando ${cmdName} eliminado con éxito`, '🗑️');
+          commandsList = commandsList.filter(c => c.name.toLowerCase() !== cmdName.toLowerCase());
+          renderCommandsTable();
+          updateKPIs();
+        } else {
+          showToast(data.error || 'Error al eliminar', '⚠️');
+        }
+      } catch (e) {
+        showToast('Error al conectar con servidor', '⚠️');
+      }
+    };
+
+    // ─── MODAL CREACIÓN / EDICIÓN ───
+    const modalCmd = document.getElementById('modal-cmd');
+    const formCmd = document.getElementById('form-command');
+
+    function openCreateModal() {
+      document.getElementById('modal-title').textContent = '✨ Añadir Nuevo Comando';
+      document.getElementById('form-cmd-id').value = '';
+      document.getElementById('form-cmd-name').value = '';
+      document.getElementById('form-cmd-name').disabled = false;
+      document.getElementById('form-cmd-userlevel').value = 'everyone';
+      document.getElementById('form-cmd-cooldown').value = '5';
+      document.getElementById('form-cmd-aliases').value = '';
+      document.getElementById('form-cmd-response').value = '';
+      updatePreviewText();
+      modalCmd.classList.add('active');
+    }
+
+    window.openEditModal = function(cmdName) {
+      const found = commandsList.find(c => c.name.toLowerCase() === cmdName.toLowerCase());
+      if (!found) return;
+
+      document.getElementById('modal-title').textContent = `✏️ Editar Comando ${found.name}`;
+      document.getElementById('form-cmd-id').value = found.id || '';
+      document.getElementById('form-cmd-name').value = found.name || '';
+      document.getElementById('form-cmd-name').disabled = true; // El nombre principal no se edita directamente
+      document.getElementById('form-cmd-userlevel').value = found.user_level || 'everyone';
+      document.getElementById('form-cmd-cooldown').value = found.cooldown || 5;
+      document.getElementById('form-cmd-aliases').value = found.aliases || '';
+      document.getElementById('form-cmd-response').value = found.response || '';
+      updatePreviewText();
+      modalCmd.classList.add('active');
+    };
+
+    function closeModal() {
+      modalCmd.classList.remove('active');
+    }
+
+    document.getElementById('btn-open-create-modal').addEventListener('click', openCreateModal);
+    document.getElementById('btn-close-modal').addEventListener('click', closeModal);
+    document.getElementById('btn-cancel-modal').addEventListener('click', closeModal);
+
+    // Insertar variables al hacer clic en chips
+    document.querySelectorAll('.btn-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const v = btn.getAttribute('data-var');
+        const textarea = document.getElementById('form-cmd-response');
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const val = textarea.value;
+        textarea.value = val.substring(0, start) + v + val.substring(end);
+        textarea.focus();
+        textarea.selectionStart = textarea.selectionEnd = start + v.length;
+        updatePreviewText();
+      });
+    });
+
+    // Actualizar previsualización en vivo
+    function updatePreviewText() {
+      const resp = document.getElementById('form-cmd-response').value;
+      const previewSpan = document.getElementById('preview-text');
+      if (!resp.trim()) {
+        previewSpan.textContent = 'Escribe una respuesta para previsualizar...';
+        previewSpan.style.color = '#9e97b3';
+        return;
+      }
+      previewSpan.style.color = '#f3f4f6';
+      // Reemplazar de forma amigable las variables
+      let sample = resp
+        .replace(/\{user\}|\$\{user\}/gi, '@SeguidorFeliz')
+        .replace(/\{touser\}|\$\{touser\}|\$\{1\}|\{1\}/gi, '@YocapiAmigo')
+        .replace(/\{channel\}|\$\{channel\}/gi, 'yocapi_pr')
+        .replace(/\{count\}|\$\{count\}/gi, '42')
+        .replace(/\{query\}|\$\{query\}/gi, 'gran directo')
+        .replace(/\{random[^\}]*\}|\$\{random[^\}]*\}/gi, '88');
+      previewSpan.textContent = sample;
+    }
+
+    document.getElementById('form-cmd-response').addEventListener('input', updatePreviewText);
+
+    // Guardar Comando (Submit)
+    document.getElementById('btn-save-command').addEventListener('click', async () => {
+      const name = document.getElementById('form-cmd-name').value.trim();
+      const response = document.getElementById('form-cmd-response').value.trim();
+      const user_level = document.getElementById('form-cmd-userlevel').value;
+      const cooldown = parseInt(document.getElementById('form-cmd-cooldown').value, 10) || 5;
+      const aliases = document.getElementById('form-cmd-aliases').value.trim();
+      const id = document.getElementById('form-cmd-id').value;
+
+      if (!name) {
+        showToast('Ingresa un nombre para el comando', '⚠️');
+        return;
+      }
+      if (!response) {
+        showToast('La respuesta no puede estar vacía', '⚠️');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/commands', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id,
+            name,
+            response,
+            user_level,
+            cooldown,
+            aliases,
+            enabled: true
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message, '💾');
+          closeModal();
+          loadCommands();
+        } else {
+          showToast(data.error || 'Error al guardar comando', '⚠️');
+        }
+      } catch (e) {
+        showToast('Error de red al guardar', '⚠️');
+      }
+    });
+
+    // ─── MODAL DE PRUEBA DE COMANDOS ───
+    const modalTest = document.getElementById('modal-test');
+
+    window.openTestModal = function(cmdName) {
+      const found = commandsList.find(c => c.name.toLowerCase() === cmdName.toLowerCase());
+      if (!found) return;
+      currentTestingCmd = found;
+
+      document.getElementById('test-modal-cmd-name').textContent = found.name;
+      document.getElementById('input-test-query').value = '';
+      document.getElementById('test-result-rendered').innerHTML = 'Haz clic en <strong>Ejecutar Prueba</strong> para simular el mensaje.';
+      modalTest.classList.add('active');
+    };
+
+    function closeTestModal() {
+      modalTest.classList.remove('active');
+      currentTestingCmd = null;
+    }
+
+    document.getElementById('btn-close-test-modal').addEventListener('click', closeTestModal);
+    document.getElementById('btn-close-test-bottom').addEventListener('click', closeTestModal);
+
+    document.getElementById('btn-run-sim-test').addEventListener('click', async () => {
+      if (!currentTestingCmd) return;
+      const role = document.getElementById('select-test-role').value;
+      const query = document.getElementById('input-test-query').value.trim();
+
+      try {
+        const res = await fetch('/api/commands/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            commandName: currentTestingCmd.name,
+            template: currentTestingCmd.response,
+            userLevel: currentTestingCmd.user_level,
+            testRole: role,
+            query
+          })
+        });
+        const data = await res.json();
+        const box = document.getElementById('test-result-rendered');
+
+        if (!data.success && data.permissionDenied) {
+          box.innerHTML = `<span style="color: #f43f5e; font-weight: 700;">${escapeHTML(data.message)}</span>`;
+        } else if (data.success) {
+          box.innerHTML = `
+            <div style="color: #10b981; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">✅ Permiso concedido (${role})</div>
+            <div style="color: #fff; font-family: 'JetBrains Mono', monospace;">${escapeHTML(data.rendered)}</div>
+          `;
+        }
+      } catch (e) {
+        showToast('Error al probar comando', '⚠️');
+      }
+    });
+
+    // ─── FILTROS Y BÚSQUEDA ───
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.getAttribute('data-filter');
+        renderCommandsTable();
+      });
+    });
+
+    document.getElementById('input-search-cmd').addEventListener('input', () => {
+      renderCommandsTable();
+    });
+
+    document.getElementById('btn-refresh-data').addEventListener('click', () => {
+      loadCommands();
+      loadStreamStatus();
+      showToast('Datos actualizados', '🔄');
+    });
+
+    // Carga inicial
+    loadCommands();
+    loadStreamStatus();
+
+    // Auto-refresco del estado de stream cada 15 segundos
+    setInterval(loadStreamStatus, 15000);
+  </script>
+</body>
+
+</html>
