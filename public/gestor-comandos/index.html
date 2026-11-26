@@ -975,31 +975,31 @@
         <div class="kpi-icon-wrap">⚡</div>
         <div class="kpi-details">
           <h3>Total Comandos</h3>
-          <div class="kpi-number" id="kpi-total">0</div>
+          <div class="kpi-number" id="kpi-total">19</div>
         </div>
       </div>
 
       <div class="kpi-card">
-        <div class="kpi-icon-wrap everyone">🟢</div>
+        <div class="kpi-icon-wrap everyone">🎂</div>
         <div class="kpi-details">
-          <h3>Everyone (Todos)</h3>
-          <div class="kpi-number" id="kpi-everyone">0</div>
+          <h3>Cumpleaños & Festejo</h3>
+          <div class="kpi-number" id="kpi-bday">4</div>
         </div>
       </div>
 
       <div class="kpi-card">
-        <div class="kpi-icon-wrap mod">🛡️</div>
+        <div class="kpi-icon-wrap mod">🪅</div>
         <div class="kpi-details">
-          <h3>Moderadores</h3>
-          <div class="kpi-number" id="kpi-mod">0</div>
+          <h3>Piñata & Minijuegos</h3>
+          <div class="kpi-number" id="kpi-pinata">3</div>
         </div>
       </div>
 
       <div class="kpi-card">
-        <div class="kpi-icon-wrap streamer">👑</div>
+        <div class="kpi-icon-wrap streamer">🛡️</div>
         <div class="kpi-details">
-          <h3>Solo Streamer</h3>
-          <div class="kpi-number" id="kpi-streamer">0</div>
+          <h3>Moderación & Stream</h3>
+          <div class="kpi-number" id="kpi-mod">8</div>
         </div>
       </div>
     </section>
@@ -1008,13 +1008,15 @@
     <div class="se-toolbar">
       <div class="se-search-wrap">
         <span class="se-search-icon">🔍</span>
-        <input type="text" id="input-search-cmd" class="se-search-input" placeholder="Buscar comando por nombre, alias o respuesta...">
+        <input type="text" id="input-search-cmd" class="se-search-input" placeholder="Buscar comando por nombre, alias o respuesta (ej: piñata, dale, reg, mod)...">
       </div>
 
       <div class="se-filters">
-        <button type="button" class="filter-btn active" data-filter="all">Todos</button>
-        <button type="button" class="filter-btn" data-filter="everyone">🟢 Everyone</button>
-        <button type="button" class="filter-btn" data-filter="moderator">🛡️ Moderadores</button>
+        <button type="button" class="filter-btn active" data-filter="all">🌟 Todos</button>
+        <button type="button" class="filter-btn" data-filter="bday">🎂 Cumpleaños</button>
+        <button type="button" class="filter-btn" data-filter="pinata">🪅 Piñata & Minijuegos</button>
+        <button type="button" class="filter-btn" data-filter="query">🔍 Consultas</button>
+        <button type="button" class="filter-btn" data-filter="mod">🛡️ Moderadores</button>
         <button type="button" class="filter-btn" data-filter="streamer">👑 Streamer</button>
       </div>
 
@@ -1065,24 +1067,38 @@
           <div class="form-group">
             <label class="form-label" for="form-cmd-name">
               <span>Nombre del Comando</span>
-              <small style="color: var(--text-dim); font-size: 0.75rem;">(ej: !redes)</small>
+              <small style="color: var(--text-dim); font-size: 0.75rem;">(ej: !piñata)</small>
             </label>
             <input type="text" id="form-cmd-name" class="form-input" placeholder="!mi_comando" required>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="form-cmd-userlevel">
-              <span>Nivel de Usuario</span>
+            <label class="form-label" for="form-cmd-category">
+              <span>Categoría</span>
             </label>
-            <select id="form-cmd-userlevel" class="form-select">
-              <option value="everyone">🟢 Everyone (Cualquier espectador)</option>
-              <option value="moderator">🛡️ Moderadores (Mods y Streamer)</option>
-              <option value="streamer">👑 Solo Streamer (@yocapi_pr)</option>
+            <select id="form-cmd-category" class="form-select">
+              <option value="bday">🎂 Cumpleaños & Alertas</option>
+              <option value="pinata">🪅 Minijuegos & Piñata</option>
+              <option value="query">🔍 Consultas & Fechas</option>
+              <option value="mod">🛡️ Moderación & Control</option>
+              <option value="streamer">👑 Solo Streamer</option>
+              <option value="general">⭐ Personalizado</option>
             </select>
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label class="form-label" for="form-cmd-userlevel">
+              <span>Nivel de Permiso</span>
+            </label>
+            <select id="form-cmd-userlevel" class="form-select">
+              <option value="everyone">🟢 Everyone</option>
+              <option value="moderator">🛡️ Moderadores</option>
+              <option value="streamer">👑 Solo Streamer</option>
+            </select>
+          </div>
+
           <div class="form-group">
             <label class="form-label" for="form-cmd-cooldown">
               <span>Cooldown (segundos)</span>
@@ -1093,7 +1109,7 @@
           <div class="form-group">
             <label class="form-label" for="form-cmd-aliases">
               <span>Aliases opcionales</span>
-              <small style="color: var(--text-dim); font-size: 0.75rem;">(separados por coma)</small>
+              <small style="color: var(--text-dim); font-size: 0.72rem;">(separados por coma)</small>
             </label>
             <input type="text" id="form-cmd-aliases" class="form-input" placeholder="!alias1, !alias2">
           </div>
@@ -1232,14 +1248,14 @@
     // Renderizar KPIs
     function updateKPIs() {
       const total = commandsList.length;
-      const everyone = commandsList.filter(c => (c.user_level || 'everyone') === 'everyone').length;
-      const mod = commandsList.filter(c => c.user_level === 'moderator').length;
-      const streamer = commandsList.filter(c => c.user_level === 'streamer').length;
+      const bdayCount = commandsList.filter(c => c.category === 'bday').length;
+      const pinataCount = commandsList.filter(c => c.category === 'pinata').length;
+      const modCount = commandsList.filter(c => c.category === 'mod' || c.category === 'streamer' || c.user_level === 'moderator' || c.user_level === 'streamer').length;
 
       document.getElementById('kpi-total').textContent = total;
-      document.getElementById('kpi-everyone').textContent = everyone;
-      document.getElementById('kpi-mod').textContent = mod;
-      document.getElementById('kpi-streamer').textContent = streamer;
+      document.getElementById('kpi-bday').textContent = bdayCount;
+      document.getElementById('kpi-pinata').textContent = pinataCount;
+      document.getElementById('kpi-mod').textContent = modCount;
     }
 
     // Renderizar Tabla
@@ -1248,9 +1264,13 @@
       const searchVal = (document.getElementById('input-search-cmd').value || '').trim().toLowerCase();
 
       let filtered = commandsList.filter(cmd => {
-        // Filtro por categoría
-        if (currentFilter !== 'all' && (cmd.user_level || 'everyone') !== currentFilter) {
-          return false;
+        // Filtro por categoría o nivel
+        if (currentFilter !== 'all') {
+          if (currentFilter === 'bday' && cmd.category !== 'bday') return false;
+          if (currentFilter === 'pinata' && cmd.category !== 'pinata') return false;
+          if (currentFilter === 'query' && cmd.category !== 'query') return false;
+          if (currentFilter === 'mod' && cmd.category !== 'mod' && cmd.user_level !== 'moderator') return false;
+          if (currentFilter === 'streamer' && cmd.category !== 'streamer' && cmd.user_level !== 'streamer') return false;
         }
         // Filtro por búsqueda
         if (searchVal) {
@@ -1281,6 +1301,14 @@
         if (lvl === 'moderator') { badgeIcon = '🛡️'; badgeLabel = 'Moderador'; }
         if (lvl === 'streamer') { badgeIcon = '👑'; badgeLabel = 'Streamer'; }
 
+        const cat = cmd.category || 'general';
+        let catBadge = '';
+        if (cat === 'bday') catBadge = '<span style="font-size:0.68rem; background:rgba(244,63,94,0.18); color:#fda4af; padding:2px 6px; border-radius:4px; font-weight:700;">🎂 Cumple</span>';
+        else if (cat === 'pinata') catBadge = '<span style="font-size:0.68rem; background:rgba(168,85,247,0.18); color:#d8b4fe; padding:2px 6px; border-radius:4px; font-weight:700;">🪅 Minijuego</span>';
+        else if (cat === 'query') catBadge = '<span style="font-size:0.68rem; background:rgba(56,189,248,0.18); color:#7dd3fc; padding:2px 6px; border-radius:4px; font-weight:700;">🔍 Consulta</span>';
+        else if (cat === 'mod') catBadge = '<span style="font-size:0.68rem; background:rgba(251,191,36,0.18); color:#fde047; padding:2px 6px; border-radius:4px; font-weight:700;">🛡️ Mod</span>';
+        else if (cat === 'streamer') catBadge = '<span style="font-size:0.68rem; background:rgba(245,158,11,0.22); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:700;">👑 Streamer</span>';
+
         // Resaltar variables en la respuesta
         const formattedResp = escapeHTML(cmd.response || '')
           .replace(/(\{user\}|\$\{user\})/gi, '<span class="cmd-variable-tag">$1</span>')
@@ -1296,9 +1324,12 @@
           <tr data-name="${escapeHTML(cmd.name)}">
             <td>
               <div class="cmd-name-box">
-                <span class="cmd-code" onclick="navigator.clipboard.writeText('${escapeHTML(cmd.name)}'); showToast('Copiado: ${escapeHTML(cmd.name)}', '📋');" title="Clic para copiar">
-                  ${escapeHTML(cmd.name)}
-                </span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span class="cmd-code" onclick="navigator.clipboard.writeText('${escapeHTML(cmd.name)}'); showToast('Copiado: ${escapeHTML(cmd.name)}', '📋');" title="Clic para copiar">
+                    ${escapeHTML(cmd.name)}
+                  </span>
+                  ${catBadge}
+                </div>
                 ${cmd.aliases ? `<span class="cmd-aliases">Alias: ${escapeHTML(cmd.aliases)}</span>` : ''}
               </div>
             </td>
@@ -1494,6 +1525,7 @@
       document.getElementById('form-cmd-id').value = '';
       document.getElementById('form-cmd-name').value = '';
       document.getElementById('form-cmd-name').disabled = false;
+      document.getElementById('form-cmd-category').value = 'bday';
       document.getElementById('form-cmd-userlevel').value = 'everyone';
       document.getElementById('form-cmd-cooldown').value = '5';
       document.getElementById('form-cmd-aliases').value = '';
@@ -1510,6 +1542,7 @@
       document.getElementById('form-cmd-id').value = found.id || '';
       document.getElementById('form-cmd-name').value = found.name || '';
       document.getElementById('form-cmd-name').disabled = true; // El nombre principal no se edita directamente
+      document.getElementById('form-cmd-category').value = found.category || 'general';
       document.getElementById('form-cmd-userlevel').value = found.user_level || 'everyone';
       document.getElementById('form-cmd-cooldown').value = found.cooldown || 5;
       document.getElementById('form-cmd-aliases').value = found.aliases || '';
@@ -1569,6 +1602,7 @@
       const name = document.getElementById('form-cmd-name').value.trim();
       const response = document.getElementById('form-cmd-response').value.trim();
       const user_level = document.getElementById('form-cmd-userlevel').value;
+      const category = document.getElementById('form-cmd-category').value;
       const cooldown = parseInt(document.getElementById('form-cmd-cooldown').value, 10) || 5;
       const aliases = document.getElementById('form-cmd-aliases').value.trim();
       const id = document.getElementById('form-cmd-id').value;
@@ -1591,6 +1625,7 @@
             name,
             response,
             user_level,
+            category,
             cooldown,
             aliases,
             enabled: true
