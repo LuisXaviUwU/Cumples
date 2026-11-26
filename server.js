@@ -1717,7 +1717,7 @@ app.get('/api/commands', async (req, res) => {
 // Crear o editar comando (Protegido)
 app.post('/api/commands', authenticateDashboard, async (req, res) => {
     try {
-        const { name, response, user_level, cooldown, enabled, aliases } = req.body;
+        const { name, response, user_level, category, cooldown, enabled, aliases } = req.body;
         if (!name || !name.trim()) {
             return res.status(400).json({ success: false, error: 'El nombre del comando es obligatorio' });
         }
@@ -1732,6 +1732,7 @@ app.post('/api/commands', authenticateDashboard, async (req, res) => {
             name: cleanName,
             response: response.trim(),
             user_level: ['everyone', 'moderator', 'streamer'].includes(user_level) ? user_level : 'everyone',
+            category: category ? String(category).trim() : 'general',
             cooldown: Math.max(1, parseInt(cooldown, 10) || 5),
             enabled: enabled !== false,
             aliases: aliases ? String(aliases).trim() : ''

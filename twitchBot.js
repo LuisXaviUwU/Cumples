@@ -741,21 +741,48 @@ async function handleChatMessage(channel, tags, message, self) {
         return sendChat(`ℹ️ Opciones de !cmd: add, edit, del, perm, list | Ej: !cmd add !redes Sígueme en...`);
     }
 
+const BUILT_IN_COMMAND_NAMES = [
+    '!cumplehoy', '!alerta', '!fiesta', '!festejo', '!hoyesmicumple', '!hoyesmicum', '!mialerta', '!lanzarmicumple', '!micumplealerta', '!lanzarcumple', '!cumplealerta',
+    '!reg', '!registro', '!regcumple', '!registrarme', '!registrar', '!anotarme', '!cumpleregistro',
+    '!cumple', '!micumple', '!cumpleaños', '!cumpleanos', '!mifecha', '!fechacumple', '!cuandocumplo',
+    '!prox', '!proximos', '!siguientes', '!cumples',
+    '!mes', '!cumplemes', '!cumplesmes', '!mescumple',
+    '!frase', '!hbcambio', '!hbfrase', '!micumplefrase', '!cambiarfrase', '!mifrase',
+    '!sonido', '!audio', '!hbsonido', '!misonido',
+    '!piñata', '!pinata', '!pata', '!pstop', '!piñatastop', '!pinatastop', '!piñatita', '!pinatita',
+    '!dale', '!pegar', '!hit', '!palo', '!golpe', '!batear', '!darle', '!pega', '!romper', '!golpear',
+    '!feliz', '!hb', '!felicidades', '!felicidades1', '!felicidades2', '!felicidades3', '!felicitar', '!felicitar1', '!felicitar2', '!felicitar3', '!felicitaciones', '!felicitacion', '!festejar',
+    '!cumplecmds', '!ccmds', '!cumpleayuda', '!cumpleguia', '!cumpleinfo', '!cumplecomandos', '!bday',
+    '!hbmod', '!cumplemod', '!hbadmin', '!hbestado',
+    '!listo', '!hecho', '!yacelebro', '!hbyacelebro', '!hbcelebrado', '!hblisto',
+    '!relanzar', '!reinicio', '!hbrelanzar', '!hbreiniciar',
+    '!libre', '!abrir', '!hblibre', '!hbdesbloquear', '!desbloquear', '!desbloquearfecha',
+    '!alertas', '!hbalertas', '!cumplealertas',
+    '!rec', '!grabar', '!hbgrabacion', '!hbmodovideo',
+    '!silencio', '!hbpruebas', '!hbsilencio', '!hbsilent', '!hbmodoprueba',
+    '!stream', '!live'
+];
+
     // ─── EJECUCIÓN DE COMANDOS PERSONALIZADOS ESTILO STREAMELEMENTS ──────────
     const customCmd = findCustomCommand(command);
-    if (customCmd && customCmd.enabled) {
-        // 1. Verificación de permisos según user_level
+    if (customCmd) {
+        // 1. Verificación de si está habilitado en el gestor
+        if (customCmd.enabled === false) {
+            return sendChat(`⛔ @${sender}, el comando ${customCmd.name} está temporalmente desactivado por la streamer.`);
+        }
+
+        // 2. Verificación de permisos según user_level configurado en el gestor
         if (!checkUserPermission(customCmd.user_level, tags, channel)) {
             if (customCmd.user_level === 'streamer') {
-                return sendChat(`⛔ @${sender}, comando exclusivo de la streamer @yocapi_pr 👑`);
+                return sendChat(`⛔ @${sender}, el comando ${customCmd.name} está configurado como exclusivo de la streamer @yocapi_pr 👑`);
             }
             if (customCmd.user_level === 'moderator') {
-                return sendChat(`⛔ @${sender}, comando exclusivo de moderadores 🛡️`);
+                return sendChat(`⛔ @${sender}, el comando ${customCmd.name} está configurado como exclusivo de moderadores 🛡️`);
             }
             return;
         }
 
-        // 2. Cooldown anti-spam
+        // 3. Cooldown anti-spam configurado en el gestor
         const now = Date.now();
         const lastRun = customCmdCooldowns.get(customCmd.name.toLowerCase()) || 0;
         const cdMs = (customCmd.cooldown || 5) * 1000;
@@ -764,24 +791,27 @@ async function handleChatMessage(channel, tags, message, self) {
         }
         customCmdCooldowns.set(customCmd.name.toLowerCase(), now);
 
-        // 3. Procesamiento de variables en la respuesta
-        const fullQuery = parts.slice(1).join(' ').trim();
-        const parsedResponse = parseCommandResponse(customCmd.response, {
-            user: sender,
-            touser: arg,
-            channel: botConfig.channel || 'yocapi_pr',
-            count: (customCmd.execution_count || 0) + 1,
-            query: fullQuery
-        });
-
-        await sendChat(parsedResponse);
-
         // 4. Conteo de ejecuciones
         customCmd.execution_count = (customCmd.execution_count || 0) + 1;
         if (dbRef && dbRef.incrementCommandCount) {
             dbRef.incrementCommandCount(customCmd.name);
         }
-        return;
+
+        // 5. Si es un comando puramente de texto libre (no un comando con lógica interna de piñata/alerta/sistema)
+        const isSystemCommand = BUILT_IN_COMMAND_NAMES.includes(command);
+        if (!isSystemCommand) {
+            const fullQuery = parts.slice(1).join(' ').trim();
+            const parsedResponse = parseCommandResponse(customCmd.response, {
+                user: sender,
+                touser: arg,
+                channel: botConfig.channel || 'yocapi_pr',
+                count: customCmd.execution_count,
+                query: fullQuery
+            });
+            await sendChat(parsedResponse);
+            return;
+        }
+        // Si es un comando de sistema (piñata, dale, cumplehoy, reg, sonido, frase, feliz, etc.), continúa hacia abajo ejecutando la lógica nativa del minijuego o alerta
     }
 
     // ─── MINIJUEGO: GOLPES A LA PIÑATA DE CAPIBARA (!dale, !pegar, !hit, etc.) ─

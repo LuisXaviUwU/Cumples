@@ -131,10 +131,15 @@ function initDatabase() {
             enabled INTEGER DEFAULT 1,
             aliases TEXT DEFAULT '',
             execution_count INTEGER DEFAULT 0,
+            category TEXT DEFAULT 'general',
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         );
     `);
+
+    try {
+        sqliteDb.exec("ALTER TABLE custom_commands ADD COLUMN category TEXT DEFAULT 'general';");
+    } catch (e) {}
 
     try {
         sqliteDb.exec("ALTER TABLE users ADD COLUMN recovery_hash TEXT DEFAULT '';");
@@ -577,8 +582,9 @@ const db = {
         if (mode === 'firestore') {
             try {
                 const snapshot = await firestoreDb.collection('custom_commands').get();
-                if (snapshot.empty) {
-                    await this.seedDefaultCommandsIfEmpty();
+                const hasCumplehoy = snapshot.docs.some(d => d.data().name === '!cumplehoy');
+                if (snapshot.empty || !hasCumplehoy) {
+                    await this.seedDefaultCommandsIfEmpty(true);
                     const seededSnapshot = await firestoreDb.collection('custom_commands').get();
                     return seededSnapshot.docs.map(doc => doc.data());
                 }
@@ -589,10 +595,10 @@ const db = {
             }
         } else {
             try {
-                const countStmt = sqliteDb.prepare('SELECT COUNT(*) as total FROM custom_commands');
+                const countStmt = sqliteDb.prepare("SELECT COUNT(*) as total FROM custom_commands WHERE name = '!cumplehoy'");
                 const { total } = countStmt.get() || { total: 0 };
                 if (total === 0) {
-                    await this.seedDefaultCommandsIfEmpty();
+                    await this.seedDefaultCommandsIfEmpty(true);
                 }
                 const stmt = sqliteDb.prepare('SELECT * FROM custom_commands ORDER BY name ASC');
                 const rows = stmt.all();
@@ -684,6 +690,7 @@ const db = {
             cooldown: Math.max(1, parseInt(cmdData.cooldown, 10) || 5),
             enabled: cmdData.enabled !== false && cmdData.enabled !== 0 ? 1 : 0,
             aliases: (cmdData.aliases || '').toString().trim(),
+            category: (cmdData.category || 'general').toString().trim(),
             execution_count: parseInt(cmdData.execution_count, 10) || 0,
             created_at: cmdData.created_at || now,
             updated_at: now
@@ -705,14 +712,15 @@ const db = {
             try {
                 const stmt = sqliteDb.prepare(`
                     INSERT INTO custom_commands (
-                        id, name, response, user_level, cooldown, enabled, aliases, execution_count, created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        id, name, response, user_level, cooldown, enabled, aliases, category, execution_count, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(name) DO UPDATE SET
                         response = excluded.response,
                         user_level = excluded.user_level,
                         cooldown = excluded.cooldown,
                         enabled = excluded.enabled,
                         aliases = excluded.aliases,
+                        category = excluded.category,
                         execution_count = CASE WHEN excluded.execution_count > 0 THEN excluded.execution_count ELSE custom_commands.execution_count END,
                         updated_at = excluded.updated_at
                 `);
@@ -724,6 +732,7 @@ const db = {
                     record.cooldown,
                     record.enabled,
                     record.aliases,
+                    record.category,
                     record.execution_count,
                     record.created_at,
                     record.updated_at
@@ -788,65 +797,214 @@ const db = {
         }
     },
 
-    async seedDefaultCommandsIfEmpty() {
-        const defaultSeeds = [
+    async seedDefaultCommandsIfEmpty(force = false) {
+        // 1. Eliminar comandos genéricos obsoletos si existían
+        const obsoleteDummy = ['!discord', '!horario', '!redes', '!reglas', '!modinfo', '!vipinfo'];
+        for (const oldName of obsoleteDummy) {
+            try {
+                await this.deleteCustomCommand(oldName);
+            } catch (_) {}
+        }
+
+        // 2. Comandos Oficiales del Proyecto (Cumpleaños, Piñata, Felicitaciones, Moderación)
+        const officialCommands = [
+            // ─── CUMPLEAÑOS & ALERTAS ───
             {
-                name: '!discord',
-                response: '🟣 ¡Únete a la comunidad de Discord oficial de Yocapi! Charlas, anuncios de streams y dinámicas exclusivas 👉 discord.gg/yocapi {user}',
-                user_level: 'everyone',
-                cooldown: 5,
-                enabled: 1,
-                aliases: '!dc',
-                execution_count: 0
-            },
-            {
-                name: '!redes',
-                response: '🌟 Sigue a Yocapi en todas sus redes oficiales: TikTok, Twitter, Instagram y YouTube 👉 linktr.ee/yocapi_pr ✨',
-                user_level: 'everyone',
-                cooldown: 5,
-                enabled: 1,
-                aliases: '!links,!social',
-                execution_count: 0
-            },
-            {
-                name: '!horario',
-                response: '📅 Horarios habituales de directo de Yocapi: Lunes, Miércoles y Viernes a partir de las 7:00 PM (hora local). ¡No te los pierdas {user}!',
+                name: '!cumplehoy',
+                response: '🎂 ¡Lanza tu alerta festiva en directo con música y confeti en pantalla! (Día de cumple o 14 días de gracia). {user}',
                 user_level: 'everyone',
                 cooldown: 10,
                 enabled: 1,
-                aliases: '!streams,!agenda',
+                aliases: '!alerta, !fiesta, !hoyesmicumple, !mialerta, !lanzarcumple, !cumplealerta',
+                category: 'bday',
                 execution_count: 0
             },
             {
-                name: '!reglas',
-                response: '📜 Reglas del chat: 1. Respeto mutuo 2. Cero spam y mayúsculas excesivas 3. No spoilers ni backseat gaming 4. ¡Disfrutar el stream y pasarla bien! 💖',
+                name: '!reg',
+                response: '🎂 Registra tu fecha de cumpleaños con !reg DD-MM (ej: !reg 15-05) o registra a un compañero con !reg DD-MM @amigo. {user}',
+                user_level: 'everyone',
+                cooldown: 5,
+                enabled: 1,
+                aliases: '!registro, !anotarme, !regcumple, !registrar, !cumpleregistro',
+                category: 'bday',
+                execution_count: 0
+            },
+            {
+                name: '!frase',
+                response: '✍️ Personaliza la dedicatoria corta que aparecerá en pantalla cuando suene tu alerta en vivo: !frase <tu dedicatoria>',
+                user_level: 'everyone',
+                cooldown: 5,
+                enabled: 1,
+                aliases: '!hbcambio, !mifrase, !cambiarfrase, !hbfrase',
+                category: 'bday',
+                execution_count: 0
+            },
+            {
+                name: '!sonido',
+                response: '🎺 Elige la música de tu alerta: 1 = Silbato Festivo 🎺, 2 = Música de Fiesta 🎵, 3 = Felicitación de Voz 🎤 (!sonido 1/2/3).',
+                user_level: 'everyone',
+                cooldown: 5,
+                enabled: 1,
+                aliases: '!audio, !hbsonido, !misonido',
+                category: 'bday',
+                execution_count: 0
+            },
+            // ─── CONSULTAS ───
+            {
+                name: '!cumple',
+                response: '🎂 Consulta tu fecha registrada y días restantes con !cumple o consulta la de otro seguidor con !cumple @usuario.',
+                user_level: 'everyone',
+                cooldown: 5,
+                enabled: 1,
+                aliases: '!micumple, !cumpleaños, !cumpleanos, !mifecha',
+                category: 'query',
+                execution_count: 0
+            },
+            {
+                name: '!prox',
+                response: '⏳ Lista cronológica de los próximos cumpleaños que están por celebrarse en la comunidad de Yocapi.',
                 user_level: 'everyone',
                 cooldown: 10,
                 enabled: 1,
-                aliases: '!rules',
+                aliases: '!proximos, !siguientes, !cumples',
+                category: 'query',
                 execution_count: 0
             },
             {
-                name: '!modinfo',
-                response: '🛡️ Canal oficial de @yocapi_pr. Equipo de moderadores activo para mantener un ambiente seguro y divertido para toda la comunidad.',
+                name: '!mes',
+                response: '🗓️ Miembros de la comunidad que cumplen años en el mes actual o en el mes indicado (!mes mayo o !mes 05).',
+                user_level: 'everyone',
+                cooldown: 10,
+                enabled: 1,
+                aliases: '!cumplemes, !cumplesmes, !mescumple',
+                category: 'query',
+                execution_count: 0
+            },
+            {
+                name: '!cumplecmds',
+                response: '📜 Guía interactiva oficial de comandos de cumpleaños de @yocapi_pr: {URL}/comandos 🎉',
+                user_level: 'everyone',
+                cooldown: 10,
+                enabled: 1,
+                aliases: '!ccmds, !cumpleayuda, !cumpleinfo, !cumpleguia',
+                category: 'query',
+                execution_count: 0
+            },
+            // ─── MINIJUEGOS & PIÑATA ───
+            {
+                name: '!piñata',
+                response: '🪅 Minijuego de la Piñata de Capibara: !piñata [nombre] [golpes]. ¡Aparece colgada en pantalla para que el chat la rompa!',
+                user_level: 'moderator',
+                cooldown: 10,
+                enabled: 1,
+                aliases: '!pata, !pinata, !pstop, !piñatastop, !pinatastop',
+                category: 'pinata',
+                execution_count: 0
+            },
+            {
+                name: '!dale',
+                response: '🏏 ¡Golpea la piñata de capibara activa! Tu avatar sale disparado con un palo para batearla y soltar caramelos.',
+                user_level: 'everyone',
+                cooldown: 1,
+                enabled: 1,
+                aliases: '!pegar, !golpe, !hit, !palo, !batear, !romper, !darle',
+                category: 'pinata',
+                execution_count: 0
+            },
+            {
+                name: '!feliz',
+                response: '💌 Envía confeti y una tarjeta flotante de felicitación a la pantalla del stream: !feliz <mensaje>',
+                user_level: 'everyone',
+                cooldown: 5,
+                enabled: 1,
+                aliases: '!hb, !felicitar, !felicidades, !festejar',
+                category: 'pinata',
+                execution_count: 0
+            },
+            // ─── MODERACIÓN & CONTROL ───
+            {
+                name: '!hbmod',
+                response: '🛡️ Panel de estado rápido para mods: alertas, grabación, bot y temporizador en directo.',
                 user_level: 'moderator',
                 cooldown: 5,
                 enabled: 1,
-                aliases: '!mods',
+                aliases: '!cumplemod, !hbadmin, !hbestado',
+                category: 'mod',
                 execution_count: 0
             },
             {
-                name: '!vipinfo',
-                response: '👑 ¡Un agradecimiento muy especial a todos los VIPs y suscriptores por su apoyo incondicional al canal de @yocapi_pr! ✨',
-                user_level: 'streamer',
-                cooldown: 5,
+                name: '!listo',
+                response: '✅ Marca manualmente a un cumpleañero como ya celebrado este año para silenciar recordatorios: !listo @usuario',
+                user_level: 'moderator',
+                cooldown: 3,
                 enabled: 1,
-                aliases: '!vip',
+                aliases: '!hecho, !yacelebro, !hbyacelebro, !hbcelebrado',
+                category: 'mod',
+                execution_count: 0
+            },
+            {
+                name: '!relanzar',
+                response: '🔄 Reinicia la celebración de un usuario para que pueda re-lanzar su festejo con !cumplehoy en directo: !relanzar @usuario',
+                user_level: 'moderator',
+                cooldown: 3,
+                enabled: 1,
+                aliases: '!reinicio, !hbrelanzar, !hbreiniciar',
+                category: 'mod',
+                execution_count: 0
+            },
+            {
+                name: '!libre',
+                response: '🔓 Desbloquea la fecha de cumpleaños de un seguidor para que pueda corregirla con !reg DD-MM: !libre @usuario',
+                user_level: 'moderator',
+                cooldown: 3,
+                enabled: 1,
+                aliases: '!abrir, !hblibre, !hbdesbloquear',
+                category: 'mod',
+                execution_count: 0
+            },
+            {
+                name: '!alertas',
+                response: '🔔 Activa o pausa temporalmente las alertas de cumpleañero (!cumplehoy) en directo: !alertas on/off',
+                user_level: 'moderator',
+                cooldown: 3,
+                enabled: 1,
+                aliases: '!hbalertas, !cumplealertas',
+                category: 'mod',
+                execution_count: 0
+            },
+            {
+                name: '!rec',
+                response: '🎬 Modo Grabación: silencia alertas y felicitaciones en directo para momentos sin interrupciones: !rec on/off',
+                user_level: 'moderator',
+                cooldown: 3,
+                enabled: 1,
+                aliases: '!grabar, !hbgrabacion, !hbmodovideo',
+                category: 'mod',
+                execution_count: 0
+            },
+            {
+                name: '!silencio',
+                response: '🧪 Modo Pruebas: procesa todo en el overlay de OBS sin enviar mensajes al chat de Twitch: !silencio on/off',
+                user_level: 'moderator',
+                cooldown: 3,
+                enabled: 1,
+                aliases: '!hbpruebas, !hbsilencio, !hbsilent',
+                category: 'mod',
+                execution_count: 0
+            },
+            {
+                name: '!stream',
+                response: '🔴 Control de directo y verificación de aviso de StreamElements para recordatorios: !stream on/off/status',
+                user_level: 'streamer',
+                cooldown: 3,
+                enabled: 1,
+                aliases: '!live, !directo',
+                category: 'streamer',
                 execution_count: 0
             }
         ];
 
-        for (const item of defaultSeeds) {
+        for (const item of officialCommands) {
             try {
                 await this.saveCustomCommand(item);
             } catch (_) {}
